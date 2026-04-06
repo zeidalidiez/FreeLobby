@@ -1,0 +1,105 @@
+Game Design Document: "FreeLobby" (Working Title)
+1. Vision & Core Loop
+Pitch: A minimalist, browser-based multiplayer room where introverts can get a quick, safe hit of social interaction with strangers at any hour.
+
+Core Loop: Enter name -> Join/Create Room -> Move around -> Express via emotes/10-char signs -> Mutually agree to reveal names (Vibe Check) -> Leave feeling a bit more connected.
+
+Tone: Calming, safe, low-pressure, ephemeral.
+
+2. Tech Stack & Architecture
+Frontend: Phaser (HTML5 Canvas/WebGL). Handles rendering placeholder.png, character movement interpolation, and displaying the UI overlay.
+
+Backend: Node.js with Socket.IO. Handles room management, broadcasting player coordinates, routing chat/emotes, and enforcing server limits.
+
+Hosting: Requires a server capable of running a Node.js daemon (not just static file hosting).
+
+3. Core Mechanics (v1.0)
+Rooms: Instanced lobbies. If the active room list hits a server-defined cap, room creation is temporarily disabled to prevent crashes.
+
+Movement: 2D top-down or isometric movement. No collision detection needed for v1.0 beyond the walls of the room to keep the AI-generated code simple.
+
+Emotes: A UI panel with up to 30 simple emotes (smile, wave, coffee cup, sleep, etc.) that spawn as a temporary bubble over the player's head.
+
+Signs: A text input field capped at 10 characters. When submitted, the text hovers over the player for a few seconds.
+
+The Vibe Check (Name Reveal): * Players appear as "Stranger" to each other initially.
+
+Player A clicks Player B and selects "Vibe Check."
+
+Player B receives a gentle, unobtrusive prompt: "A Stranger wants to share names. Comfortable?"
+
+If Yes: Both players see each other's entered names. If No: The prompt fades away silently.
+
+4. UI & UX Elements
+Landing Screen: Minimalist. A single text input for "Name" and buttons for "Join Random Room" or "Create Room." No passwords, no logins.
+
+In-Game HUD: * Emote Menu (Grid layout).
+
+Sign Input Box (10-char limit).
+
+Room ID display (for sharing).
+
+"Made with Love" Button: Persistent UI button in the corner. Clicking opens a simple HTML/CSS modal over the canvas with your donation link and a brief thank-you message.
+
+5. Asset List (Minimalist Approach)
+To keep your workload light, everything relies on placeholder.png tinted via Phaser's built-in color manipulation, or very simple custom pixel art when you're ready.
+
+Player Sprite: placeholder.png (Tinted different colors for different users).
+
+Room Background: A simple solid color or a tiled placeholder.png.
+
+Emotes: 30 small transparent PNGs (or even just unicode emojis rendered as text over the player to save immense amounts of graphic design time).
+
+UI Elements: Standard HTML/CSS DOM elements overlaid on top of the Phaser canvas (this is much easier for an AI to code than building UI entirely within Phaser).
+
+6. Future Scope (Post v1.0)
+Room Customization: Players can place basic furniture (placeholder.png variants).
+
+String Saving: The server serializes the X/Y coordinates of placed furniture into a JSON string, encoded as Base64. The user copies this text string and can paste it later to instantly rebuild their room.
+
+Development Timeline (Estimated: 4–6 Weeks)
+Working solo with an AI, the biggest hurdle will be keeping the AI focused on one file at a time. Do not ask the AI to build the whole game at once.
+
+Phase 1: Foundation (Week 1)
+
+Goal: Get a local server running and a character moving on a screen.
+
+Set up the Node.js/Socket.IO server boilerplate.
+
+Set up the Phaser frontend boilerplate.
+
+Achieve basic client-server connection (console logging when a user connects).
+
+Implement basic WASD/Arrow key movement for a single placeholder.png sprite.
+
+Phase 2: Multiplayer & Rooms (Week 2)
+
+Goal: See other people moving.
+
+Implement room creation and joining logic in Node.js.
+
+Broadcast player coordinates to other clients in the same room.
+
+Crucial AI prompt tip: Ask the AI specifically for "client-side interpolation" so the movement doesn't look completely stuttery when data is sent over the network.
+
+Phase 3: Communication (Week 3)
+
+Goal: Emotes and Signs.
+
+Build the HTML/CSS overlay for the Emote grid and Sign input.
+
+Wire the UI to emit Socket.IO events (sendEmote, sendSign).
+
+Listen for those events in Phaser to draw text/icons above the appropriate placeholder.png.
+
+Phase 4: The Vibe Check & Polish (Week 4)
+
+Goal: Name reveals and UI finalization.
+
+Implement the handshake logic for the "Vibe Check."
+
+Build the "Made with Love" donation modal.
+
+Implement server limits (e.g., max 50 rooms, max 10 players per room) to ensure stability.
+
+Test with a few friends.

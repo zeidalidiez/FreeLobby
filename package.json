@@ -1,0 +1,16 @@
+{
+  "name": "freelobby",
+  "version": "1.0.0",
+  "description": "A minimalist, browser-based multiplayer social room for introverts",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js"
+  },
+  "keywords": ["multiplayer", "social", "phaser", "socket.io"],
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.21.0",
+    "socket.io": "^4.7.5"
+  }
+}

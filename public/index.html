@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FreeLobby — A Calm Social Space</title>
+  <meta name="description" content="A minimalist, browser-based multiplayer room where introverts can get a quick, safe hit of social interaction with strangers at any hour.">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- ═══ LANDING SCREEN ═══ -->
+  <div id="landing-screen">
+    <div class="landing-card">
+      <h1 class="landing-title">FreeLobby</h1>
+      <p class="landing-subtitle">a calm corner of the internet</p>
+
+      <div class="input-group">
+        <label for="player-name">Your Name</label>
+        <input
+          type="text"
+          id="player-name"
+          placeholder="Something nice…"
+          maxlength="24"
+          autocomplete="off"
+          spellcheck="false"
+        >
+      </div>
+
+      <div class="btn-group">
+        <button class="btn btn-primary" id="btn-join">
+          <span class="btn-icon">✦</span>
+          Join Random Room
+        </button>
+        <button class="btn btn-secondary" id="btn-create">
+          <span class="btn-icon">＋</span>
+          Create a Room
+        </button>
+      </div>
+
+      <div class="join-specific">
+        <button class="join-specific-toggle" id="btn-toggle-specific">
+          Have a Room Code?
+        </button>
+        <div class="join-specific-panel" id="join-specific-panel">
+          <div class="join-specific-row">
+            <input
+              type="text"
+              id="room-code-input"
+              placeholder="ABCD"
+              maxlength="4"
+              autocomplete="off"
+              spellcheck="false"
+            >
+            <button class="btn btn-primary btn-sm" id="btn-join-code">
+              Join
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <p class="landing-footer">
+        made with <span class="heart">♥</span> for quiet people
+      </p>
+    </div>
+  </div>
+
+  <!-- ═══ GAME VIEW ═══ -->
+  <div id="game-container"></div>
+
+  <!-- ═══ HUD OVERLAYS ═══ -->
+  <div id="connection-status">
+    <span class="status-dot"></span>
+    <span id="status-text">Connected</span>
+  </div>
+
+  <div id="room-info">
+    <span class="room-label">Room</span>
+    <span id="room-id-display" class="room-code">----</span>
+    <button id="copy-room-btn" class="copy-btn" title="Copy room code">📋</button>
+  </div>
+
+  <div id="player-count">
+    <span id="player-count-text">1 player</span>
+  </div>
+
+  <button id="flee-btn" title="Escape to an empty room">Go to empty room</button>
+
+  <button id="back-btn">← Lobby</button>
+
+  <!-- ═══ EMOTE PANEL ═══ -->
+  <div id="emote-panel">
+    <button class="emote-toggle" id="emote-toggle" title="Emotes">😊</button>
+    <div class="emote-grid" id="emote-grid">
+      <button class="emote-btn" data-emote="😊">😊</button>
+      <button class="emote-btn" data-emote="👋">👋</button>
+      <button class="emote-btn" data-emote="☕">☕</button>
+      <button class="emote-btn" data-emote="😴">😴</button>
+      <button class="emote-btn" data-emote="❤️">❤️</button>
+      <button class="emote-btn" data-emote="😂">😂</button>
+      <button class="emote-btn" data-emote="🎵">🎵</button>
+      <button class="emote-btn" data-emote="✨">✨</button>
+      <button class="emote-btn" data-emote="🤔">🤔</button>
+      <button class="emote-btn" data-emote="👍">👍</button>
+      <button class="emote-btn" data-emote="🌙">🌙</button>
+      <button class="emote-btn" data-emote="🔥">🔥</button>
+      <button class="emote-btn" data-emote="🎮">🎮</button>
+      <button class="emote-btn" data-emote="📖">📖</button>
+      <button class="emote-btn" data-emote="🐱">🐱</button>
+      <button class="emote-btn" data-emote="🌿">🌿</button>
+      <button class="emote-btn" data-emote="🎧">🎧</button>
+      <button class="emote-btn" data-emote="💤">💤</button>
+      <button class="emote-btn" data-emote="🫂">🫂</button>
+      <button class="emote-btn" data-emote="🍵">🍵</button>
+      <button class="emote-btn" data-emote="🌸">🌸</button>
+      <button class="emote-btn" data-emote="😌">😌</button>
+      <button class="emote-btn" data-emote="🎨">🎨</button>
+      <button class="emote-btn" data-emote="🧸">🧸</button>
+      <button class="emote-btn" data-emote="🍃">🍃</button>
+      <button class="emote-btn" data-emote="💫">💫</button>
+      <button class="emote-btn" data-emote="🎶">🎶</button>
+      <button class="emote-btn" data-emote="🌈">🌈</button>
+      <button class="emote-btn" data-emote="🕯️">🕯️</button>
+      <button class="emote-btn" data-emote="🤗">🤗</button>
+    </div>
+  </div>
+
+  <!-- ═══ SIGN INPUT ═══ -->
+  <div id="sign-bar">
+    <input type="text" id="sign-input" placeholder="Pass a Vibe Check to type…" maxlength="10" autocomplete="off" spellcheck="false" disabled>
+    <button class="sign-send-btn" id="sign-send" disabled>↑</button>
+  </div>
+
+  <!-- ═══ VIBE CHECK ACTION POPUP ═══ -->
+  <!-- Shown when local player clicks on another player -->
+  <div id="vibe-action" class="vibe-action">
+    <button id="vibe-action-btn" class="vibe-action-btn">✦ Vibe Check</button>
+  </div>
+
+  <!-- ═══ VIBE CHECK PROMPT ═══ -->
+  <!-- Shown when another player requests a vibe check on you -->
+  <div id="vibe-prompt" class="vibe-prompt">
+    <p class="vibe-prompt-text">A Stranger wants to share names.<br>Comfortable?</p>
+    <div class="vibe-prompt-actions">
+      <button id="vibe-accept" class="vibe-prompt-btn vibe-accept">Sure ✦</button>
+      <button id="vibe-decline" class="vibe-prompt-btn vibe-decline">Not now</button>
+    </div>
+  </div>
+
+  <!-- ═══ MADE WITH LOVE BUTTON ═══ -->
+  <button id="love-btn" class="love-btn">♥</button>
+
+  <!-- ═══ MADE WITH LOVE MODAL ═══ -->
+  <div id="love-modal" class="love-modal-overlay">
+    <div class="love-modal">
+      <button id="love-modal-close" class="love-modal-close">×</button>
+      <div class="love-modal-heart">♥</div>
+      <h2 class="love-modal-title">Made with Love</h2>
+      <p class="love-modal-text">
+        FreeLobby is a free, no-login space for quiet connection.
+        If it brightened your day, consider supporting its existence.
+      </p>
+      <a href="https://ko-fi.com/zeiddiez" class="love-modal-link" id="donate-link" target="_blank" rel="noopener">
+        Support FreeLobby →
+      </a>
+      <p class="love-modal-thanks">Thank you for being here. 💛</p>
+    </div>
+  </div>
+
+  <!-- Error toast -->
+  <div id="error-toast" class="error-toast"></div>
+
+  <!-- ═══ SCRIPTS ═══ -->
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.min.js"></script>
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <script src="js/game.js"></script>
+</body>
+</html>
