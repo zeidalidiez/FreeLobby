@@ -595,7 +595,21 @@ function connectSocket() {
     roomIdDisplay.textContent = roomId;
     console.log(`✦ Joined room ${roomId}`, players);
 
-    spawnLocalPlayer(you);
+    // Clean up previous room state if fleeing
+    for (const [id, _] of otherPlayers) {
+      removeOtherPlayer(id);
+    }
+
+    if (player) {
+      // Reposition and update color for local player
+      player.setPosition(you.x, you.y);
+      player.setTint(you.color);
+      myColor = you.color;
+      if (nameLabel) nameLabel.setPosition(you.x, you.y - 30);
+    } else {
+      spawnLocalPlayer(you);
+    }
+
     for (const [id, pData] of Object.entries(players)) {
       if (id !== socket.id) spawnOtherPlayer(pData);
     }
