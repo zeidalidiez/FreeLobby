@@ -115,6 +115,8 @@ function exitGame() {
   roomIdDisplay.textContent = '----';
   otherPlayers.clear();
   player = null;
+  targetPosition = null;
+  isPanning = false;
 }
 
 // Button listeners
@@ -261,6 +263,12 @@ const gameConfig = {
 
 let player;
 let cursors;
+let targetPosition = null;
+let isPanning = false;
+let panStartX = 0;
+let panStartY = 0;
+let camStartScrollX = 0;
+let camStartScrollY = 0;
 let wasd;
 let nameLabel;
 let myColor = 0xa78bfa;
@@ -334,6 +342,43 @@ function create() {
     right: Phaser.Input.Keyboard.KeyCodes.D,
   });
 
+  // Mobile Controls: Drag-to-Pan & Click-to-Move
+  this.input.on('pointerdown', (pointer) => {
+    if (pointer.event.target.tagName !== 'CANVAS') return;
+    isPanning = false;
+    panStartX = pointer.x;
+    panStartY = pointer.y;
+    camStartScrollX = this.cameras.main.scrollX;
+    camStartScrollY = this.cameras.main.scrollY;
+  });
+
+  this.input.on('pointermove', (pointer) => {
+    if (!pointer.isDown || pointer.event.target.tagName !== 'CANVAS') return;
+    const dist = Phaser.Math.Distance.Between(panStartX, panStartY, pointer.x, pointer.y);
+    if (dist > 10) {
+      if (!isPanning) {
+        isPanning = true;
+        this.cameras.main.stopFollow();
+      }
+      this.cameras.main.scrollX = camStartScrollX + (panStartX - pointer.x) / this.cameras.main.zoom;
+      this.cameras.main.scrollY = camStartScrollY + (panStartY - pointer.y) / this.cameras.main.zoom;
+    }
+  });
+
+  this.input.on('pointerup', (pointer) => {
+    if (pointer.event.target.tagName !== 'CANVAS') return;
+    if (!isPanning && player) {
+      // Clamp target to map bounds
+      const clampedX = Phaser.Math.Clamp(pointer.worldX, 24, WORLD_WIDTH - 24);
+      const clampedY = Phaser.Math.Clamp(pointer.worldY, 24, WORLD_HEIGHT - 24);
+      
+      targetPosition = { x: clampedX, y: clampedY };
+      createClickPulse(clampedX, clampedY);
+      this.cameras.main.startFollow(player, true, 0.08, 0.08);
+    }
+    isPanning = false;
+  });
+
   connectSocket();
   this.wallGroup = wallGroup;
 }
@@ -343,16 +388,32 @@ function update(_time, _delta) {
     const signFocused = document.activeElement === signInput;
     let vx = 0;
     let vy = 0;
+    let usingKeyboard = false;
 
     if (!signFocused) {
-      if (cursors.left.isDown  || wasd.left.isDown)  vx = -PLAYER_SPEED;
-      if (cursors.right.isDown || wasd.right.isDown) vx =  PLAYER_SPEED;
-      if (cursors.up.isDown    || wasd.up.isDown)    vy = -PLAYER_SPEED;
-      if (cursors.down.isDown  || wasd.down.isDown)  vy =  PLAYER_SPEED;
+      if (cursors.left.isDown  || wasd.left.isDown)  { vx = -PLAYER_SPEED; usingKeyboard = true; }
+      if (cursors.right.isDown || wasd.right.isDown) { vx =  PLAYER_SPEED; usingKeyboard = true; }
+      if (cursors.up.isDown    || wasd.up.isDown)    { vy = -PLAYER_SPEED; usingKeyboard = true; }
+      if (cursors.down.isDown  || wasd.down.isDown)  { vy =  PLAYER_SPEED; usingKeyboard = true; }
 
       if (vx !== 0 && vy !== 0) {
         vx *= Math.SQRT1_2;
         vy *= Math.SQRT1_2;
+      }
+    }
+
+    if (usingKeyboard) {
+      targetPosition = null; // Keyboard overrides click-to-move
+      scene.cameras.main.startFollow(player, true, 0.08, 0.08); // Ensure camera follows again
+    } else if (targetPosition) {
+      // Click-to-move logic
+      const dist = Phaser.Math.Distance.Between(player.x, player.y, targetPosition.x, targetPosition.y);
+      if (dist < 5) {
+        targetPosition = null; // Reached destination
+      } else {
+        const angle = Phaser.Math.Angle.Between(player.x, player.y, targetPosition.x, targetPosition.y);
+        vx = Math.cos(angle) * PLAYER_SPEED;
+        vy = Math.sin(angle) * PLAYER_SPEED;
       }
     }
 
@@ -376,6 +437,20 @@ function update(_time, _delta) {
       other.nameLabel.setPosition(other.sprite.x, other.sprite.y - 30);
     }
   }
+}
+
+function createClickPulse(x, y) {
+  if (!scene) return;
+  const pulse = scene.add.circle(x, y, 5, 0xffffff, 0.4).setDepth(2);
+  pulse.setStrokeStyle(2, 0xffffff, 0.8);
+  scene.tweens.add({
+    targets: pulse,
+    radius: 18,
+    alpha: 0,
+    duration: 350,
+    ease: 'Quad.easeOut',
+    onComplete: () => pulse.destroy()
+  });
 }
 
 // ═══════════════════════════════════════════════════════
