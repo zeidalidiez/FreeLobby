@@ -39,10 +39,15 @@ function getNextColor(room) {
 }
 
 function findJoinableRoom() {
+  const available = [];
   for (const [roomId, room] of rooms) {
-    if (room.players.size < MAX_PLAYERS_PER_ROOM) return roomId;
+    if (room.players.size < MAX_PLAYERS_PER_ROOM) available.push(roomId);
   }
-  return null;
+  
+  if (available.length === 0) return null;
+
+  // Distribute the player randomly across any of the available active rooms
+  return available[Math.floor(Math.random() * available.length)];
 }
 
 /** Create a canonical pair key for two socket IDs */
