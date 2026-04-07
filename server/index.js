@@ -96,6 +96,7 @@ function joinPlayerToRoom(socket, roomId, name) {
     x: 600,
     y: 400,
     color,
+    lastActive: Date.now()
   };
 
   room.players.set(socket.id, playerData);
@@ -215,6 +216,7 @@ io.on('connection', (socket) => {
     if (!pd) return;
     pd.x = data.x;
     pd.y = data.y;
+    pd.lastActive = Date.now();
     socket.to(roomId).emit('playerMoved', { id: socket.id, x: data.x, y: data.y });
   });
 
@@ -225,6 +227,7 @@ io.on('connection', (socket) => {
     const now = Date.now();
     if (socket._lastEmote && now - socket._lastEmote < 500) return;
     socket._lastEmote = now;
+    if (socket.playerData) socket.playerData.lastActive = now;
     io.in(roomId).emit('playerEmote', { id: socket.id, emote });
   });
 
@@ -236,6 +239,7 @@ io.on('connection', (socket) => {
     const now = Date.now();
     if (socket._lastSign && now - socket._lastSign < 500) return;
     socket._lastSign = now;
+    if (socket.playerData) socket.playerData.lastActive = now;
     const clean = String(text || '').slice(0, 10);
     if (!clean) return;
 
@@ -267,6 +271,7 @@ io.on('connection', (socket) => {
     const now = Date.now();
     if (socket._lastVibeCheck && now - socket._lastVibeCheck < 5000) return;
     socket._lastVibeCheck = now;
+    if (socket.playerData) socket.playerData.lastActive = now;
 
     // Send prompt to target
     io.to(targetId).emit('vibeCheckPrompt', {
@@ -282,6 +287,7 @@ io.on('connection', (socket) => {
     const roomId = socket.roomId;
     if (!roomId || !rooms.has(roomId)) return;
     const room = rooms.get(roomId);
+    if (socket.playerData) socket.playerData.lastActive = Date.now();
 
     if (!accepted) {
       // Silent rejection — nothing happens
@@ -318,6 +324,24 @@ io.on('connection', (socket) => {
     removePlayerFromRoom(socket);
   });
 });
+
+// ── Idle Checking ──
+const IDLE_TIMEOUT_MS = 15 * 60 * 1000; // 15 minutes
+
+setInterval(() => {
+  const now = Date.now();
+  for (const [roomId, room] of rooms.entries()) {
+    for (const [playerId, pd] of room.players.entries()) {
+      if (now - pd.lastActive > IDLE_TIMEOUT_MS) {
+        const socket = io.sockets.sockets.get(playerId);
+        if (socket) {
+          socket.emit('error', { message: 'You were idle for a while, so we let you drift back to the lobby.' });
+          socket.disconnect(true);
+        }
+      }
+    }
+  }
+}, 60000); // Verify AFK players every minute
 
 // ─── Start server ───────────────────────────────────────
 server.listen(PORT, () => {
