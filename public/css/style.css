@@ -775,9 +775,9 @@ body::before {
 /* ─── Vibe Check Prompt ─────────────────────────────── */
 .vibe-prompt {
   position: fixed;
-  top: 80px;
+  top: 50%;
   left: 50%;
-  transform: translateX(-50%) translateY(-10px);
+  transform: translate(-50%, -50%) scale(0.95);
   z-index: 400;
   display: none;
   flex-direction: column;
@@ -796,7 +796,7 @@ body::before {
 .vibe-prompt.visible {
   display: flex;
   opacity: 1;
-  transform: translateX(-50%) translateY(0);
+  transform: translate(-50%, -50%) scale(1);
 }
 
 .vibe-prompt-text {
