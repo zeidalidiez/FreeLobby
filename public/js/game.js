@@ -365,8 +365,12 @@ function create() {
     }
   });
 
-  this.input.on('pointerup', (pointer) => {
+  this.input.on('pointerup', (pointer, currentlyOver) => {
     if (pointer.event.target.tagName !== 'CANVAS') return;
+    
+    // Disable walking if clicking on an interactive element (like a player sprite)
+    if (currentlyOver && currentlyOver.length > 0) return;
+
     if (!isPanning && player) {
       // Clamp target to map bounds
       const clampedX = Phaser.Math.Clamp(pointer.worldX, 24, WORLD_WIDTH - 24);
