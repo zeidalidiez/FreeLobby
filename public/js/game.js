@@ -516,10 +516,12 @@ function spawnOtherPlayer(data) {
     vibeTargetId = data.id;
 
     // Position the popup near the click, but offset to avoid overlap
-    const screenX = pointer.event.clientX;
-    const screenY = pointer.event.clientY;
-    vibeAction.style.left = `${screenX + 10}px`;
-    vibeAction.style.top  = `${screenY - 40}px`;
+    const screenX = pointer.event.clientX ?? pointer.x;
+    const screenY = pointer.event.clientY ?? pointer.y;
+    
+    // Clamp to ensure it doesn't render off-screen!
+    vibeAction.style.left = `${Math.min(screenX + 10, window.innerWidth - 140)}px`;
+    vibeAction.style.top  = `${Math.max(screenY - 40, 10)}px`;
     vibeAction.classList.add('visible');
   });
 
