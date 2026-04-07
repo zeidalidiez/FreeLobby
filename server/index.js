@@ -123,9 +123,15 @@ io.on('connection', (socket) => {
     rooms.set(roomId, createRoom());
     const playerData = joinPlayerToRoom(socket, roomId, name);
 
+    const room = rooms.get(roomId);
+    const sanitizedPlayers = {};
+    for (const [id, pd] of room.players.entries()) {
+      sanitizedPlayers[id] = id === socket.id ? pd : { ...pd, name: pd.strangerName };
+    }
+
     socket.emit('roomJoined', {
       roomId, you: playerData,
-      players: Object.fromEntries(rooms.get(roomId).players),
+      players: sanitizedPlayers,
     });
     console.log(`   ↳ Created room ${roomId} (name: "${playerData.name}")`);
   });
@@ -138,11 +144,18 @@ io.on('connection', (socket) => {
 
     const playerData = joinPlayerToRoom(socket, roomId, name);
 
+    const sanitizedPlayers = {};
+    for (const [id, pd] of room.players.entries()) {
+      sanitizedPlayers[id] = id === socket.id ? pd : { ...pd, name: pd.strangerName };
+    }
+
     socket.emit('roomJoined', {
       roomId, you: playerData,
-      players: Object.fromEntries(room.players),
+      players: sanitizedPlayers,
     });
-    socket.to(roomId).emit('playerJoined', playerData);
+    
+    const scrubbedPlayerData = { ...playerData, name: playerData.strangerName };
+    socket.to(roomId).emit('playerJoined', scrubbedPlayerData);
     console.log(`   ↳ Joined room ${roomId} (name: "${playerData.name}", total: ${room.players.size})`);
   });
 
@@ -159,11 +172,18 @@ io.on('connection', (socket) => {
     const room = rooms.get(roomId);
     const playerData = joinPlayerToRoom(socket, roomId, name);
 
+    const sanitizedPlayers = {};
+    for (const [id, pd] of room.players.entries()) {
+      sanitizedPlayers[id] = id === socket.id ? pd : { ...pd, name: pd.strangerName };
+    }
+
     socket.emit('roomJoined', {
       roomId, you: playerData,
-      players: Object.fromEntries(room.players),
+      players: sanitizedPlayers,
     });
-    socket.to(roomId).emit('playerJoined', playerData);
+    
+    const scrubbedPlayerData = { ...playerData, name: playerData.strangerName };
+    socket.to(roomId).emit('playerJoined', scrubbedPlayerData);
     console.log(`   ↳ Joined random room ${roomId} (name: "${playerData.name}", total: ${room.players.size})`);
   });
 
@@ -174,9 +194,14 @@ io.on('connection', (socket) => {
     const room = rooms.get(roomId);
     const playerData = joinPlayerToRoom(socket, roomId, name);
 
+    const sanitizedPlayers = {};
+    for (const [id, pd] of room.players.entries()) {
+      sanitizedPlayers[id] = id === socket.id ? pd : { ...pd, name: pd.strangerName };
+    }
+
     socket.emit('roomJoined', {
       roomId, you: playerData,
-      players: Object.fromEntries(room.players),
+      players: sanitizedPlayers,
     });
     console.log(`   ↳ Fled to new room ${roomId} (name: "${playerData.name}")`);
   });

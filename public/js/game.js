@@ -671,7 +671,7 @@ function connectSocket() {
   socket.on('roomJoined', ({ roomId, you, players }) => {
     currentRoomId = roomId;
     roomIdDisplay.textContent = roomId;
-    console.log(`✦ Joined room ${roomId}`, players);
+    console.log(`✦ Joined room ${roomId}. Local player: ${you.name}.`);
 
     // Clean up previous room state if fleeing
     for (const [id, _] of otherPlayers) {
@@ -695,7 +695,7 @@ function connectSocket() {
   });
 
   socket.on('playerJoined', (data) => {
-    console.log(`✦ Player joined: ${data.name} [${data.id}]`);
+    console.log(`✦ Player joined: ${data.strangerName || 'Stranger'} [${data.id}]`);
     spawnOtherPlayer(data);
   });
 
