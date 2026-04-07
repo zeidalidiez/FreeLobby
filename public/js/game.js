@@ -494,8 +494,8 @@ function spawnOtherPlayer(data) {
   sprite.setTint(data.color);
   sprite.setDepth(5);
 
-  // Others appear as "Stranger" until vibe check is accepted
-  const label = scene.add.text(data.x, data.y - 30, 'Stranger', {
+  // Others appear as their unique stranger alias until vibe check is accepted
+  const label = scene.add.text(data.x, data.y - 30, data.strangerName || 'Stranger', {
     fontFamily: 'Inter, sans-serif',
     fontSize: '13px',
     color: '#94a3b8',
@@ -532,6 +532,7 @@ function spawnOtherPlayer(data) {
     targetY: data.y,
     revealed: false,
     realName: data.name,
+    strangerName: data.strangerName || 'Stranger',
   });
 
   updatePlayerCount();
@@ -723,6 +724,14 @@ function connectSocket() {
   socket.on('vibeCheckPrompt', ({ fromId }) => {
     // Someone wants to vibe check us
     vibePromptFromId = fromId;
+    
+    // Update prompt text with the stranger's name
+    const other = otherPlayers.get(fromId);
+    if (other) {
+      const displayName = other.revealed ? other.realName : other.strangerName;
+      document.getElementById('vibe-prompt-text').innerText = `${displayName} initiated a vibe check, do you wish to allow chat and share names with this user?`;
+    }
+    
     vibePrompt.classList.add('visible');
 
     // Auto-dismiss after 15s if no response

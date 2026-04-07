@@ -78,9 +78,21 @@ function createRoom() {
 function joinPlayerToRoom(socket, roomId, name) {
   const room = rooms.get(roomId);
   const color = getNextColor(room);
+  
+  // Assign a unique stranger name
+  const existingAliases = new Set(Array.from(room.players.values()).map(p => p.strangerName));
+  let strangerName = 'Stranger X';
+  for (let i = 1; i <= 1000; i++) {
+     if (!existingAliases.has(`Stranger ${i}`)) {
+        strangerName = `Stranger ${i}`;
+        break;
+     }
+  }
+
   const playerData = {
     id: socket.id,
     name: name || 'Stranger',
+    strangerName,
     x: 600,
     y: 400,
     color,
