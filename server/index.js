@@ -314,6 +314,71 @@ io.on('connection', (socket) => {
     }
   });
 
+  // ── Import Room Hash ──
+  socket.on('importRoomHash', ({ hash }) => {
+    const roomId = socket.roomId;
+    if (!roomId || !rooms.has(roomId)) return;
+    const room = rooms.get(roomId);
+    if (room.ownerId !== socket.id) return;
+
+    let furniture;
+    try {
+      const json = Buffer.from(hash, 'base64').toString('utf-8');
+      furniture = JSON.parse(json);
+    } catch {
+      socket.emit('error', { message: 'Invalid room hash.' });
+      return;
+    }
+
+    if (!Array.isArray(furniture)) {
+      socket.emit('error', { message: 'Invalid room hash format.' });
+      return;
+    }
+    if (furniture.length > MAX_FURNITURE) {
+      socket.emit('error', { message: `Hash contains too many items (max ${MAX_FURNITURE}).` });
+      return;
+    }
+
+    const maxX = Math.floor(1200 / GRID_SIZE);
+    const maxY = Math.floor(800 / GRID_SIZE);
+    const newOccupied = new Set();
+    const newBlocked = new Set();
+
+    for (const item of furniture) {
+      if (!item || typeof item.t !== 'number') {
+        socket.emit('error', { message: 'Invalid furniture item in hash.' });
+        return;
+      }
+      if (item.t < 0 || item.t >= FURNITURE_FOOTPRINTS.length) {
+        socket.emit('error', { message: 'Unknown furniture type in hash.' });
+        return;
+      }
+      if (item.r < 0 || item.r > 3) item.r = 0;
+
+      const fp = getFootprint(item.t, item.r);
+      if (item.x < 0 || item.x + fp.w > maxX || item.y < 0 || item.y + fp.h > maxY) {
+        socket.emit('error', { message: 'Furniture out of bounds in hash.' });
+        return;
+      }
+
+      const cells = getCells(item);
+      for (const cell of cells) {
+        if (newOccupied.has(cell)) {
+          socket.emit('error', { message: 'Overlapping furniture in hash.' });
+          return;
+        }
+        newOccupied.add(cell);
+        if (!fp.walkable) newBlocked.add(cell);
+      }
+    }
+
+    // All valid — atomically replace
+    room.furniture = furniture;
+    room.occupiedCells = newOccupied;
+    room.blockedCells = newBlocked;
+    io.in(roomId).emit('roomFurnitureReset', { furniture });
+  });
+
   // ── Player Movement ──
   socket.on('playerMove', (data) => {
     const roomId = socket.roomId;

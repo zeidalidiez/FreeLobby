@@ -1311,6 +1311,70 @@ body::before {
   color: var(--accent-primary);
 }
 
+/* ─── Furniture Hash Section ────────────────────────── */
+.furniture-hash-section {
+  margin-top: 8px;
+  text-align: center;
+  border-top: 1px solid var(--border-glass);
+  padding-top: 8px;
+}
+
+.hash-toggle {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: color var(--transition-smooth);
+  padding: 4px 0;
+}
+
+.hash-toggle:hover {
+  color: var(--accent-primary);
+}
+
+.hash-panel {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+              margin 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  margin-top: 0;
+}
+
+.hash-panel.open {
+  max-height: 120px;
+  margin-top: 8px;
+}
+
+.hash-row {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.hash-row input {
+  flex: 1;
+  padding: 8px 10px;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  outline: none;
+  transition: var(--transition-smooth);
+}
+
+.hash-row input:focus {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+.hash-row input::placeholder {
+  color: var(--text-muted);
+}
+
 /* ═══════════════════════════════════════════════════════
    RESPONSIVE
    ═══════════════════════════════════════════════════════ */

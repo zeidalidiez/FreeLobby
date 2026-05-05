@@ -333,6 +333,12 @@ const furniturePanel   = document.getElementById('furniture-panel');
 const furniturePalette = document.getElementById('furniture-palette');
 const toolPlace        = document.getElementById('tool-place');
 const toolRemove       = document.getElementById('tool-remove');
+const btnToggleHash    = document.getElementById('btn-toggle-hash');
+const hashPanel        = document.getElementById('hash-panel');
+const roomHashExport   = document.getElementById('room-hash-export');
+const btnCopyRoomHash  = document.getElementById('btn-copy-room-hash');
+const roomHashImport   = document.getElementById('room-hash-import');
+const btnImportRoomHash = document.getElementById('btn-import-room-hash');
 
 let buildMode = false;
 let buildTool = 'place';
@@ -392,6 +398,56 @@ buildBtn.addEventListener('click', () => {
 
 toolPlace.addEventListener('click', () => { buildTool = 'place'; updateBuildUI(); });
 toolRemove.addEventListener('click', () => { buildTool = 'remove'; updateBuildUI(); });
+
+// ─── Room Hash Export / Import ─────────────────────────
+
+function encodeRoomHash(furniture) {
+  try {
+    const json = JSON.stringify(furniture);
+    return btoa(json);
+  } catch {
+    return '';
+  }
+}
+
+function decodeRoomHash(hash) {
+  try {
+    const json = atob(hash.trim());
+    return JSON.parse(json);
+  } catch {
+    return null;
+  }
+}
+
+function updateRoomHashExport() {
+  const items = roomFurniture.map(f => f.item);
+  roomHashExport.value = encodeRoomHash(items);
+}
+
+btnToggleHash.addEventListener('click', () => {
+  hashPanel.classList.toggle('open');
+  updateRoomHashExport();
+});
+
+btnCopyRoomHash.addEventListener('click', () => {
+  if (roomHashExport.value) {
+    navigator.clipboard.writeText(roomHashExport.value).then(() => {
+      btnCopyRoomHash.textContent = '✓';
+      setTimeout(() => btnCopyRoomHash.textContent = 'Copy', 1500);
+    });
+  }
+});
+
+btnImportRoomHash.addEventListener('click', () => {
+  const hash = roomHashImport.value.trim();
+  if (!hash) return;
+  const furniture = decodeRoomHash(hash);
+  if (!furniture) { showError('Invalid room hash.'); return; }
+  if (socket && socket.connected) {
+    socket.emit('importRoomHash', { hash });
+    roomHashImport.value = '';
+  }
+});
 
 // ═══════════════════════════════════════════════════════
 // PHASER CONFIG
@@ -1006,6 +1062,7 @@ function connectSocket() {
     });
     roomFurniture = [];
     if (furniture) furniture.forEach(item => renderFurnitureItem(item));
+    updateRoomHashExport();
 
     if (player) {
       // Reposition and update color for local player
@@ -1080,6 +1137,7 @@ function connectSocket() {
 
   socket.on('furniturePlaced', ({ item }) => {
     renderFurnitureItem(item);
+    updateRoomHashExport();
   });
 
   socket.on('furnitureRemoved', ({ index }) => {
@@ -1088,7 +1146,18 @@ function connectSocket() {
       if (scene.furnitureGroup) scene.furnitureGroup.remove(f.sprite);
       f.sprite.destroy();
       roomFurniture.splice(index, 1);
+      updateRoomHashExport();
     }
+  });
+
+  socket.on('roomFurnitureReset', ({ furniture }) => {
+    roomFurniture.forEach(f => {
+      if (scene && scene.furnitureGroup) scene.furnitureGroup.remove(f.sprite);
+      f.sprite.destroy();
+    });
+    roomFurniture = [];
+    if (furniture) furniture.forEach(item => renderFurnitureItem(item));
+    updateRoomHashExport();
   });
 
   socket.on('error', ({ message }) => {

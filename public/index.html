@@ -145,6 +145,19 @@
       <button class="tool-btn active" id="tool-place" title="Place">＋</button>
       <button class="tool-btn" id="tool-remove" title="Remove">−</button>
     </div>
+    <div class="furniture-hash-section">
+      <button class="hash-toggle" id="btn-toggle-hash">Export / Import Layout</button>
+      <div class="hash-panel" id="hash-panel">
+        <div class="hash-row">
+          <input type="text" id="room-hash-export" readonly maxlength="200" placeholder="Room hash…">
+          <button class="btn btn-primary btn-sm" id="btn-copy-room-hash">Copy</button>
+        </div>
+        <div class="hash-row">
+          <input type="text" id="room-hash-import" maxlength="500" placeholder="Paste hash…">
+          <button class="btn btn-primary btn-sm" id="btn-import-room-hash">Load</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- ═══ EMOTE PANEL ═══ -->

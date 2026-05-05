@@ -94,7 +94,7 @@ This is non-negotiable. Every AI working on this must preserve these mechanics.
 - [x] Send customization data to server so others see your avatar correctly
 - [x] Subtle glow pulse animation in-game
 
-### Phase 3: Private Rooms & Furniture *(IN PROGRESS)*
+### Phase 3: Private Rooms & Furniture *(COMPLETE)*
 - [x] Room ownership: Creator is the owner
 - [x] Room settings: Public (joinable by code/random) or Private (invite only)
 - [x] Furniture system: Owner can place wireframe primitives from a palette
@@ -102,7 +102,7 @@ This is non-negotiable. Every AI working on this must preserve these mechanics.
 - [x] **Placement limit:** 20 items per room (enforced server-side)
 - [x] Procedural neon furniture rendering (8 types: Cube, Sphere, Cylinder, Pyramid, Chair, Plant, Lamp, Rug)
 - [x] Owner-only build mode with place/remove tools
-- [ ] **Room Hash:** Export/import UI (Base64 JSON)
+- [x] **Room Hash:** Export/import UI (Base64 JSON) with atomic server validation
 - [x] All furniture unlocked for all users
 - [x] Non-owners can view furniture but cannot move it
 - [ ] "Invite to Room" via Vibe Check context menu
@@ -286,7 +286,7 @@ These formats are documented so users can build their own tools, bots, and room 
 **Example:** `0101` = Color 0 (Cyan), Shape 1 (Square), Accessory 0 (None), Pulse 1 (Normal).
 
 ### Room Hash (Base64 JSON)
-A Base64-encoded JSON array of furniture objects.
+A Base64-encoded JSON array of furniture objects. Owners can export their current layout via the Build Panel's "Export / Import Layout" section, copy the hash, and paste it later (or in another room) to instantly reconstruct the space.
 
 ```json
 [
@@ -304,6 +304,8 @@ A Base64-encoded JSON array of furniture objects.
 
 **Grid cell size:** 64px. World bounds 1200×800 → Grid approx 18×12.  
 **Max items per room:** 20 (enforced by server & client).
+
+**Import behavior:** The server validates the entire hash atomically before replacing the room's furniture. If any item is invalid, out of bounds, overlapping, or exceeds the limit, the entire import is rejected and the existing room layout is preserved.
 
 **Furniture Type IDs:**
 | ID | Name | Footprint | Walkable |
