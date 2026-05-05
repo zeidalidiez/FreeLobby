@@ -133,10 +133,7 @@ pm2 save
 
 ## License
 
-MIT — FreeLobby is FOSS. Not a product. Not a startup. Just a public good for quiet people.
+MIT — FreeLobby is FOSS and anyone can run their own servers or build off of it. Not a product. Not a startup. A public service.
 
 If it brightened your day, consider supporting its existence: https://ko-fi.com/zeiddiez
 
----
-
-*made with ♥ for quiet people*
