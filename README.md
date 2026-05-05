@@ -50,7 +50,7 @@ I built this because I wanted a space where quiet people can just *be* around ot
 | Backend | Node.js, Express, Socket.IO |
 | Hosting | Oracle Cloud Free Tier (1 vCPU, ~5GB disk, Ubuntu) |
 | Process Manager | PM2 |
-| Assets | **100% procedural.** No user uploads. No database for core state. |
+| Assets | **100% procedural for now. Potentially image based/sprites** No user uploads. No database for core state. |
 
 All room state lives in-memory. Rooms die when empty. No persistent database required.
 
