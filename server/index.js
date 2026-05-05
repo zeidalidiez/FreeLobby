@@ -12,6 +12,39 @@ const PORT = process.env.PORT || 3000;
 // ─── Server Limits ──────────────────────────────────────
 const MAX_ROOMS            = 50;
 const MAX_PLAYERS_PER_ROOM = 10;
+const MAX_FURNITURE        = 20;
+const GRID_SIZE            = 64;
+
+const FURNITURE_FOOTPRINTS = [
+  { w: 1, h: 1, walkable: false }, // 0: Cube
+  { w: 1, h: 1, walkable: false }, // 1: Sphere
+  { w: 1, h: 1, walkable: false }, // 2: Cylinder
+  { w: 1, h: 1, walkable: false }, // 3: Pyramid
+  { w: 1, h: 1, walkable: true  }, // 4: Chair
+  { w: 1, h: 1, walkable: false }, // 5: Plant
+  { w: 1, h: 1, walkable: false }, // 6: Lamp
+  { w: 2, h: 2, walkable: true  }, // 7: Rug
+];
+
+function getFootprint(type, rotation) {
+  const fp = FURNITURE_FOOTPRINTS[type];
+  if (!fp) return { w: 1, h: 1, walkable: false };
+  const rot = (rotation || 0) % 4;
+  const w = (rot % 2 === 1) ? fp.h : fp.w;
+  const h = (rot % 2 === 1) ? fp.w : fp.h;
+  return { w, h, walkable: fp.walkable };
+}
+
+function getCells(item) {
+  const fp = getFootprint(item.t, item.r);
+  const cells = [];
+  for (let dx = 0; dx < fp.w; dx++) {
+    for (let dy = 0; dy < fp.h; dy++) {
+      cells.push(`${item.x + dx},${item.y + dy}`);
+    }
+  }
+  return cells;
+}
 
 // ─── Room State ─────────────────────────────────────────
 // rooms: Map<roomId, { players, revealedPairs }>
@@ -21,8 +54,8 @@ const rooms = new Map();
 
 // Player colors
 const PLAYER_COLORS = [
-  0xa78bfa, 0xf59e0b, 0x34d399, 0xf472b6, 0x38bdf8,
-  0xfb923c, 0x818cf8, 0xa3e635, 0xe879f9, 0x2dd4bf,
+  0x00f0ff, 0xff00ff, 0x39ff14, 0xff007f, 0xffff00,
+  0xff8800, 0xbd00ff, 0x0088ff, 0xff3333, 0x00ffcc,
 ];
 
 // ─── Helpers ────────────────────────────────────────────
@@ -41,12 +74,12 @@ function getNextColor(room) {
 function findJoinableRoom() {
   const available = [];
   for (const [roomId, room] of rooms) {
-    if (room.players.size < MAX_PLAYERS_PER_ROOM) available.push(roomId);
+    if (room.isPublic !== false && room.players.size < MAX_PLAYERS_PER_ROOM) available.push(roomId);
   }
   
   if (available.length === 0) return null;
 
-  // Distribute the player randomly across any of the available active rooms
+  // Distribute the player randomly across any of the available active public rooms
   return available[Math.floor(Math.random() * available.length)];
 }
 
@@ -77,10 +110,10 @@ function removePlayerFromRoom(socket) {
 }
 
 function createRoom() {
-  return { players: new Map(), revealedPairs: new Set() };
+  return { players: new Map(), revealedPairs: new Set(), occupiedCells: new Set(), blockedCells: new Set() };
 }
 
-function joinPlayerToRoom(socket, roomId, name) {
+function joinPlayerToRoom(socket, roomId, name, customization) {
   const room = rooms.get(roomId);
   const color = getNextColor(room);
   
@@ -101,7 +134,8 @@ function joinPlayerToRoom(socket, roomId, name) {
     x: 600,
     y: 400,
     color,
-    lastActive: Date.now()
+    lastActive: Date.now(),
+    customization: customization || { colorIdx: 0, shape: 0, accessory: 0, pulse: 1 },
   };
 
   room.players.set(socket.id, playerData);
@@ -120,14 +154,14 @@ io.on('connection', (socket) => {
   console.log(`✦ Player connected   [${socket.id}]`);
 
   // ── Create Room ──
-  socket.on('createRoom', ({ name }) => {
+  socket.on('createRoom', ({ name, customization, isPublic }) => {
     if (rooms.size >= MAX_ROOMS) {
       socket.emit('error', { message: 'Server is full. Try again later.' });
       return;
     }
     const roomId = generateRoomId();
-    rooms.set(roomId, createRoom());
-    const playerData = joinPlayerToRoom(socket, roomId, name);
+    rooms.set(roomId, { players: new Map(), revealedPairs: new Set(), ownerId: socket.id, isPublic: isPublic !== false, furniture: [], occupiedCells: new Set(), blockedCells: new Set() });
+    const playerData = joinPlayerToRoom(socket, roomId, name, customization);
 
     const room = rooms.get(roomId);
     const sanitizedPlayers = {};
@@ -138,17 +172,20 @@ io.on('connection', (socket) => {
     socket.emit('roomJoined', {
       roomId, you: playerData,
       players: sanitizedPlayers,
+      isOwner: true,
+      isPublic: room.isPublic,
+      furniture: room.furniture,
     });
-    console.log(`   ↳ Created room ${roomId} (name: "${playerData.name}")`);
+    console.log(`   ↳ Created room ${roomId} (name: "${playerData.name}", public: ${room.isPublic})`);
   });
 
   // ── Join Specific Room ──
-  socket.on('joinRoom', ({ roomId, name }) => {
+  socket.on('joinRoom', ({ roomId, name, customization }) => {
     const room = rooms.get(roomId);
     if (!room) { socket.emit('error', { message: `Room "${roomId}" not found.` }); return; }
     if (room.players.size >= MAX_PLAYERS_PER_ROOM) { socket.emit('error', { message: 'That room is full.' }); return; }
 
-    const playerData = joinPlayerToRoom(socket, roomId, name);
+    const playerData = joinPlayerToRoom(socket, roomId, name, customization);
 
     const sanitizedPlayers = {};
     for (const [id, pd] of room.players.entries()) {
@@ -158,6 +195,9 @@ io.on('connection', (socket) => {
     socket.emit('roomJoined', {
       roomId, you: playerData,
       players: sanitizedPlayers,
+      isOwner: room.ownerId === socket.id,
+      isPublic: room.isPublic !== false,
+      furniture: room.furniture,
     });
     
     const scrubbedPlayerData = { ...playerData, name: playerData.strangerName };
@@ -166,17 +206,17 @@ io.on('connection', (socket) => {
   });
 
   // ── Join Random Room ──
-  socket.on('joinRandomRoom', ({ name }) => {
+  socket.on('joinRandomRoom', ({ name, customization }) => {
     let roomId = findJoinableRoom();
     if (!roomId) {
       if (rooms.size >= MAX_ROOMS) { socket.emit('error', { message: 'Server is full. Try again later.' }); return; }
       roomId = generateRoomId();
-      rooms.set(roomId, createRoom());
+      rooms.set(roomId, { players: new Map(), revealedPairs: new Set(), ownerId: socket.id, isPublic: true, furniture: [], occupiedCells: new Set(), blockedCells: new Set() });
       console.log(`   ↳ No open rooms, auto-created ${roomId}`);
     }
 
     const room = rooms.get(roomId);
-    const playerData = joinPlayerToRoom(socket, roomId, name);
+    const playerData = joinPlayerToRoom(socket, roomId, name, customization);
 
     const sanitizedPlayers = {};
     for (const [id, pd] of room.players.entries()) {
@@ -186,6 +226,9 @@ io.on('connection', (socket) => {
     socket.emit('roomJoined', {
       roomId, you: playerData,
       players: sanitizedPlayers,
+      isOwner: room.ownerId === socket.id,
+      isPublic: room.isPublic !== false,
+      furniture: room.furniture,
     });
     
     const scrubbedPlayerData = { ...playerData, name: playerData.strangerName };
@@ -193,12 +236,12 @@ io.on('connection', (socket) => {
     console.log(`   ↳ Joined random room ${roomId} (name: "${playerData.name}", total: ${room.players.size})`);
   });
 
-  socket.on('fleeRoom', ({ name }) => {
+  socket.on('fleeRoom', ({ name, customization }) => {
     removePlayerFromRoom(socket);
     const roomId = generateRoomId();
-    rooms.set(roomId, createRoom());
+    rooms.set(roomId, { players: new Map(), revealedPairs: new Set(), ownerId: socket.id, isPublic: true, furniture: [], occupiedCells: new Set(), blockedCells: new Set() });
     const room = rooms.get(roomId);
-    const playerData = joinPlayerToRoom(socket, roomId, name);
+    const playerData = joinPlayerToRoom(socket, roomId, name, customization);
 
     const sanitizedPlayers = {};
     for (const [id, pd] of room.players.entries()) {
@@ -208,8 +251,67 @@ io.on('connection', (socket) => {
     socket.emit('roomJoined', {
       roomId, you: playerData,
       players: sanitizedPlayers,
+      isOwner: true,
+      isPublic: true,
+      furniture: room.furniture,
     });
     console.log(`   ↳ Fled to new room ${roomId} (name: "${playerData.name}")`);
+  });
+
+  // ── Furniture Placement ──
+  socket.on('placeFurniture', ({ item }) => {
+    const roomId = socket.roomId;
+    if (!roomId || !rooms.has(roomId)) return;
+    const room = rooms.get(roomId);
+    if (room.ownerId !== socket.id) return;
+    if (!item || typeof item.t !== 'number') return;
+    if (room.furniture.length >= MAX_FURNITURE) {
+      socket.emit('error', { message: 'Room furniture limit reached (20).' });
+      return;
+    }
+    const maxX = Math.floor(1200 / GRID_SIZE);
+    const maxY = Math.floor(800 / GRID_SIZE);
+    if (item.r < 0 || item.r > 3) item.r = 0;
+    if (item.t < 0 || item.t >= FURNITURE_FOOTPRINTS.length) return;
+
+    const fp = getFootprint(item.t, item.r);
+    if (item.x < 0 || item.x + fp.w > maxX || item.y < 0 || item.y + fp.h > maxY) {
+      socket.emit('error', { message: 'Furniture out of bounds.' });
+      return;
+    }
+
+    const cells = getCells(item);
+    for (const cell of cells) {
+      if (room.occupiedCells.has(cell)) {
+        socket.emit('error', { message: 'Space is already occupied.' });
+        return;
+      }
+    }
+
+    for (const cell of cells) {
+      room.occupiedCells.add(cell);
+      if (!fp.walkable) room.blockedCells.add(cell);
+    }
+
+    room.furniture.push(item);
+    io.in(roomId).emit('furniturePlaced', { item });
+  });
+
+  socket.on('removeFurniture', ({ index }) => {
+    const roomId = socket.roomId;
+    if (!roomId || !rooms.has(roomId)) return;
+    const room = rooms.get(roomId);
+    if (room.ownerId !== socket.id) return;
+    if (index >= 0 && index < room.furniture.length) {
+      const item = room.furniture[index];
+      const cells = getCells(item);
+      for (const cell of cells) {
+        room.occupiedCells.delete(cell);
+        room.blockedCells.delete(cell);
+      }
+      room.furniture.splice(index, 1);
+      io.in(roomId).emit('furnitureRemoved', { index });
+    }
   });
 
   // ── Player Movement ──

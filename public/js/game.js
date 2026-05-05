@@ -42,16 +42,130 @@ const loveBtn       = document.getElementById('love-btn');
 const loveModal     = document.getElementById('love-modal');
 const loveModalClose = document.getElementById('love-modal-close');
 
+const btnPublic     = document.getElementById('btn-public');
+const btnPrivate    = document.getElementById('btn-private');
+const ownerBadge    = document.getElementById('owner-badge');
+
 let game = null;
 let socket = null;
 let playerName = 'Stranger';
 let currentRoomId = null;
 let joinMode = 'random';
 let joinRoomCode = '';
+let isRoomOwner = false;
+let createRoomPublic = true;
 
 // Vibe Check state
 let vibeTargetId = null;     // who we clicked on
 let vibePromptFromId = null; // who is requesting a vibe check on us
+
+// Phase 2 — Character Customization
+const btnToggleCustomize = document.getElementById('btn-toggle-customize');
+const customizePanel     = document.getElementById('customize-panel');
+const colorSwatches      = document.getElementById('color-swatches');
+const shapeBtns          = document.getElementById('shape-btns');
+const accBtns            = document.getElementById('acc-btns');
+const pulseSlider        = document.getElementById('pulse-slider');
+const avatarHashInput    = document.getElementById('avatar-hash');
+const btnCopyHash        = document.getElementById('btn-copy-hash');
+const importHashInput    = document.getElementById('import-hash');
+const btnImportHash      = document.getElementById('btn-import-hash');
+
+const PLAYER_COLORS = [
+  0x00f0ff, 0xff00ff, 0x39ff14, 0xff007f, 0xffff00,
+  0xff8800, 0xbd00ff, 0x0088ff, 0xff3333, 0x00ffcc,
+];
+const COLOR_HEX_STR = [
+  '#00f0ff', '#ff00ff', '#39ff14', '#ff007f', '#ffff00',
+  '#ff8800', '#bd00ff', '#0088ff', '#ff3333', '#00ffcc',
+];
+
+let CUSTOMIZATION = { colorIdx: 0, shape: 0, accessory: 0, pulse: 1 };
+
+function encodeHash(c) {
+  const chars = '0123456789abcdef';
+  return chars[c.colorIdx] + String(c.shape) + String(c.accessory) + String(c.pulse);
+}
+function decodeHash(str) {
+  const chars = '0123456789abcdef';
+  const c = { colorIdx: 0, shape: 0, accessory: 0, pulse: 1 };
+  if (str.length !== 4) return c;
+  c.colorIdx = chars.indexOf(str[0].toLowerCase());
+  if (c.colorIdx < 0) c.colorIdx = 0;
+  c.shape = parseInt(str[1], 10) || 0;
+  c.accessory = parseInt(str[2], 10) || 0;
+  c.pulse = parseInt(str[3], 10);
+  if (isNaN(c.pulse)) c.pulse = 1;
+  c.colorIdx = Math.max(0, Math.min(9, c.colorIdx));
+  c.shape = Math.max(0, Math.min(2, c.shape));
+  c.accessory = Math.max(0, Math.min(3, c.accessory));
+  c.pulse = Math.max(0, Math.min(2, c.pulse));
+  return c;
+}
+function updateCustomizationUI() {
+  avatarHashInput.value = encodeHash(CUSTOMIZATION);
+  colorSwatches.querySelectorAll('.swatch').forEach((el, i) => {
+    el.classList.toggle('active', i === CUSTOMIZATION.colorIdx);
+  });
+  shapeBtns.querySelectorAll('.shape-btn').forEach(el => {
+    el.classList.toggle('active', parseInt(el.dataset.shape, 10) === CUSTOMIZATION.shape);
+  });
+  accBtns.querySelectorAll('.acc-btn').forEach(el => {
+    el.classList.toggle('active', parseInt(el.dataset.acc, 10) === CUSTOMIZATION.accessory);
+  });
+  pulseSlider.value = CUSTOMIZATION.pulse;
+}
+
+COLOR_HEX_STR.forEach((hex, i) => {
+  const sw = document.createElement('div');
+  sw.className = 'swatch' + (i === 0 ? ' active' : '');
+  sw.style.backgroundColor = hex;
+  sw.style.boxShadow = `0 0 8px ${hex}66`;
+  sw.addEventListener('click', () => {
+    CUSTOMIZATION.colorIdx = i;
+    updateCustomizationUI();
+  });
+  colorSwatches.appendChild(sw);
+});
+
+btnToggleCustomize.addEventListener('click', () => customizePanel.classList.toggle('open'));
+
+shapeBtns.addEventListener('click', (e) => {
+  const btn = e.target.closest('.shape-btn');
+  if (!btn) return;
+  CUSTOMIZATION.shape = parseInt(btn.dataset.shape, 10);
+  updateCustomizationUI();
+});
+
+accBtns.addEventListener('click', (e) => {
+  const btn = e.target.closest('.acc-btn');
+  if (!btn) return;
+  CUSTOMIZATION.accessory = parseInt(btn.dataset.acc, 10);
+  updateCustomizationUI();
+});
+
+pulseSlider.addEventListener('input', () => {
+  CUSTOMIZATION.pulse = parseInt(pulseSlider.value, 10);
+  updateCustomizationUI();
+});
+
+btnCopyHash.addEventListener('click', () => {
+  navigator.clipboard.writeText(encodeHash(CUSTOMIZATION)).then(() => {
+    btnCopyHash.textContent = '✓';
+    setTimeout(() => btnCopyHash.textContent = 'Copy', 1500);
+  });
+});
+
+btnImportHash.addEventListener('click', () => {
+  const str = importHashInput.value.trim();
+  if (str.length === 4) {
+    CUSTOMIZATION = decodeHash(str);
+    updateCustomizationUI();
+    importHashInput.value = '';
+  } else {
+    showError('Hash must be 4 characters');
+  }
+});
 
 // ─── Landing UI Logic ──────────────────────────────────
 
@@ -70,6 +184,7 @@ function enterGame(mode, roomCode) {
   playerName = nameInput.value.trim() || 'Stranger';
   joinMode = mode;
   joinRoomCode = roomCode || '';
+  createRoomPublic = btnPublic.classList.contains('active');
 
   landingScreen.classList.add('hidden');
   gameContainer.classList.add('active');
@@ -107,14 +222,27 @@ function exitGame() {
   vibePrompt.classList.remove('visible');
   loveModal.classList.remove('visible');
   fleeBtn.classList.remove('visible');
+  buildBtn.classList.remove('visible');
+  buildBtn.classList.remove('active');
+  furniturePanel.classList.remove('visible');
+  ownerBadge.classList.remove('visible');
+  isRoomOwner = false;
+  buildMode = false;
+  roomFurniture.forEach(f => {
+    if (scene && scene.furnitureGroup) scene.furnitureGroup.remove(f.sprite);
+    f.sprite.destroy();
+  });
+  roomFurniture = [];
 
   if (game) { game.destroy(true); game = null; }
   if (socket) { socket.disconnect(); socket = null; }
+  if (playerAccessory) { playerAccessory.destroy(); playerAccessory = null; }
 
   currentRoomId = null;
   roomIdDisplay.textContent = '----';
   otherPlayers.clear();
   player = null;
+  playerAccessory = null;
   targetPosition = null;
   isPanning = false;
 }
@@ -130,7 +258,7 @@ btnJoinCode.addEventListener('click', () => {
 backBtn.addEventListener('click', exitGame);
 fleeBtn.addEventListener('click', () => {
   if (socket && socket.connected) {
-    socket.emit('fleeRoom', { name: playerName });
+    socket.emit('fleeRoom', { name: playerName, customization: CUSTOMIZATION });
     // Reset local typing lock when fleeing
     signInput.disabled = true;
     signSendBtn.disabled = true;
@@ -150,24 +278,28 @@ copyRoomBtn.addEventListener('click', () => {
   }
 });
 
-function showError(msg) {
-  errorToast.textContent = msg;
-  errorToast.classList.add('visible');
-  setTimeout(() => errorToast.classList.remove('visible'), 3500);
-}
-
 // ─── Emote & Sign UI ──────────────────────────────────
 
-emoteToggle.addEventListener('click', () => emoteGrid.classList.toggle('open'));
+emoteToggle.addEventListener('pointerdown', (e) => {
+  e.stopPropagation();
+  e.preventDefault();
+  emoteGrid.classList.toggle('open');
+});
 
-emoteGrid.addEventListener('click', (e) => {
+emoteGrid.addEventListener('pointerdown', (e) => {
+  e.stopPropagation();
+  e.preventDefault();
   const btn = e.target.closest('.emote-btn');
   if (!btn) return;
   if (socket && socket.connected) socket.emit('sendEmote', { emote: btn.dataset.emote });
   emoteGrid.classList.remove('open');
 });
 
-signSendBtn.addEventListener('click', sendSign);
+signSendBtn.addEventListener('pointerdown', (e) => {
+  e.stopPropagation();
+  e.preventDefault();
+  sendSign();
+});
 signInput.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') sendSign();
   e.stopPropagation();
@@ -183,53 +315,86 @@ function sendSign() {
   signInput.blur();
 }
 
-// ─── Vibe Check UI ─────────────────────────────────────
-
-// "✦ Vibe Check" button in the action popup
-vibeActionBtn.addEventListener('click', () => {
-  if (vibeTargetId && socket && socket.connected) {
-    socket.emit('vibeCheckRequest', { targetId: vibeTargetId });
-    vibeAction.classList.remove('visible');
-
-    // Show brief feedback
-    showEmoteBubble(player, '✦');
-  }
-});
-
-// Close action popup when clicking elsewhere
-document.addEventListener('pointerdown', (e) => {
-  if (!vibeAction.contains(e.target)) {
-    vibeAction.classList.remove('visible');
-    vibeTargetId = null;
-  }
-});
-
-// Accept vibe check prompt
-vibeAcceptBtn.addEventListener('click', () => {
-  if (vibePromptFromId && socket && socket.connected) {
-    socket.emit('vibeCheckRespond', { fromId: vibePromptFromId, accepted: true });
-  }
-  vibePrompt.classList.remove('visible');
-  vibePromptFromId = null;
-});
-
-// Decline vibe check prompt
-vibeDeclineBtn.addEventListener('click', () => {
-  if (vibePromptFromId && socket && socket.connected) {
-    socket.emit('vibeCheckRespond', { fromId: vibePromptFromId, accepted: false });
-  }
-  vibePrompt.classList.remove('visible');
-  vibePromptFromId = null;
-});
-
 // ─── Made with Love Modal ──────────────────────────────
 
-loveBtn.addEventListener('click', () => loveModal.classList.add('visible'));
+loveBtn.addEventListener('pointerdown', (e) => {
+  e.stopPropagation();
+  e.preventDefault();
+  loveModal.classList.add('visible');
+});
 loveModalClose.addEventListener('click', () => loveModal.classList.remove('visible'));
 loveModal.addEventListener('click', (e) => {
   if (e.target === loveModal) loveModal.classList.remove('visible');
 });
 
+// Phase 3 — Furniture Build Mode
+const buildBtn         = document.getElementById('build-btn');
+const furniturePanel   = document.getElementById('furniture-panel');
+const furniturePalette = document.getElementById('furniture-palette');
+const toolPlace        = document.getElementById('tool-place');
+const toolRemove       = document.getElementById('tool-remove');
+
+let buildMode = false;
+let buildTool = 'place';
+let selectedFurnitureType = 0;
+const FURNITURE_NAMES = ['Cube', 'Sphere', 'Cylinder', 'Pyramid', 'Chair', 'Plant', 'Lamp', 'Rug'];
+const FURNITURE_FOOTPRINTS = [
+  { w: 1, h: 1, walkable: false }, // 0: Cube
+  { w: 1, h: 1, walkable: false }, // 1: Sphere
+  { w: 1, h: 1, walkable: false }, // 2: Cylinder
+  { w: 1, h: 1, walkable: false }, // 3: Pyramid
+  { w: 1, h: 1, walkable: true  }, // 4: Chair
+  { w: 1, h: 1, walkable: false }, // 5: Plant
+  { w: 1, h: 1, walkable: false }, // 6: Lamp
+  { w: 2, h: 2, walkable: true  }, // 7: Rug
+];
+
+function getClientFootprint(type, rotation) {
+  const fp = FURNITURE_FOOTPRINTS[type];
+  if (!fp) return { w: 1, h: 1, walkable: false };
+  const rot = (rotation || 0) % 4;
+  const w = (rot % 2 === 1) ? fp.h : fp.w;
+  const h = (rot % 2 === 1) ? fp.w : fp.h;
+  return { w, h, walkable: fp.walkable };
+}
+
+// Generate furniture palette
+const FURNITURE_ICONS = ['🟦','⚪','⏺️','🔺','🪑','🌱','💡','🟩'];
+FURNITURE_NAMES.forEach((name, i) => {
+  const btn = document.createElement('button');
+  btn.className = 'furn-btn' + (i === 0 ? ' active' : '');
+  btn.title = name;
+  btn.dataset.type = String(i);
+  btn.textContent = FURNITURE_ICONS[i];
+  btn.addEventListener('click', () => {
+    selectedFurnitureType = i;
+    buildTool = 'place';
+    updateBuildUI();
+  });
+  furniturePalette.appendChild(btn);
+});
+
+function updateBuildUI() {
+  furniturePalette.querySelectorAll('.furn-btn').forEach((el, i) => {
+    el.classList.toggle('active', i === selectedFurnitureType && buildTool === 'place');
+  });
+  toolPlace.classList.toggle('active', buildTool === 'place');
+  toolRemove.classList.toggle('active', buildTool === 'remove');
+}
+
+buildBtn.addEventListener('click', () => {
+  buildMode = !buildMode;
+  buildBtn.classList.toggle('active', buildMode);
+  furniturePanel.classList.toggle('visible', buildMode);
+  if (buildMode) buildTool = 'place';
+  updateBuildUI();
+});
+
+toolPlace.addEventListener('click', () => { buildTool = 'place'; updateBuildUI(); });
+toolRemove.addEventListener('click', () => { buildTool = 'remove'; updateBuildUI(); });
+
+// ═══════════════════════════════════════════════════════
+// PHASER CONFIG
 // ═══════════════════════════════════════════════════════
 // PHASER CONFIG
 // ═══════════════════════════════════════════════════════
@@ -245,7 +410,7 @@ const gameConfig = {
   parent: 'game-container',
   width: window.innerWidth,
   height: window.innerHeight,
-  backgroundColor: '#0c0c0e',
+  backgroundColor: '#050508',
   physics: {
     default: 'arcade',
     arcade: { gravity: { y: 0 }, debug: false },
@@ -262,6 +427,7 @@ const gameConfig = {
 // ═══════════════════════════════════════════════════════
 
 let player;
+let playerAccessory = null;
 let cursors;
 let targetPosition = null;
 let isPanning = false;
@@ -281,6 +447,7 @@ let lastX = -1;
 let lastY = -1;
 
 let scene;
+let roomFurniture = []; // { sprite, item }
 
 // ═══════════════════════════════════════════════════════
 // SCENE FUNCTIONS
@@ -289,23 +456,85 @@ let scene;
 function preload() {
   scene = this;
 
-  const gfx = this.make.graphics({ add: false });
-  gfx.fillStyle(0xffffff, 0.15); gfx.fillCircle(24, 24, 24);
-  gfx.fillStyle(0xffffff, 0.3);  gfx.fillCircle(24, 24, 18);
-  gfx.fillStyle(0xffffff, 1);    gfx.fillCircle(24, 24, 12);
-  gfx.fillStyle(0xffffff, 0.7);  gfx.fillCircle(22, 20, 5);
-  gfx.generateTexture('player-sprite', 48, 48);
-  gfx.destroy();
+  // Generate base shapes
+  ['circle', 'square', 'diamond'].forEach((shape) => {
+    const g = this.make.graphics({ add: false });
+    if (shape === 'circle') {
+      g.fillStyle(0xffffff, 0.15); g.fillCircle(24, 24, 24);
+      g.fillStyle(0xffffff, 0.4);  g.fillCircle(24, 24, 18);
+      g.fillStyle(0xffffff, 0.9);  g.fillCircle(24, 24, 10);
+      g.fillStyle(0xffffff, 1.0);  g.fillCircle(24, 24, 5);
+    } else if (shape === 'square') {
+      g.fillStyle(0xffffff, 0.15); g.fillRect(0, 0, 48, 48);
+      g.fillStyle(0xffffff, 0.4);  g.fillRect(6, 6, 36, 36);
+      g.fillStyle(0xffffff, 0.9);  g.fillRect(14, 14, 20, 20);
+      g.fillStyle(0xffffff, 1.0);  g.fillRect(19, 19, 10, 10);
+    } else if (shape === 'diamond') {
+      const drawD = (r) => { g.beginPath(); g.moveTo(24, 24-r); g.lineTo(24+r, 24); g.lineTo(24, 24+r); g.lineTo(24-r, 24); g.closePath(); g.fillPath(); };
+      g.fillStyle(0xffffff, 0.15); drawD(24);
+      g.fillStyle(0xffffff, 0.4);  drawD(18);
+      g.fillStyle(0xffffff, 0.9);  drawD(10);
+      g.fillStyle(0xffffff, 1.0);  drawD(5);
+    }
+    g.generateTexture(`player-${shape}`, 48, 48);
+    g.destroy();
+  });
+
+  // Accessories
+  const accG = this.make.graphics({ add: false });
+  // Headphones
+  accG.clear(); accG.lineStyle(3, 0xffffff, 0.9); accG.beginPath(); accG.arc(24, 22, 12, Math.PI, 0); accG.strokePath();
+  accG.fillStyle(0xffffff, 0.9); accG.fillRect(10, 20, 5, 10); accG.fillRect(33, 20, 5, 10);
+  accG.generateTexture('acc-headphones', 48, 48);
+  // Halo
+  accG.clear(); accG.lineStyle(2, 0xffffff, 0.9); accG.strokeEllipse(24, 10, 28, 8);
+  accG.generateTexture('acc-halo', 48, 48);
+  // Beanie
+  accG.clear(); accG.fillStyle(0xffffff, 0.9); accG.fillRect(10, 4, 28, 10); accG.fillRect(8, 10, 32, 4);
+  accG.generateTexture('acc-beanie', 48, 48);
+  accG.destroy();
+
+  // Furniture (64x64 textures for clean integer scaling)
+  const furnGfx = this.make.graphics({ add: false });
+  // 0: Cube
+  furnGfx.clear(); furnGfx.lineStyle(2, 0xffffff, 0.9); furnGfx.strokeRect(0, 0, 64, 64); furnGfx.lineStyle(1, 0xffffff, 0.5); furnGfx.strokeRect(12, 12, 40, 40);
+  furnGfx.generateTexture('furn-0', 64, 64);
+  // 1: Sphere
+  furnGfx.clear(); furnGfx.lineStyle(2, 0xffffff, 0.9); furnGfx.strokeCircle(32, 32, 28); furnGfx.lineStyle(1, 0xffffff, 0.5); furnGfx.strokeCircle(32, 32, 14);
+  furnGfx.generateTexture('furn-1', 64, 64);
+  // 2: Cylinder
+  furnGfx.clear(); furnGfx.lineStyle(2, 0xffffff, 0.9); furnGfx.strokeEllipse(32, 32, 56, 40); furnGfx.lineStyle(1, 0xffffff, 0.5); furnGfx.lineBetween(4, 32, 60, 32);
+  furnGfx.generateTexture('furn-2', 64, 64);
+  // 3: Pyramid
+  furnGfx.clear(); furnGfx.lineStyle(2, 0xffffff, 0.9); furnGfx.beginPath(); furnGfx.moveTo(32, 4); furnGfx.lineTo(56, 52); furnGfx.lineTo(8, 52); furnGfx.closePath(); furnGfx.strokePath();
+  furnGfx.generateTexture('furn-3', 64, 64);
+  // 4: Chair
+  furnGfx.clear(); furnGfx.lineStyle(2, 0xffffff, 0.9); furnGfx.strokeRect(16, 28, 32, 24); furnGfx.lineBetween(16, 28, 16, 8); furnGfx.lineBetween(48, 28, 48, 8); furnGfx.lineBetween(16, 8, 48, 8);
+  furnGfx.generateTexture('furn-4', 64, 64);
+  // 5: Plant
+  furnGfx.clear(); furnGfx.lineStyle(2, 0x39ff14, 0.9); furnGfx.strokeCircle(32, 22, 14); furnGfx.lineStyle(2, 0xffffff, 0.6); furnGfx.lineBetween(32, 36, 32, 56);
+  furnGfx.generateTexture('furn-5', 64, 64);
+  // 6: Lamp
+  furnGfx.clear(); furnGfx.lineStyle(2, 0xffffff, 0.6); furnGfx.lineBetween(32, 4, 32, 44); furnGfx.fillStyle(0xffff00, 0.8); furnGfx.fillCircle(32, 6, 6);
+  furnGfx.generateTexture('furn-6', 64, 64);
+  // 7: Rug
+  furnGfx.clear(); furnGfx.fillStyle(0xffffff, 0.15); furnGfx.fillRect(0, 16, 64, 32); furnGfx.lineStyle(1, 0xffffff, 0.4); furnGfx.strokeRect(0, 16, 64, 32);
+  furnGfx.generateTexture('furn-7', 64, 64);
+  furnGfx.destroy();
 
   const floor = this.make.graphics({ add: false });
-  floor.fillStyle(0x18181a, 1); floor.fillRect(0, 0, 64, 64);
-  floor.lineStyle(1, 0x222224, 0.4); floor.strokeRect(0, 0, 64, 64);
-  floor.generateTexture('floor-tile', 64, 64);
+  floor.fillStyle(0x050508, 1); floor.fillRect(0, 0, 128, 128);
+  floor.lineStyle(2, 0x00f0ff, 0.2); floor.strokeRect(0, 0, 128, 128);
+  floor.lineStyle(1, 0x00f0ff, 0.05);
+  floor.lineBetween(64, 0, 64, 128);
+  floor.lineBetween(0, 64, 128, 64);
+  floor.generateTexture('floor-tile', 128, 128);
   floor.destroy();
 
   const wall = this.make.graphics({ add: false });
-  wall.fillStyle(0x222224, 1); wall.fillRect(0, 0, 64, 64);
-  wall.lineStyle(2, 0x2a2a2e, 0.6); wall.strokeRect(0, 0, 64, 64);
+  wall.fillStyle(0x020205, 0.8); wall.fillRect(0, 0, 64, 64);
+  wall.lineStyle(3, 0x00f0ff, 0.6); wall.strokeRect(0, 0, 64, 64);
+  wall.lineStyle(1, 0xffffff, 0.8); wall.strokeRect(0, 0, 64, 64);
   wall.generateTexture('wall-tile', 64, 64);
   wall.destroy();
 }
@@ -313,13 +542,14 @@ function preload() {
 function create() {
   scene = this;
 
-  for (let x = 0; x < WORLD_WIDTH; x += 64) {
-    for (let y = 0; y < WORLD_HEIGHT; y += 64) {
-      this.add.image(x + 32, y + 32, 'floor-tile');
+  for (let x = 0; x < WORLD_WIDTH; x += 128) {
+    for (let y = 0; y < WORLD_HEIGHT; y += 128) {
+      this.add.image(x + 64, y + 64, 'floor-tile');
     }
   }
 
   const wallGroup = this.physics.add.staticGroup();
+  const furnitureGroup = this.physics.add.staticGroup();
   for (let x = 0; x < WORLD_WIDTH; x += 64) {
     wallGroup.add(this.add.image(x + 32, 0, 'wall-tile'));
     wallGroup.add(this.add.image(x + 32, WORLD_HEIGHT, 'wall-tile'));
@@ -331,7 +561,7 @@ function create() {
 
   player = null;
 
-  this.cameras.main.setBackgroundColor('#0c0c0e');
+  this.cameras.main.setBackgroundColor('#050508');
   this.physics.world.setBounds(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
 
   cursors = this.input.keyboard.createCursorKeys();
@@ -368,6 +598,25 @@ function create() {
   this.input.on('pointerup', (pointer, currentlyOver) => {
     if (pointer.event.target.tagName !== 'CANVAS') return;
     
+    if (buildMode && isRoomOwner) {
+      if (!isPanning) {
+        const gx = Math.floor(pointer.worldX / 64);
+        const gy = Math.floor(pointer.worldY / 64);
+        if (buildTool === 'place') {
+          const item = { t: selectedFurnitureType, x: gx, y: gy, r: 0 };
+          socket.emit('placeFurniture', { item });
+        } else if (buildTool === 'remove') {
+          const idx = roomFurniture.findIndex(f => {
+            const fp = getClientFootprint(f.item.t, f.item.r);
+            return gx >= f.item.x && gx < f.item.x + fp.w && gy >= f.item.y && gy < f.item.y + fp.h;
+          });
+          if (idx >= 0) socket.emit('removeFurniture', { index: idx });
+        }
+      }
+      isPanning = false;
+      return;
+    }
+
     // Disable walking if clicking on an interactive element (like a player sprite)
     if (currentlyOver && currentlyOver.length > 0) return;
 
@@ -385,6 +634,7 @@ function create() {
 
   connectSocket();
   this.wallGroup = wallGroup;
+  this.furnitureGroup = furnitureGroup;
 }
 
 function update(_time, _delta) {
@@ -423,6 +673,15 @@ function update(_time, _delta) {
 
     player.setVelocity(vx, vy);
     nameLabel.setPosition(player.x, player.y - 30);
+    if (playerAccessory) playerAccessory.setPosition(player.x, player.y);
+
+    // Pulse animation
+    const pulseSpeeds = [0.02, 0.04, 0.08];
+    const pulseT = scene.time.now / 1000;
+    const pulseSpeed = pulseSpeeds[CUSTOMIZATION.pulse] || 0.04;
+    const pulseScale = 1 + Math.sin(pulseT * pulseSpeed * Math.PI * 2) * 0.05;
+    player.setScale(pulseScale);
+    if (playerAccessory) playerAccessory.setScale(pulseScale);
 
     const now = Date.now();
     const moved = (Math.abs(player.x - lastX) > 0.5 || Math.abs(player.y - lastY) > 0.5);
@@ -439,14 +698,23 @@ function update(_time, _delta) {
       other.sprite.x += (other.targetX - other.sprite.x) * LERP_FACTOR;
       other.sprite.y += (other.targetY - other.sprite.y) * LERP_FACTOR;
       other.nameLabel.setPosition(other.sprite.x, other.sprite.y - 30);
+      if (other.accessory) other.accessory.setPosition(other.sprite.x, other.sprite.y);
+
+      // Pulse animation
+      const pulseSpeeds = [0.02, 0.04, 0.08];
+      const pulseT = scene.time.now / 1000;
+      const pulseSpeed = pulseSpeeds[other.customization.pulse] || 0.04;
+      const pulseScale = 1 + Math.sin(pulseT * pulseSpeed * Math.PI * 2) * 0.05;
+      other.sprite.setScale(pulseScale);
+      if (other.accessory) other.accessory.setScale(pulseScale);
     }
   }
 }
 
 function createClickPulse(x, y) {
   if (!scene) return;
-  const pulse = scene.add.circle(x, y, 5, 0xffffff, 0.4).setDepth(2);
-  pulse.setStrokeStyle(2, 0xffffff, 0.8);
+  const pulse = scene.add.circle(x, y, 5, 0x00f0ff, 0.4).setDepth(2);
+  pulse.setStrokeStyle(2, 0x00f0ff, 0.8);
   scene.tweens.add({
     targets: pulse,
     radius: 18,
@@ -463,24 +731,34 @@ function createClickPulse(x, y) {
 
 function spawnLocalPlayer(data) {
   if (player) return;
-  myColor = data.color;
+  const cust = data.customization || CUSTOMIZATION;
+  myColor = PLAYER_COLORS[cust.colorIdx] || data.color;
 
-  player = scene.physics.add.sprite(data.x, data.y, 'player-sprite');
-  player.setTint(data.color);
+  const shapeKey = ['player-circle', 'player-square', 'player-diamond'][cust.shape] || 'player-circle';
+  player = scene.physics.add.sprite(data.x, data.y, shapeKey);
+  player.setTint(myColor);
   player.setCollideWorldBounds(true);
   player.setDepth(10);
 
-  scene.physics.add.collider(player, scene.wallGroup);
+  if (playerAccessory) { playerAccessory.destroy(); playerAccessory = null; }
+  if (cust.accessory > 0) {
+    const accKeys = ['', 'acc-headphones', 'acc-halo', 'acc-beanie'];
+    playerAccessory = scene.add.sprite(data.x, data.y, accKeys[cust.accessory]);
+    playerAccessory.setTint(myColor);
+    playerAccessory.setDepth(11);
+  }
 
-  // Local player sees own real name
+  scene.physics.add.collider(player, scene.wallGroup);
+  scene.physics.add.collider(player, scene.furnitureGroup);
+
   nameLabel = scene.add.text(data.x, data.y - 30, playerName, {
     fontFamily: 'Inter, sans-serif',
     fontSize: '13px',
-    color: '#e2e8f0',
+    color: '#e0f7ff',
     align: 'center',
-    stroke: '#0c0c0e',
+    stroke: '#050508',
     strokeThickness: 3,
-  }).setOrigin(0.5).setDepth(11);
+  }).setOrigin(0.5).setDepth(12);
 
   scene.cameras.main.startFollow(player, true, 0.08, 0.08);
 
@@ -488,42 +766,55 @@ function spawnLocalPlayer(data) {
   scene.tweens.add({ targets: [player], alpha: 1, scale: 1, duration: 400, ease: 'Back.easeOut' });
   nameLabel.setAlpha(0);
   scene.tweens.add({ targets: [nameLabel], alpha: 1, duration: 400, delay: 150 });
+  if (playerAccessory) {
+    playerAccessory.setAlpha(0); playerAccessory.setScale(0.3);
+    scene.tweens.add({ targets: [playerAccessory], alpha: 1, scale: 1, duration: 400, ease: 'Back.easeOut' });
+  }
 }
 
 function spawnOtherPlayer(data) {
   if (data.id === socket.id) return;
   if (otherPlayers.has(data.id)) return;
 
-  const sprite = scene.add.sprite(data.x, data.y, 'player-sprite');
-  sprite.setTint(data.color);
+  const cust = data.customization || { colorIdx: 0, shape: 0, accessory: 0, pulse: 1 };
+  const color = PLAYER_COLORS[cust.colorIdx] || data.color;
+  const shapeKey = ['player-circle', 'player-square', 'player-diamond'][cust.shape] || 'player-circle';
+
+  const sprite = scene.add.sprite(data.x, data.y, shapeKey);
+  sprite.setTint(color);
   sprite.setDepth(5);
 
-  // Others appear as their unique stranger alias until vibe check is accepted
+  let accessory = null;
+  if (cust.accessory > 0) {
+    const accKeys = ['', 'acc-headphones', 'acc-halo', 'acc-beanie'];
+    accessory = scene.add.sprite(data.x, data.y, accKeys[cust.accessory]);
+    accessory.setTint(color);
+    accessory.setDepth(6);
+  }
+
   const label = scene.add.text(data.x, data.y - 30, data.strangerName || 'Stranger', {
     fontFamily: 'Inter, sans-serif',
     fontSize: '13px',
-    color: '#94a3b8',
+    color: '#8aaabf',
     align: 'center',
-    stroke: '#0c0c0e',
+    stroke: '#050508',
     strokeThickness: 3,
-  }).setOrigin(0.5).setDepth(6);
+  }).setOrigin(0.5).setDepth(7);
 
-  // Entrance animation
   sprite.setAlpha(0); sprite.setScale(0.3);
   scene.tweens.add({ targets: [sprite], alpha: 1, scale: 1, duration: 400, ease: 'Back.easeOut' });
   label.setAlpha(0);
   scene.tweens.add({ targets: [label], alpha: 1, duration: 400, delay: 150 });
+  if (accessory) {
+    accessory.setAlpha(0); accessory.setScale(0.3);
+    scene.tweens.add({ targets: [accessory], alpha: 1, scale: 1, duration: 400, ease: 'Back.easeOut' });
+  }
 
-  // Make sprite interactive — clicking opens Vibe Check popup
   sprite.setInteractive({ useHandCursor: true });
   sprite.on('pointerdown', (pointer) => {
     vibeTargetId = data.id;
-
-    // Position the popup near the click, but offset to avoid overlap
     const screenX = pointer.event.clientX ?? pointer.x;
     const screenY = pointer.event.clientY ?? pointer.y;
-    
-    // Clamp to ensure it doesn't render off-screen!
     vibeAction.style.left = `${Math.min(screenX + 10, window.innerWidth - 140)}px`;
     vibeAction.style.top  = `${Math.max(screenY - 40, 10)}px`;
     vibeAction.classList.add('visible');
@@ -531,12 +822,14 @@ function spawnOtherPlayer(data) {
 
   otherPlayers.set(data.id, {
     sprite,
+    accessory,
     nameLabel: label,
     targetX: data.x,
     targetY: data.y,
     revealed: false,
     realName: data.name,
     strangerName: data.strangerName || 'Stranger',
+    customization: cust,
   });
 
   updatePlayerCount();
@@ -546,10 +839,17 @@ function removeOtherPlayer(id) {
   const other = otherPlayers.get(id);
   if (!other) return;
 
+  const targets = [other.sprite, other.nameLabel];
+  if (other.accessory) targets.push(other.accessory);
+
   scene.tweens.add({
-    targets: [other.sprite, other.nameLabel],
+    targets,
     alpha: 0, scale: 0.3, duration: 300, ease: 'Power2',
-    onComplete: () => { other.sprite.destroy(); other.nameLabel.destroy(); },
+    onComplete: () => {
+      other.sprite.destroy();
+      other.nameLabel.destroy();
+      if (other.accessory) other.accessory.destroy();
+    },
   });
 
   otherPlayers.delete(id);
@@ -559,6 +859,22 @@ function removeOtherPlayer(id) {
 function updatePlayerCount() {
   const total = 1 + otherPlayers.size;
   playerCountText.textContent = total === 1 ? '1 player' : `${total} players`;
+}
+
+function renderFurnitureItem(item) {
+  if (!scene) return;
+  const fp = getClientFootprint(item.t, item.r);
+  const x = item.x * 64 + (fp.w * 64) / 2;
+  const y = item.y * 64 + (fp.h * 64) / 2;
+  const sprite = scene.add.sprite(x, y, `furn-${item.t}`);
+  sprite.setDepth(1);
+  sprite.setAlpha(0.8);
+  sprite.setScale(fp.w, fp.h);
+  if (item.r) sprite.setAngle(item.r * 90);
+  if (!fp.walkable && scene.furnitureGroup) {
+    scene.furnitureGroup.add(sprite);
+  }
+  roomFurniture.push({ sprite, item, fp });
 }
 
 // ═══════════════════════════════════════════════════════
@@ -642,7 +958,7 @@ function revealPlayerName(playerId, name) {
     duration: 200,
     onComplete: () => {
       other.nameLabel.setText(name);
-      other.nameLabel.setColor('#e2e8f0'); // brighter, like local player
+      other.nameLabel.setColor('#e0f7ff'); // brighter, like local player
       scene.tweens.add({ targets: other.nameLabel, alpha: 1, duration: 300 });
     },
   });
@@ -667,20 +983,29 @@ function connectSocket() {
     console.log('✦ Connected to FreeLobby server:', socket.id);
     setConnectionStatus(true);
 
-    if (joinMode === 'random') socket.emit('joinRandomRoom', { name: playerName });
-    else if (joinMode === 'create') socket.emit('createRoom', { name: playerName });
-    else if (joinMode === 'code') socket.emit('joinRoom', { roomId: joinRoomCode, name: playerName });
+    if (joinMode === 'random') socket.emit('joinRandomRoom', { name: playerName, customization: CUSTOMIZATION });
+    else if (joinMode === 'create') socket.emit('createRoom', { name: playerName, customization: CUSTOMIZATION, isPublic: createRoomPublic });
+    else if (joinMode === 'code') socket.emit('joinRoom', { roomId: joinRoomCode, name: playerName, customization: CUSTOMIZATION });
   });
 
-  socket.on('roomJoined', ({ roomId, you, players }) => {
+  socket.on('roomJoined', ({ roomId, you, players, isOwner, isPublic, furniture }) => {
     currentRoomId = roomId;
     roomIdDisplay.textContent = roomId;
-    console.log(`✦ Joined room ${roomId}. Local player: ${you.name}.`);
+    isRoomOwner = !!isOwner;
+    if (isRoomOwner) { ownerBadge.classList.add('visible'); buildBtn.classList.add('visible'); }
+    else { ownerBadge.classList.remove('visible'); buildBtn.classList.remove('visible'); buildBtn.classList.remove('active'); furniturePanel.classList.remove('visible'); buildMode = false; }
+    console.log(`✦ Joined room ${roomId}. Local player: ${you.name}. Owner: ${isRoomOwner}. Public: ${isPublic !== false}.`);
 
     // Clean up previous room state if fleeing
     for (const [id, _] of otherPlayers) {
       removeOtherPlayer(id);
     }
+    roomFurniture.forEach(f => {
+      if (scene && scene.furnitureGroup) scene.furnitureGroup.remove(f.sprite);
+      f.sprite.destroy();
+    });
+    roomFurniture = [];
+    if (furniture) furniture.forEach(item => renderFurnitureItem(item));
 
     if (player) {
       // Reposition and update color for local player
@@ -688,6 +1013,7 @@ function connectSocket() {
       player.setTint(you.color);
       myColor = you.color;
       if (nameLabel) nameLabel.setPosition(you.x, you.y - 30);
+      if (playerAccessory) playerAccessory.setPosition(you.x, you.y);
     } else {
       spawnLocalPlayer(you);
     }
@@ -750,6 +1076,19 @@ function connectSocket() {
   socket.on('vibeCheckRevealed', ({ playerId, name }) => {
     // Mutual name reveal!
     revealPlayerName(playerId, name);
+  });
+
+  socket.on('furniturePlaced', ({ item }) => {
+    renderFurnitureItem(item);
+  });
+
+  socket.on('furnitureRemoved', ({ index }) => {
+    if (index >= 0 && index < roomFurniture.length) {
+      const f = roomFurniture[index];
+      if (scene.furnitureGroup) scene.furnitureGroup.remove(f.sprite);
+      f.sprite.destroy();
+      roomFurniture.splice(index, 1);
+    }
   });
 
   socket.on('error', ({ message }) => {
