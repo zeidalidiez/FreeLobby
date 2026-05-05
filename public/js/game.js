@@ -167,6 +167,12 @@ btnImportHash.addEventListener('click', () => {
   }
 });
 
+function showError(msg) {
+  errorToast.textContent = msg;
+  errorToast.classList.add('visible');
+  setTimeout(() => errorToast.classList.remove('visible'), 3500);
+}
+
 // ─── Landing UI Logic ──────────────────────────────────
 
 btnToggleSpecific.addEventListener('click', () => {
@@ -177,6 +183,60 @@ btnToggleSpecific.addEventListener('click', () => {
 roomCodeInput.addEventListener('input', () => {
   roomCodeInput.value = roomCodeInput.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
 });
+
+// ═══════════════════════════════════════════════════════
+// PHASER CONFIG (must be defined before enterGame)
+// ═══════════════════════════════════════════════════════
+
+const WORLD_WIDTH  = 1200;
+const WORLD_HEIGHT = 800;
+const PLAYER_SPEED = 220;
+const LERP_FACTOR  = 0.15;
+const SEND_RATE    = 50;
+
+const gameConfig = {
+  type: Phaser.AUTO,
+  parent: 'game-container',
+  width: window.innerWidth,
+  height: window.innerHeight,
+  backgroundColor: '#050508',
+  physics: {
+    default: 'arcade',
+    arcade: { gravity: { y: 0 }, debug: false },
+  },
+  scene: { preload, create, update },
+  scale: {
+    mode: Phaser.Scale.RESIZE,
+    autoCenter: Phaser.Scale.CENTER_BOTH,
+  },
+};
+
+// ═══════════════════════════════════════════════════════
+// SCENE STATE
+// ═══════════════════════════════════════════════════════
+
+let player;
+let playerAccessory = null;
+let cursors;
+let targetPosition = null;
+let isPanning = false;
+let panStartX = 0;
+let panStartY = 0;
+let camStartScrollX = 0;
+let camStartScrollY = 0;
+let wasd;
+let nameLabel;
+let myColor = 0xa78bfa;
+
+const otherPlayers = new Map();
+
+let lastSendTime = 0;
+let lastX = -1;
+let lastY = -1;
+
+let scene;
+let roomFurniture = [];
+let roomTheme = 0;
 
 // ─── Enter / Exit Game ─────────────────────────────────
 
@@ -335,10 +395,8 @@ const toolPlace        = document.getElementById('tool-place');
 const toolRemove       = document.getElementById('tool-remove');
 const btnToggleHash    = document.getElementById('btn-toggle-hash');
 const hashPanel        = document.getElementById('hash-panel');
-const roomHashExport   = document.getElementById('room-hash-export');
-const btnCopyRoomHash  = document.getElementById('btn-copy-room-hash');
-const roomHashImport   = document.getElementById('room-hash-import');
-const btnImportRoomHash = document.getElementById('btn-import-room-hash');
+const btnDownloadCard  = document.getElementById('btn-download-card');
+const cardFileInput    = document.getElementById('card-file-input');
 
 let buildMode = false;
 let buildTool = 'place';
@@ -399,111 +457,32 @@ buildBtn.addEventListener('click', () => {
 toolPlace.addEventListener('click', () => { buildTool = 'place'; updateBuildUI(); });
 toolRemove.addEventListener('click', () => { buildTool = 'remove'; updateBuildUI(); });
 
-// ─── Room Hash Export / Import ─────────────────────────
-
-function encodeRoomHash(furniture) {
-  try {
-    const json = JSON.stringify(furniture);
-    return btoa(json);
-  } catch {
-    return '';
-  }
-}
-
-function decodeRoomHash(hash) {
-  try {
-    const json = atob(hash.trim());
-    return JSON.parse(json);
-  } catch {
-    return null;
-  }
-}
-
-function updateRoomHashExport() {
-  const items = roomFurniture.map(f => f.item);
-  roomHashExport.value = encodeRoomHash(items);
-}
+// ─── Room Memory Card Export / Import ──────────────────
 
 btnToggleHash.addEventListener('click', () => {
   hashPanel.classList.toggle('open');
-  updateRoomHashExport();
 });
 
-btnCopyRoomHash.addEventListener('click', () => {
-  if (roomHashExport.value) {
-    navigator.clipboard.writeText(roomHashExport.value).then(() => {
-      btnCopyRoomHash.textContent = '✓';
-      setTimeout(() => btnCopyRoomHash.textContent = 'Copy', 1500);
-    });
-  }
+btnDownloadCard.addEventListener('click', () => {
+  const items = roomFurniture.map(f => f.item);
+  const canvas = generateRoomCard(currentRoomId, items, roomTheme);
+  const link = document.createElement('a');
+  link.download = `freelobby-room-${currentRoomId || 'card'}.png`;
+  link.href = canvas.toDataURL('image/png');
+  link.click();
 });
 
-btnImportRoomHash.addEventListener('click', () => {
-  const hash = roomHashImport.value.trim();
-  if (!hash) return;
-  const furniture = decodeRoomHash(hash);
-  if (!furniture) { showError('Invalid room hash.'); return; }
-  if (socket && socket.connected) {
-    socket.emit('importRoomHash', { hash });
-    roomHashImport.value = '';
-  }
+cardFileInput.addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  decodeRoomCard(file, (result, error) => {
+    if (error) { showError(error); return; }
+    if (socket && socket.connected) {
+      socket.emit('setRoomFurniture', { furniture: result.furniture, theme: result.theme });
+    }
+  });
+  cardFileInput.value = '';
 });
-
-// ═══════════════════════════════════════════════════════
-// PHASER CONFIG
-// ═══════════════════════════════════════════════════════
-// PHASER CONFIG
-// ═══════════════════════════════════════════════════════
-
-const WORLD_WIDTH  = 1200;
-const WORLD_HEIGHT = 800;
-const PLAYER_SPEED = 220;
-const LERP_FACTOR  = 0.15;
-const SEND_RATE    = 50;
-
-const gameConfig = {
-  type: Phaser.AUTO,
-  parent: 'game-container',
-  width: window.innerWidth,
-  height: window.innerHeight,
-  backgroundColor: '#050508',
-  physics: {
-    default: 'arcade',
-    arcade: { gravity: { y: 0 }, debug: false },
-  },
-  scene: { preload, create, update },
-  scale: {
-    mode: Phaser.Scale.RESIZE,
-    autoCenter: Phaser.Scale.CENTER_BOTH,
-  },
-};
-
-// ═══════════════════════════════════════════════════════
-// SCENE STATE
-// ═══════════════════════════════════════════════════════
-
-let player;
-let playerAccessory = null;
-let cursors;
-let targetPosition = null;
-let isPanning = false;
-let panStartX = 0;
-let panStartY = 0;
-let camStartScrollX = 0;
-let camStartScrollY = 0;
-let wasd;
-let nameLabel;
-let myColor = 0xa78bfa;
-
-// Other players: Map<socketId, { sprite, nameLabel, targetX, targetY, revealed }>
-const otherPlayers = new Map();
-
-let lastSendTime = 0;
-let lastX = -1;
-let lastY = -1;
-
-let scene;
-let roomFurniture = []; // { sprite, item }
 
 // ═══════════════════════════════════════════════════════
 // SCENE FUNCTIONS
@@ -934,6 +913,202 @@ function renderFurnitureItem(item) {
 }
 
 // ═══════════════════════════════════════════════════════
+// ROOM MEMORY CARD
+// ═══════════════════════════════════════════════════════
+
+const CARD_WIDTH = 320;
+const CARD_HEIGHT = 200;
+const CARD_DATA_ROW = CARD_HEIGHT - 1;
+
+function generateRoomCard(roomId, furniture, theme) {
+  const canvas = document.createElement('canvas');
+  canvas.width = CARD_WIDTH;
+  canvas.height = CARD_HEIGHT;
+  const ctx = canvas.getContext('2d');
+
+  // Background
+  ctx.fillStyle = '#050508';
+  ctx.fillRect(0, 0, CARD_WIDTH, CARD_HEIGHT);
+
+  // Neon border
+  ctx.strokeStyle = '#00f0ff';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(4, 4, CARD_WIDTH - 8, CARD_HEIGHT - 8);
+
+  // Corner brackets
+  ctx.lineWidth = 3;
+  const cornerSize = 12;
+  // Top-left
+  ctx.beginPath(); ctx.moveTo(4, 16); ctx.lineTo(4, 4); ctx.lineTo(16, 4); ctx.stroke();
+  // Top-right
+  ctx.beginPath(); ctx.moveTo(CARD_WIDTH - 4, 16); ctx.lineTo(CARD_WIDTH - 4, 4); ctx.lineTo(CARD_WIDTH - 16, 4); ctx.stroke();
+  // Bottom-left
+  ctx.beginPath(); ctx.moveTo(4, CARD_HEIGHT - 16); ctx.lineTo(4, CARD_HEIGHT - 4); ctx.lineTo(16, CARD_HEIGHT - 4); ctx.stroke();
+  // Bottom-right
+  ctx.beginPath(); ctx.moveTo(CARD_WIDTH - 4, CARD_HEIGHT - 16); ctx.lineTo(CARD_WIDTH - 4, CARD_HEIGHT - 4); ctx.lineTo(CARD_WIDTH - 16, CARD_HEIGHT - 4); ctx.stroke();
+
+  // Header text
+  ctx.fillStyle = '#00f0ff';
+  ctx.font = 'bold 14px monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('ROOM CARD', CARD_WIDTH / 2, 24);
+
+  // Room code
+  ctx.fillStyle = '#8aaabf';
+  ctx.font = '12px monospace';
+  ctx.fillText(roomId || '----', CARD_WIDTH / 2, 40);
+
+  // Mini grid preview
+  const previewX = 80;
+  const previewY = 55;
+  const previewW = 160;
+  const previewH = 96;
+  const cellSize = 8;
+
+  // Floor background based on theme
+  const themeColors = ['#0a0a12', '#1a0a0a', '#0a1a0a', '#0a0a1a'];
+  ctx.fillStyle = themeColors[theme % themeColors.length] || themeColors[0];
+  ctx.fillRect(previewX, previewY, previewW, previewH);
+
+  // Grid lines
+  ctx.strokeStyle = 'rgba(0, 240, 255, 0.15)';
+  ctx.lineWidth = 1;
+  for (let gx = 0; gx <= previewW; gx += cellSize) {
+    ctx.beginPath(); ctx.moveTo(previewX + gx, previewY); ctx.lineTo(previewX + gx, previewY + previewH); ctx.stroke();
+  }
+  for (let gy = 0; gy <= previewH; gy += cellSize) {
+    ctx.beginPath(); ctx.moveTo(previewX, previewY + gy); ctx.lineTo(previewX + previewW, previewY + gy); ctx.stroke();
+  }
+
+  // Draw furniture icons on preview
+  const furniturePreviewColors = [
+    '#00f0ff', '#ff00ff', '#39ff14', '#ff007f',
+    '#ffff00', '#ff8800', '#bd00ff', '#0088ff'
+  ];
+  if (furniture) {
+    furniture.forEach(item => {
+      const px = previewX + item.x * cellSize;
+      const py = previewY + item.y * cellSize;
+      const fp = getClientFootprint(item.t, item.r);
+      ctx.fillStyle = furniturePreviewColors[item.t % furniturePreviewColors.length];
+      ctx.globalAlpha = 0.6;
+      ctx.fillRect(px, py, fp.w * cellSize, fp.h * cellSize);
+      ctx.globalAlpha = 1.0;
+    });
+  }
+
+  // Footer branding
+  ctx.fillStyle = '#445566';
+  ctx.font = '10px monospace';
+  ctx.textAlign = 'right';
+  ctx.fillText('FreeLobby', CARD_WIDTH - 12, CARD_HEIGHT - 12);
+
+  // ─── Encode data strip in bottom pixel row ───
+  // We use 2 pixels per item to avoid alpha=0 corruption.
+  // Format: [version][theme][0][255] [count][0][0][255] [t][x][y][255] [r][layer][0][255] ...
+  const imgData = ctx.getImageData(0, 0, CARD_WIDTH, CARD_HEIGHT);
+  const data = imgData.data;
+  const rowOffset = CARD_DATA_ROW * CARD_WIDTH * 4;
+
+  // Pixel 0: version + theme
+  data[rowOffset + 0] = 1; // version
+  data[rowOffset + 1] = theme || 0;
+  data[rowOffset + 2] = 0;
+  data[rowOffset + 3] = 255;
+
+  // Pixel 1: count
+  const count = furniture ? furniture.length : 0;
+  data[rowOffset + 4] = count;
+  data[rowOffset + 5] = 0;
+  data[rowOffset + 6] = 0;
+  data[rowOffset + 7] = 255;
+
+  // Pixels 2...N: each furniture item (2 pixels each)
+  if (furniture) {
+    console.log('[CardEncode] encoding', furniture.length, 'items');
+    furniture.forEach((item, i) => {
+      const dataOff = rowOffset + (i * 2 + 2) * 4;
+      data[dataOff + 0] = item.t;
+      data[dataOff + 1] = item.x;
+      data[dataOff + 2] = item.y;
+      data[dataOff + 3] = 255;
+
+      const metaOff = rowOffset + (i * 2 + 3) * 4;
+      data[metaOff + 0] = item.r || 0;
+      data[metaOff + 1] = item.layer || 0;
+      data[metaOff + 2] = 0;
+      data[metaOff + 3] = 255;
+
+      console.log(`[CardEncode] item ${i}: t=${item.t} x=${item.x} y=${item.y} r=${item.r} layer=${item.layer}`);
+    });
+  }
+
+  ctx.putImageData(imgData, 0, 0);
+  return canvas;
+}
+
+function decodeRoomCard(imageFile, callback) {
+  const img = new Image();
+  const reader = new FileReader();
+
+  reader.onload = (e) => {
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = CARD_WIDTH;
+      canvas.height = CARD_HEIGHT;
+      const ctx = canvas.getContext('2d');
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(img, 0, 0, CARD_WIDTH, CARD_HEIGHT);
+
+      try {
+        const imgData = ctx.getImageData(0, 0, CARD_WIDTH, CARD_HEIGHT);
+        const data = imgData.data;
+        const rowOffset = CARD_DATA_ROW * CARD_WIDTH * 4;
+
+        const version = data[rowOffset + 0];
+        console.log('[CardDecode] version:', version, 'first bytes:', data[rowOffset], data[rowOffset+1], data[rowOffset+2], data[rowOffset+3]);
+        if (version !== 1) {
+          callback(null, 'Unknown card version or corrupted data.');
+          return;
+        }
+
+        const theme = data[rowOffset + 1];
+        const count = data[rowOffset + 4];
+        console.log('[CardDecode] theme:', theme, 'count:', count);
+
+        if (count > 100) {
+          callback(null, 'Card contains too many items (max 100).');
+          return;
+        }
+
+        const furniture = [];
+        for (let i = 0; i < count; i++) {
+          const dataOff = rowOffset + (i * 2 + 2) * 4;
+          const metaOff = rowOffset + (i * 2 + 3) * 4;
+          const t = data[dataOff + 0];
+          const x = data[dataOff + 1];
+          const y = data[dataOff + 2];
+          const r = data[metaOff + 0];
+          const layer = data[metaOff + 1];
+          console.log(`[CardDecode] item ${i}: t=${t} x=${x} y=${y} r=${r} layer=${layer}`);
+          furniture.push({ t, x, y, r, layer });
+        }
+
+        callback({ theme, furniture }, null);
+      } catch (err) {
+        console.error('[CardDecode] error:', err);
+        callback(null, 'Failed to decode card data.');
+      }
+    };
+    img.onerror = () => callback(null, 'Failed to load image.');
+    img.src = e.target.result;
+  };
+
+  reader.onerror = () => callback(null, 'Failed to read image file.');
+  reader.readAsDataURL(imageFile);
+}
+
+// ═══════════════════════════════════════════════════════
 // EMOTE & SIGN DISPLAY
 // ═══════════════════════════════════════════════════════
 
@@ -1044,13 +1219,14 @@ function connectSocket() {
     else if (joinMode === 'code') socket.emit('joinRoom', { roomId: joinRoomCode, name: playerName, customization: CUSTOMIZATION });
   });
 
-  socket.on('roomJoined', ({ roomId, you, players, isOwner, isPublic, furniture }) => {
+  socket.on('roomJoined', ({ roomId, you, players, isOwner, isPublic, furniture, theme }) => {
     currentRoomId = roomId;
     roomIdDisplay.textContent = roomId;
     isRoomOwner = !!isOwner;
+    roomTheme = theme || 0;
     if (isRoomOwner) { ownerBadge.classList.add('visible'); buildBtn.classList.add('visible'); }
     else { ownerBadge.classList.remove('visible'); buildBtn.classList.remove('visible'); buildBtn.classList.remove('active'); furniturePanel.classList.remove('visible'); buildMode = false; }
-    console.log(`✦ Joined room ${roomId}. Local player: ${you.name}. Owner: ${isRoomOwner}. Public: ${isPublic !== false}.`);
+    console.log(`✦ Joined room ${roomId}. Local player: ${you.name}. Owner: ${isRoomOwner}. Public: ${isPublic !== false}. Theme: ${roomTheme}.`);
 
     // Clean up previous room state if fleeing
     for (const [id, _] of otherPlayers) {
@@ -1062,7 +1238,6 @@ function connectSocket() {
     });
     roomFurniture = [];
     if (furniture) furniture.forEach(item => renderFurnitureItem(item));
-    updateRoomHashExport();
 
     if (player) {
       // Reposition and update color for local player
@@ -1137,7 +1312,6 @@ function connectSocket() {
 
   socket.on('furniturePlaced', ({ item }) => {
     renderFurnitureItem(item);
-    updateRoomHashExport();
   });
 
   socket.on('furnitureRemoved', ({ index }) => {
@@ -1146,18 +1320,21 @@ function connectSocket() {
       if (scene.furnitureGroup) scene.furnitureGroup.remove(f.sprite);
       f.sprite.destroy();
       roomFurniture.splice(index, 1);
-      updateRoomHashExport();
     }
   });
 
-  socket.on('roomFurnitureReset', ({ furniture }) => {
+  socket.on('roomFurnitureReset', ({ furniture, theme }) => {
     roomFurniture.forEach(f => {
       if (scene && scene.furnitureGroup) scene.furnitureGroup.remove(f.sprite);
       f.sprite.destroy();
     });
     roomFurniture = [];
     if (furniture) furniture.forEach(item => renderFurnitureItem(item));
-    updateRoomHashExport();
+    if (typeof theme === 'number') roomTheme = theme;
+  });
+
+  socket.on('roomThemeChanged', ({ theme }) => {
+    if (typeof theme === 'number') roomTheme = theme;
   });
 
   socket.on('error', ({ message }) => {

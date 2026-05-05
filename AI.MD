@@ -99,10 +99,11 @@ This is non-negotiable. Every AI working on this must preserve these mechanics.
 - [x] Room settings: Public (joinable by code/random) or Private (invite only)
 - [x] Furniture system: Owner can place wireframe primitives from a palette
 - [x] **Grid-based placement:** All furniture snaps to a 64px grid
-- [x] **Placement limit:** 20 items per room (enforced server-side)
+- [x] **Placement limit:** 100 items per room (enforced server-side)
 - [x] Procedural neon furniture rendering (8 types: Cube, Sphere, Cylinder, Pyramid, Chair, Plant, Lamp, Rug)
 - [x] Owner-only build mode with place/remove tools
-- [x] **Room Hash:** Export/import UI (Base64 JSON) with atomic server validation
+- [x] **Room Memory Card:** Cyberpunk PNG card export/import with embedded RGBA data strip
+- [x] **Room Theme:** Stored in card + room state (prepared for multiple room aesthetics)
 - [x] All furniture unlocked for all users
 - [x] Non-owners can view furniture but cannot move it
 - [ ] "Invite to Room" via Vibe Check context menu
@@ -179,7 +180,7 @@ const FURNITURE_FOOTPRINTS = [
 On placement, the server checks:
 1. Bounds: `x + w` and `y + h` must fit inside the world.
 2. Overlap: No cell in the footprint may already exist in `occupiedCells`.
-3. Limit: Max 20 items per room.
+3. Limit: Max 100 items per room.
 
 On removal, all cells for that item are removed from both sets.
 
@@ -285,27 +286,46 @@ These formats are documented so users can build their own tools, bots, and room 
 
 **Example:** `0101` = Color 0 (Cyan), Shape 1 (Square), Accessory 0 (None), Pulse 1 (Normal).
 
-### Room Hash (Base64 JSON)
-A Base64-encoded JSON array of furniture objects. Owners can export their current layout via the Build Panel's "Export / Import Layout" section, copy the hash, and paste it later (or in another room) to instantly reconstruct the space.
+### Room Memory Card (PNG Image)
 
-```json
-[
-  { "t": 0, "x": 3, "y": 4, "r": 0 },
-  { "t": 1, "x": 5, "y": 2, "r": 1 }
-]
-```
+Instead of a text hash, FreeLobby uses a **cyberpunk memory card** — a small PNG image (320×200px) that owners can download, save, and upload later to reconstruct their room. This is more user-friendly, visually distinct, and supports far more metadata than a text string.
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `t` | integer | Furniture type ID |
-| `x` | integer | Grid X coordinate (0 = left edge) |
-| `y` | integer | Grid Y coordinate (0 = top edge) |
-| `r` | integer | Rotation in 90° increments (0, 1, 2, 3) |
+**Card Appearance:**
+- Dark void background with electric cyan neon border and corner brackets
+- "ROOM CARD" header + room code
+- Abstract mini grid preview showing furniture placement (adapts to room theme)
+- "FreeLobby" branding
+- A 1-pixel data strip hidden at the very bottom row (row 199)
 
-**Grid cell size:** 64px. World bounds 1200×800 → Grid approx 18×12.  
-**Max items per room:** 20 (enforced by server & client).
+**Data Encoding (Bottom Pixel Row):**
 
-**Import behavior:** The server validates the entire hash atomically before replacing the room's furniture. If any item is invalid, out of bounds, overlapping, or exceeds the limit, the entire import is rejected and the existing room layout is preserved.
+To avoid alpha-channel corruption during PNG compression, we use **2 pixels per item** with alpha pinned to 255.
+
+| Pixel | R | G | B | A | Purpose |
+|-------|---|---|---|---|---------|
+| 0 | Version (1) | Theme ID | Reserved | 255 | Header |
+| 1 | Count | 0 | 0 | 255 | Furniture count |
+| 2+N×2 | Type | Grid X | Grid Y | 255 | Item N position |
+| 3+N×2 | Rotation | Layer | Reserved | 255 | Item N metadata |
+
+- **Version:** Always 1 (for future format changes)
+- **Theme ID:** 0–255 (for different room aesthetics)
+- **Rotation:** 0–3 (90° increments)
+- **Layer:** 0–63 (stacking support)
+
+This format supports:
+- **255 furniture items** per room (expandable)
+- **64 stacking layers** (for rugs-on-rugs, etc.)
+- **256 room themes** (for future aesthetic variations)
+- **Lossless preservation** via PNG export
+
+**Server Events:**
+- `setRoomFurniture({ furniture, theme })` — atomically replaces room layout + theme
+- `setRoomTheme({ theme })` — changes room theme only
+
+**Import behavior:** The server validates the entire furniture array atomically. If any item is invalid, out of bounds, overlapping, or exceeds the limit, the entire import is rejected and the existing room layout is preserved.
+
+**Legacy Support:** The old Base64 JSON `importRoomHash` event remains functional for backward compatibility, but the UI now exclusively uses memory cards.
 
 **Furniture Type IDs:**
 | ID | Name | Footprint | Walkable |

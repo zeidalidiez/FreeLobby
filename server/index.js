@@ -12,7 +12,7 @@ const PORT = process.env.PORT || 3000;
 // ─── Server Limits ──────────────────────────────────────
 const MAX_ROOMS            = 50;
 const MAX_PLAYERS_PER_ROOM = 10;
-const MAX_FURNITURE        = 20;
+const MAX_FURNITURE        = 100;
 const GRID_SIZE            = 64;
 
 const FURNITURE_FOOTPRINTS = [
@@ -110,7 +110,7 @@ function removePlayerFromRoom(socket) {
 }
 
 function createRoom() {
-  return { players: new Map(), revealedPairs: new Set(), occupiedCells: new Set(), blockedCells: new Set() };
+  return { players: new Map(), revealedPairs: new Set(), occupiedCells: new Set(), blockedCells: new Set(), theme: 0 };
 }
 
 function joinPlayerToRoom(socket, roomId, name, customization) {
@@ -160,7 +160,7 @@ io.on('connection', (socket) => {
       return;
     }
     const roomId = generateRoomId();
-    rooms.set(roomId, { players: new Map(), revealedPairs: new Set(), ownerId: socket.id, isPublic: isPublic !== false, furniture: [], occupiedCells: new Set(), blockedCells: new Set() });
+    rooms.set(roomId, { players: new Map(), revealedPairs: new Set(), ownerId: socket.id, isPublic: isPublic !== false, furniture: [], occupiedCells: new Set(), blockedCells: new Set(), theme: 0 });
     const playerData = joinPlayerToRoom(socket, roomId, name, customization);
 
     const room = rooms.get(roomId);
@@ -175,6 +175,7 @@ io.on('connection', (socket) => {
       isOwner: true,
       isPublic: room.isPublic,
       furniture: room.furniture,
+      theme: room.theme,
     });
     console.log(`   ↳ Created room ${roomId} (name: "${playerData.name}", public: ${room.isPublic})`);
   });
@@ -198,6 +199,7 @@ io.on('connection', (socket) => {
       isOwner: room.ownerId === socket.id,
       isPublic: room.isPublic !== false,
       furniture: room.furniture,
+      theme: room.theme,
     });
     
     const scrubbedPlayerData = { ...playerData, name: playerData.strangerName };
@@ -211,7 +213,7 @@ io.on('connection', (socket) => {
     if (!roomId) {
       if (rooms.size >= MAX_ROOMS) { socket.emit('error', { message: 'Server is full. Try again later.' }); return; }
       roomId = generateRoomId();
-      rooms.set(roomId, { players: new Map(), revealedPairs: new Set(), ownerId: socket.id, isPublic: true, furniture: [], occupiedCells: new Set(), blockedCells: new Set() });
+      rooms.set(roomId, { players: new Map(), revealedPairs: new Set(), ownerId: socket.id, isPublic: true, furniture: [], occupiedCells: new Set(), blockedCells: new Set(), theme: 0 });
       console.log(`   ↳ No open rooms, auto-created ${roomId}`);
     }
 
@@ -229,6 +231,7 @@ io.on('connection', (socket) => {
       isOwner: room.ownerId === socket.id,
       isPublic: room.isPublic !== false,
       furniture: room.furniture,
+      theme: room.theme,
     });
     
     const scrubbedPlayerData = { ...playerData, name: playerData.strangerName };
@@ -239,7 +242,7 @@ io.on('connection', (socket) => {
   socket.on('fleeRoom', ({ name, customization }) => {
     removePlayerFromRoom(socket);
     const roomId = generateRoomId();
-    rooms.set(roomId, { players: new Map(), revealedPairs: new Set(), ownerId: socket.id, isPublic: true, furniture: [], occupiedCells: new Set(), blockedCells: new Set() });
+    rooms.set(roomId, { players: new Map(), revealedPairs: new Set(), ownerId: socket.id, isPublic: true, furniture: [], occupiedCells: new Set(), blockedCells: new Set(), theme: 0 });
     const room = rooms.get(roomId);
     const playerData = joinPlayerToRoom(socket, roomId, name, customization);
 
@@ -254,6 +257,7 @@ io.on('connection', (socket) => {
       isOwner: true,
       isPublic: true,
       furniture: room.furniture,
+      theme: room.theme,
     });
     console.log(`   ↳ Fled to new room ${roomId} (name: "${playerData.name}")`);
   });
@@ -314,7 +318,37 @@ io.on('connection', (socket) => {
     }
   });
 
-  // ── Import Room Hash ──
+  // ── Helper: validate & compute occupancy for a furniture array ──
+  function validateFurnitureArray(furniture) {
+    if (!Array.isArray(furniture)) return { ok: false, error: 'Invalid furniture format.' };
+    if (furniture.length > MAX_FURNITURE) return { ok: false, error: `Too many items (max ${MAX_FURNITURE}).` };
+
+    const maxX = Math.floor(1200 / GRID_SIZE);
+    const maxY = Math.floor(800 / GRID_SIZE);
+    const newOccupied = new Set();
+    const newBlocked = new Set();
+
+    for (const item of furniture) {
+      if (!item || typeof item.t !== 'number') return { ok: false, error: 'Invalid furniture item.' };
+      if (item.t < 0 || item.t >= FURNITURE_FOOTPRINTS.length) return { ok: false, error: 'Unknown furniture type.' };
+      if (item.r < 0 || item.r > 3) item.r = 0;
+
+      const fp = getFootprint(item.t, item.r);
+      if (item.x < 0 || item.x + fp.w > maxX || item.y < 0 || item.y + fp.h > maxY) {
+        return { ok: false, error: 'Furniture out of bounds.' };
+      }
+
+      const cells = getCells(item);
+      for (const cell of cells) {
+        if (newOccupied.has(cell)) return { ok: false, error: 'Overlapping furniture.' };
+        newOccupied.add(cell);
+        if (!fp.walkable) newBlocked.add(cell);
+      }
+    }
+    return { ok: true, occupied: newOccupied, blocked: newBlocked };
+  }
+
+  // ── Import Room Hash (Legacy Base64 JSON) ──
   socket.on('importRoomHash', ({ hash }) => {
     const roomId = socket.roomId;
     if (!roomId || !rooms.has(roomId)) return;
@@ -330,53 +364,43 @@ io.on('connection', (socket) => {
       return;
     }
 
-    if (!Array.isArray(furniture)) {
-      socket.emit('error', { message: 'Invalid room hash format.' });
-      return;
-    }
-    if (furniture.length > MAX_FURNITURE) {
-      socket.emit('error', { message: `Hash contains too many items (max ${MAX_FURNITURE}).` });
-      return;
-    }
+    const result = validateFurnitureArray(furniture);
+    if (!result.ok) { socket.emit('error', { message: result.error }); return; }
 
-    const maxX = Math.floor(1200 / GRID_SIZE);
-    const maxY = Math.floor(800 / GRID_SIZE);
-    const newOccupied = new Set();
-    const newBlocked = new Set();
-
-    for (const item of furniture) {
-      if (!item || typeof item.t !== 'number') {
-        socket.emit('error', { message: 'Invalid furniture item in hash.' });
-        return;
-      }
-      if (item.t < 0 || item.t >= FURNITURE_FOOTPRINTS.length) {
-        socket.emit('error', { message: 'Unknown furniture type in hash.' });
-        return;
-      }
-      if (item.r < 0 || item.r > 3) item.r = 0;
-
-      const fp = getFootprint(item.t, item.r);
-      if (item.x < 0 || item.x + fp.w > maxX || item.y < 0 || item.y + fp.h > maxY) {
-        socket.emit('error', { message: 'Furniture out of bounds in hash.' });
-        return;
-      }
-
-      const cells = getCells(item);
-      for (const cell of cells) {
-        if (newOccupied.has(cell)) {
-          socket.emit('error', { message: 'Overlapping furniture in hash.' });
-          return;
-        }
-        newOccupied.add(cell);
-        if (!fp.walkable) newBlocked.add(cell);
-      }
-    }
-
-    // All valid — atomically replace
     room.furniture = furniture;
-    room.occupiedCells = newOccupied;
-    room.blockedCells = newBlocked;
-    io.in(roomId).emit('roomFurnitureReset', { furniture });
+    room.occupiedCells = result.occupied;
+    room.blockedCells = result.blocked;
+    io.in(roomId).emit('roomFurnitureReset', { furniture, theme: room.theme });
+  });
+
+  // ── Set Room Furniture (raw array from decoded memory card) ──
+  socket.on('setRoomFurniture', ({ furniture, theme }) => {
+    const roomId = socket.roomId;
+    if (!roomId || !rooms.has(roomId)) return;
+    const room = rooms.get(roomId);
+    if (room.ownerId !== socket.id) return;
+
+    const result = validateFurnitureArray(furniture);
+    if (!result.ok) { socket.emit('error', { message: result.error }); return; }
+
+    if (typeof theme === 'number' && theme >= 0) room.theme = theme;
+
+    room.furniture = furniture;
+    room.occupiedCells = result.occupied;
+    room.blockedCells = result.blocked;
+    io.in(roomId).emit('roomFurnitureReset', { furniture, theme: room.theme });
+  });
+
+  // ── Set Room Theme ──
+  socket.on('setRoomTheme', ({ theme }) => {
+    const roomId = socket.roomId;
+    if (!roomId || !rooms.has(roomId)) return;
+    const room = rooms.get(roomId);
+    if (room.ownerId !== socket.id) return;
+    if (typeof theme === 'number' && theme >= 0) {
+      room.theme = theme;
+      io.in(roomId).emit('roomThemeChanged', { theme: room.theme });
+    }
   });
 
   // ── Player Movement ──

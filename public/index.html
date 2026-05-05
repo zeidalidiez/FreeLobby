@@ -146,15 +146,14 @@
       <button class="tool-btn" id="tool-remove" title="Remove">−</button>
     </div>
     <div class="furniture-hash-section">
-      <button class="hash-toggle" id="btn-toggle-hash">Export / Import Layout</button>
+      <button class="hash-toggle" id="btn-toggle-hash">Memory Card</button>
       <div class="hash-panel" id="hash-panel">
+        <button class="btn btn-primary btn-sm" id="btn-download-card" style="width:100%;margin-bottom:8px;">Download Room Card</button>
         <div class="hash-row">
-          <input type="text" id="room-hash-export" readonly maxlength="200" placeholder="Room hash…">
-          <button class="btn btn-primary btn-sm" id="btn-copy-room-hash">Copy</button>
-        </div>
-        <div class="hash-row">
-          <input type="text" id="room-hash-import" maxlength="500" placeholder="Paste hash…">
-          <button class="btn btn-primary btn-sm" id="btn-import-room-hash">Load</button>
+          <label class="file-input-label" style="flex:1;text-align:center;padding:8px;font-size:0.78rem;color:var(--text-secondary);cursor:pointer;border:1px dashed var(--border-glass);border-radius:var(--radius-sm);">
+            <input type="file" id="card-file-input" accept="image/png" style="display:none;">
+            Upload Room Card
+          </label>
         </div>
       </div>
     </div>
