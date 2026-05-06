@@ -42,8 +42,6 @@ const loveBtn       = document.getElementById('love-btn');
 const loveModal     = document.getElementById('love-modal');
 const loveModalClose = document.getElementById('love-modal-close');
 
-const btnPublic     = document.getElementById('btn-public');
-const btnPrivate    = document.getElementById('btn-private');
 const ownerBadge    = document.getElementById('owner-badge');
 
 let game = null;
@@ -53,7 +51,6 @@ let currentRoomId = null;
 let joinMode = 'random';
 let joinRoomCode = '';
 let isRoomOwner = false;
-let createRoomPublic = true;
 
 // Vibe Check state
 let vibeTargetId = null;     // who we clicked on
@@ -244,7 +241,6 @@ function enterGame(mode, roomCode) {
   playerName = nameInput.value.trim() || 'Stranger';
   joinMode = mode;
   joinRoomCode = roomCode || '';
-  createRoomPublic = btnPublic.classList.contains('active');
 
   landingScreen.classList.add('hidden');
   gameContainer.classList.add('active');
@@ -301,6 +297,7 @@ function exitGame() {
   currentRoomId = null;
   roomIdDisplay.textContent = '----';
   otherPlayers.clear();
+  mutedPlayers.clear();
   player = null;
   playerAccessory = null;
   targetPosition = null;
@@ -385,6 +382,60 @@ loveBtn.addEventListener('pointerdown', (e) => {
 loveModalClose.addEventListener('click', () => loveModal.classList.remove('visible'));
 loveModal.addEventListener('click', (e) => {
   if (e.target === loveModal) loveModal.classList.remove('visible');
+});
+
+// ─── Vibe Check & Mute UI ──────────────────────────────
+
+const mutedPlayers = new Set(); // socket IDs of muted strangers
+const muteActionBtn = document.getElementById('mute-action-btn');
+
+// "✦ Vibe Check" button in the action popup
+vibeActionBtn.addEventListener('click', () => {
+  if (vibeTargetId && socket && socket.connected) {
+    socket.emit('vibeCheckRequest', { targetId: vibeTargetId });
+    vibeAction.classList.remove('visible');
+    showEmoteBubble(player, '✦');
+  }
+});
+
+// "Mute/Unmute" button in the action popup
+muteActionBtn.addEventListener('click', () => {
+  if (!vibeTargetId) return;
+  if (mutedPlayers.has(vibeTargetId)) {
+    mutedPlayers.delete(vibeTargetId);
+    muteActionBtn.textContent = 'Mute';
+    muteActionBtn.classList.remove('active');
+  } else {
+    mutedPlayers.add(vibeTargetId);
+    muteActionBtn.textContent = 'Unmute';
+    muteActionBtn.classList.add('active');
+  }
+});
+
+// Close action popup when clicking elsewhere
+document.addEventListener('pointerdown', (e) => {
+  if (!vibeAction.contains(e.target)) {
+    vibeAction.classList.remove('visible');
+    vibeTargetId = null;
+  }
+});
+
+// Accept vibe check prompt
+vibeAcceptBtn.addEventListener('click', () => {
+  if (vibePromptFromId && socket && socket.connected) {
+    socket.emit('vibeCheckRespond', { fromId: vibePromptFromId, accepted: true });
+  }
+  vibePrompt.classList.remove('visible');
+  vibePromptFromId = null;
+});
+
+// Decline vibe check prompt
+vibeDeclineBtn.addEventListener('click', () => {
+  if (vibePromptFromId && socket && socket.connected) {
+    socket.emit('vibeCheckRespond', { fromId: vibePromptFromId, accepted: false });
+  }
+  vibePrompt.classList.remove('visible');
+  vibePromptFromId = null;
 });
 
 // Phase 3 — Furniture Build Mode
@@ -848,6 +899,14 @@ function spawnOtherPlayer(data) {
   sprite.setInteractive({ useHandCursor: true });
   sprite.on('pointerdown', (pointer) => {
     vibeTargetId = data.id;
+    // Update mute button state for this target
+    if (mutedPlayers.has(data.id)) {
+      muteActionBtn.textContent = 'Unmute';
+      muteActionBtn.classList.add('active');
+    } else {
+      muteActionBtn.textContent = 'Mute';
+      muteActionBtn.classList.remove('active');
+    }
     const screenX = pointer.event.clientX ?? pointer.x;
     const screenY = pointer.event.clientY ?? pointer.y;
     vibeAction.style.left = `${Math.min(screenX + 10, window.innerWidth - 140)}px`;
@@ -1210,7 +1269,7 @@ function connectSocket() {
     setConnectionStatus(true);
 
     if (joinMode === 'random') socket.emit('joinRandomRoom', { name: playerName, customization: CUSTOMIZATION });
-    else if (joinMode === 'create') socket.emit('createRoom', { name: playerName, customization: CUSTOMIZATION, isPublic: createRoomPublic });
+    else if (joinMode === 'create') socket.emit('createRoom', { name: playerName, customization: CUSTOMIZATION, isPublic: false });
     else if (joinMode === 'code') socket.emit('joinRoom', { roomId: joinRoomCode, name: playerName, customization: CUSTOMIZATION });
   });
 
@@ -1219,7 +1278,9 @@ function connectSocket() {
     roomIdDisplay.textContent = roomId;
     isRoomOwner = !!isOwner;
     roomTheme = theme || 0;
-    if (isRoomOwner) { ownerBadge.classList.add('visible'); buildBtn.classList.add('visible'); }
+    // Build mode only available in private rooms where you are the owner
+    const canBuild = isRoomOwner && !isPublic;
+    if (canBuild) { ownerBadge.classList.add('visible'); buildBtn.classList.add('visible'); }
     else { ownerBadge.classList.remove('visible'); buildBtn.classList.remove('visible'); buildBtn.classList.remove('active'); furniturePanel.classList.remove('visible'); buildMode = false; }
     console.log(`✦ Joined room ${roomId}. Local player: ${you.name}. Owner: ${isRoomOwner}. Public: ${isPublic !== false}. Theme: ${roomTheme}.`);
 
@@ -1268,6 +1329,7 @@ function connectSocket() {
 
   // ── Phase 3: Emotes & Signs ──
   socket.on('playerEmote', ({ id, emote }) => {
+    if (mutedPlayers.has(id)) return; // Mute filter
     const sprite = getSpriteForPlayer(id);
     if (sprite) showEmoteBubble(sprite, emote);
   });
@@ -1330,6 +1392,10 @@ function connectSocket() {
 
   socket.on('roomThemeChanged', ({ theme }) => {
     if (typeof theme === 'number') roomTheme = theme;
+  });
+
+  socket.on('buildError', ({ message }) => {
+    showError(message);
   });
 
   socket.on('error', ({ message }) => {

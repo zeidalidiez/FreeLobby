@@ -14,6 +14,7 @@ const MAX_ROOMS            = 50;
 const MAX_PLAYERS_PER_ROOM = 10;
 const MAX_FURNITURE        = 100;
 const GRID_SIZE            = 64;
+const ROOM_EMOTE_CAP_PER_SEC = 30;
 
 const FURNITURE_FOOTPRINTS = [
   { w: 1, h: 1, walkable: false }, // 0: Cube
@@ -110,12 +111,23 @@ function removePlayerFromRoom(socket) {
 }
 
 function createRoom() {
-  return { players: new Map(), revealedPairs: new Set(), occupiedCells: new Set(), blockedCells: new Set(), theme: 0 };
+  return { players: new Map(), revealedPairs: new Set(), occupiedCells: new Set(), blockedCells: new Set(), theme: 0, emoteWindow: { startMs: 0, count: 0 } };
+}
+
+function sanitizeName(raw) {
+  if (typeof raw !== 'string') return 'Anon';
+  // Strip control characters and zero-width characters, then clip to 24.
+  const cleaned = raw
+    .replace(/[\u0000-\u001F\u007F-\u009F\u200B-\u200F\u202A-\u202E\uFEFF]/g, '')
+    .trim()
+    .slice(0, 24);
+  return cleaned.length > 0 ? cleaned : 'Anon';
 }
 
 function joinPlayerToRoom(socket, roomId, name, customization) {
   const room = rooms.get(roomId);
   const color = getNextColor(room);
+  const safeName = sanitizeName(name);
   
   // Assign a unique stranger name
   const existingAliases = new Set(Array.from(room.players.values()).map(p => p.strangerName));
@@ -129,7 +141,7 @@ function joinPlayerToRoom(socket, roomId, name, customization) {
 
   const playerData = {
     id: socket.id,
-    name: name || 'Stranger',
+    name: safeName,
     strangerName,
     x: 600,
     y: 400,
@@ -154,13 +166,14 @@ io.on('connection', (socket) => {
   console.log(`✦ Player connected   [${socket.id}]`);
 
   // ── Create Room ──
-  socket.on('createRoom', ({ name, customization, isPublic }) => {
+  socket.on('createRoom', ({ name, customization }) => {
     if (rooms.size >= MAX_ROOMS) {
       socket.emit('error', { message: 'Server is full. Try again later.' });
       return;
     }
     const roomId = generateRoomId();
-    rooms.set(roomId, { players: new Map(), revealedPairs: new Set(), ownerId: socket.id, isPublic: isPublic !== false, furniture: [], occupiedCells: new Set(), blockedCells: new Set(), theme: 0 });
+    // Create Room always creates a PRIVATE room with the creator as owner
+    rooms.set(roomId, { players: new Map(), revealedPairs: new Set(), ownerId: socket.id, isPublic: false, furniture: [], occupiedCells: new Set(), blockedCells: new Set(), theme: 0, emoteWindow: { startMs: 0, count: 0 } });
     const playerData = joinPlayerToRoom(socket, roomId, name, customization);
 
     const room = rooms.get(roomId);
@@ -173,11 +186,11 @@ io.on('connection', (socket) => {
       roomId, you: playerData,
       players: sanitizedPlayers,
       isOwner: true,
-      isPublic: room.isPublic,
+      isPublic: false,
       furniture: room.furniture,
       theme: room.theme,
     });
-    console.log(`   ↳ Created room ${roomId} (name: "${playerData.name}", public: ${room.isPublic})`);
+    console.log(`   ↳ Created private room ${roomId} (name: "${playerData.name}")`);
   });
 
   // ── Join Specific Room ──
@@ -213,8 +226,9 @@ io.on('connection', (socket) => {
     if (!roomId) {
       if (rooms.size >= MAX_ROOMS) { socket.emit('error', { message: 'Server is full. Try again later.' }); return; }
       roomId = generateRoomId();
-      rooms.set(roomId, { players: new Map(), revealedPairs: new Set(), ownerId: socket.id, isPublic: true, furniture: [], occupiedCells: new Set(), blockedCells: new Set(), theme: 0 });
-      console.log(`   ↳ No open rooms, auto-created ${roomId}`);
+      // Auto-created random rooms have NO owner and are PUBLIC
+      rooms.set(roomId, { players: new Map(), revealedPairs: new Set(), ownerId: null, isPublic: true, furniture: [], occupiedCells: new Set(), blockedCells: new Set(), theme: 0, emoteWindow: { startMs: 0, count: 0 } });
+      console.log(`   ↳ No open rooms, auto-created random ${roomId}`);
     }
 
     const room = rooms.get(roomId);
@@ -242,7 +256,8 @@ io.on('connection', (socket) => {
   socket.on('fleeRoom', ({ name, customization }) => {
     removePlayerFromRoom(socket);
     const roomId = generateRoomId();
-    rooms.set(roomId, { players: new Map(), revealedPairs: new Set(), ownerId: socket.id, isPublic: true, furniture: [], occupiedCells: new Set(), blockedCells: new Set(), theme: 0 });
+    // Flee always creates a PRIVATE room owned by the fleer
+    rooms.set(roomId, { players: new Map(), revealedPairs: new Set(), ownerId: socket.id, isPublic: false, furniture: [], occupiedCells: new Set(), blockedCells: new Set(), theme: 0, emoteWindow: { startMs: 0, count: 0 } });
     const room = rooms.get(roomId);
     const playerData = joinPlayerToRoom(socket, roomId, name, customization);
 
@@ -255,11 +270,11 @@ io.on('connection', (socket) => {
       roomId, you: playerData,
       players: sanitizedPlayers,
       isOwner: true,
-      isPublic: true,
+      isPublic: false,
       furniture: room.furniture,
       theme: room.theme,
     });
-    console.log(`   ↳ Fled to new room ${roomId} (name: "${playerData.name}")`);
+    console.log(`   ↳ Fled to private room ${roomId} (name: "${playerData.name}")`);
   });
 
   // ── Furniture Placement ──
@@ -267,10 +282,11 @@ io.on('connection', (socket) => {
     const roomId = socket.roomId;
     if (!roomId || !rooms.has(roomId)) return;
     const room = rooms.get(roomId);
-    if (room.ownerId !== socket.id) return;
+    // Build mode only works in private rooms with an owner
+    if (room.isPublic || room.ownerId !== socket.id) return;
     if (!item || typeof item.t !== 'number') return;
     if (room.furniture.length >= MAX_FURNITURE) {
-      socket.emit('error', { message: 'Room furniture limit reached (20).' });
+      socket.emit('buildError', { message: `Room furniture limit reached (${MAX_FURNITURE}).` });
       return;
     }
     const maxX = Math.floor(1200 / GRID_SIZE);
@@ -280,14 +296,14 @@ io.on('connection', (socket) => {
 
     const fp = getFootprint(item.t, item.r);
     if (item.x < 0 || item.x + fp.w > maxX || item.y < 0 || item.y + fp.h > maxY) {
-      socket.emit('error', { message: 'Furniture out of bounds.' });
+      socket.emit('buildError', { message: 'Furniture out of bounds.' });
       return;
     }
 
     const cells = getCells(item);
     for (const cell of cells) {
       if (room.occupiedCells.has(cell)) {
-        socket.emit('error', { message: 'Space is already occupied.' });
+        socket.emit('buildError', { message: 'Space is already occupied.' });
         return;
       }
     }
@@ -305,7 +321,8 @@ io.on('connection', (socket) => {
     const roomId = socket.roomId;
     if (!roomId || !rooms.has(roomId)) return;
     const room = rooms.get(roomId);
-    if (room.ownerId !== socket.id) return;
+    // Build mode only works in private rooms with an owner
+    if (room.isPublic || room.ownerId !== socket.id) return;
     if (index >= 0 && index < room.furniture.length) {
       const item = room.furniture[index];
       const cells = getCells(item);
@@ -360,12 +377,12 @@ io.on('connection', (socket) => {
       const json = Buffer.from(hash, 'base64').toString('utf-8');
       furniture = JSON.parse(json);
     } catch {
-      socket.emit('error', { message: 'Invalid room hash.' });
+      socket.emit('buildError', { message: 'Invalid room hash.' });
       return;
     }
 
     const result = validateFurnitureArray(furniture);
-    if (!result.ok) { socket.emit('error', { message: result.error }); return; }
+    if (!result.ok) { socket.emit('buildError', { message: result.error }); return; }
 
     room.furniture = furniture;
     room.occupiedCells = result.occupied;
@@ -381,7 +398,7 @@ io.on('connection', (socket) => {
     if (room.ownerId !== socket.id) return;
 
     const result = validateFurnitureArray(furniture);
-    if (!result.ok) { socket.emit('error', { message: result.error }); return; }
+    if (!result.ok) { socket.emit('buildError', { message: result.error }); return; }
 
     if (typeof theme === 'number' && theme >= 0) room.theme = theme;
 
@@ -419,10 +436,19 @@ io.on('connection', (socket) => {
   // ── Emote ──
   socket.on('sendEmote', ({ emote }) => {
     const roomId = socket.roomId;
-    if (!roomId) return;
+    if (!roomId || !rooms.has(roomId)) return;
+    const room = rooms.get(roomId);
     const now = Date.now();
+    // Per-user rate limit (500ms)
     if (socket._lastEmote && now - socket._lastEmote < 500) return;
     socket._lastEmote = now;
+    // Per-room aggregate cap (30/sec sliding window) — silent drop
+    if (now - room.emoteWindow.startMs > 1000) {
+      room.emoteWindow.startMs = now;
+      room.emoteWindow.count = 0;
+    }
+    if (room.emoteWindow.count >= ROOM_EMOTE_CAP_PER_SEC) return;
+    room.emoteWindow.count += 1;
     if (socket.playerData) socket.playerData.lastActive = now;
     io.in(roomId).emit('playerEmote', { id: socket.id, emote });
   });

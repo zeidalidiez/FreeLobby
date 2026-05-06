@@ -776,6 +776,22 @@ body::before {
   background: rgba(255, 255, 255, 0.08);
 }
 
+.vibe-action-btn.mute-btn {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  padding: 6px 16px;
+  border-top: 1px solid var(--border-glass);
+}
+
+.vibe-action-btn.mute-btn:hover {
+  color: #ff007f;
+  background: rgba(255, 0, 127, 0.08);
+}
+
+.vibe-action-btn.mute-btn.active {
+  color: #ff007f;
+}
+
 /* ─── Vibe Check Prompt ─────────────────────────────── */
 .vibe-prompt {
   position: fixed;
@@ -1131,34 +1147,6 @@ body::before {
 .customize-import-row input:focus {
   border-color: var(--accent-primary);
   box-shadow: 0 0 0 3px var(--accent-glow);
-}
-
-/* ─── Room Type Toggle ──────────────────────────────── */
-.room-type-toggle {
-  display: flex;
-  gap: 0;
-  margin-bottom: 16px;
-  background: rgba(15, 23, 42, 0.7);
-  border: 1px solid var(--border-glass);
-  border-radius: var(--radius-sm);
-  overflow: hidden;
-}
-
-.room-type-btn {
-  flex: 1;
-  padding: 10px 0;
-  background: transparent;
-  border: none;
-  color: var(--text-muted);
-  font-family: var(--font-body);
-  font-size: 0.82rem;
-  cursor: pointer;
-  transition: var(--transition-smooth);
-}
-
-.room-type-btn.active {
-  background: rgba(0, 240, 255, 0.1);
-  color: var(--accent-primary);
 }
 
 /* ─── Owner Badge ───────────────────────────────────── */

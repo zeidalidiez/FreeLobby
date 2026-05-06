@@ -48,7 +48,22 @@ To avoid drift, do **not** start any of these in this pass — they belong to la
 
 ---
 
-## 3. Task list (do in order)
+## 3. Task list (COMPLETED)
+
+- [x] Task 1 — Remove Top Notch QA sponsor block
+- [x] Task 2 — Add MIT LICENSE file
+- [x] Task 3 — Fix furniture limit string (interpolated `MAX_FURNITURE`)
+- [x] Task 4 — Server-side name sanitization (`sanitizeName()`)
+- [x] Task 5 — Per-room emote rate cap (30/sec silent drop)
+- [x] Task 6 — Mute Stranger N toggle (client-side, session-only)
+- [x] Task 7 — Build mode restricted to private rooms only
+- [x] Task 8 — Invite to Room (PAUSED — consent concern)
+- [x] Task 9 — Flee Button creates private room
+- [x] Task 10 — Fix `.vscode/launch.json` port (8080 → 3000)
+
+---
+
+## 3. Task list (do in order) [ARCHIVED]
 
 ### Task 1 — Remove the Top Notch QA sponsor block from the love modal
 
@@ -226,35 +241,13 @@ room.emoteWindow.count += 1;
 
 ---
 
-### Task 8 — Phase 3 closeout: "Invite to Room" via Vibe Check context menu
+### Task 8 — ~~Phase 3 closeout: "Invite to Room" via Vibe Check context menu~~ **PAUSED**
 
-**What:** The last unchecked Phase 3 item in `AI.MD §5`. Add an "Invite to my room" option to the Vibe Check context menu so players who have mutually Vibe-Checked can pull each other into a private room.
+**Status:** Punted. The user (Zeid) is second-guessing whether this fits the consent ethos. 
 
-**Constraints:**
-- The "Invite to my room" option **only appears when the inviter is currently in a private room they own.** It does not appear in random or common rooms (no ownership relationship; the matchmaker / browse-list is the right path for those).
-- Both players must already be in `revealedPairs` (mutual Vibe Check passed). Inviting a non-revealed stranger is a covert side-channel and a violation of the consent gate.
+**Concern:** Even with the Vibe Check gate, an "Invite to Room" creates a coercion vector — someone who feels social pressure to accept a Vibe Check may then feel pressured to enter a private space they don't control. The Vibe Check unlocks *conversation*, not *proximity in a controlled environment*. 
 
-**Design:**
-- Inviter sends `sendInvite` with their current room code.
-- Server validates:
-  - Both players exist
-  - The pair is in `revealedPairs`
-  - The inviter's room is private (`isPublic: false`)
-  - The inviter is the room owner (`ownerId === inviter.socketId`)
-  - The inviter's room isn't full
-- Invitee receives an `invitationReceived` event. UI shows a small toast: *"`<RealName>` invites you to room `<code>`. Join? / Decline?"*
-- Decline produces no event back to the inviter (silent — consistent with Vibe Check decline).
-- On accept, the invitee leaves their current room and joins the inviter's room as a guest.
-- Rate limit: max 1 invite from a given inviter to a given invitee per 30 seconds.
-
-**Where:** `server/index.js` (new event handlers `sendInvite` / `acceptInvite`), `public/js/game.js` (context menu entry, toast UI, accept handler).
-
-**Acceptance:**
-- The invite menu only appears when the inviter is in a private room they own AND the avatar right-clicked has been Vibe-Checked.
-- Decline produces no event back to the inviter (silent).
-- Accept moves the invitee into the inviter's room cleanly (no ghost player in the old room).
-- An attempt to invite a non-revealed player or invite from a non-private room is rejected server-side and produces no client-visible state change.
-- Invites cannot be spammed (rate limit enforced).
+**Decision:** Do not implement unless a safer design emerges (e.g., opt-in room discovery where users browse available rooms voluntarily, rather than receiving direct invites).
 
 ---
 
@@ -331,7 +324,15 @@ The `socket.emit('joinedRoom', { ... isPublic: false, isOwner: true ... })` payl
 
 ---
 
-## 6. Completion log (append as you go)
+## 6. Completion log
 
-<!-- Add a one-line note per task as you ship it, e.g.: -->
-<!-- - Task 1 done (commit abcd123). Modal renders cleanly without sponsor block. -->
+- Task 1 done. Sponsor block removed from love modal. Modal renders cleanly.
+- Task 2 done. MIT LICENSE file created at repo root.
+- Task 3 done. Furniture limit string now interpolates `MAX_FURNITURE` (currently 100).
+- Task 4 done. `sanitizeName()` strips control chars, zero-width spaces, BOM; clips to 24 chars; falls back to 'Anon'.
+- Task 5 done. Per-room emote sliding window cap: 30/sec. Silent drop when exceeded.
+- Task 6 done. Mute toggle in vibe-action popup. Client-side only, session-only. Filters `playerEmote` events.
+- Task 7 done. Build mode and Memory Cards restricted to private rooms. Random rooms have `ownerId: null`.
+- Task 8 PAUSED. Invite to Room feature punted due to consent/coercion concerns.
+- Task 9 done. Flee Button now creates a private room (`isPublic: false`, owner = fleer).
+- Task 10 done. VS Code launch.json port corrected: 8080 → 3000.
