@@ -12,9 +12,99 @@ const PORT = process.env.PORT || 3000;
 // ─── Server Limits ──────────────────────────────────────
 const MAX_ROOMS            = 50;
 const MAX_PLAYERS_PER_ROOM = 10;
+const MAX_PLAYERS_PER_COMMON_ROOM = 25;
 const MAX_FURNITURE        = 100;
 const GRID_SIZE            = 64;
 const ROOM_EMOTE_CAP_PER_SEC = 30;
+
+// ─── Common Room Definitions ────────────────────────────
+// Common rooms are server-curated, persistent, and never die when empty.
+// They have larger dimensions and higher player caps.
+const COMMON_ROOMS_DEF = [
+  {
+    id: 'LOBBY',
+    name: 'The Lobby',
+    description: 'A welcoming space for new arrivals',
+    theme: 0,
+    width: 1600,
+    height: 1000,
+    maxPlayers: 25,
+    furniture: [
+      { t: 7, x: 10, y: 6, r: 0 },   // rug center
+      { t: 4, x: 11, y: 7, r: 0 },   // chair
+      { t: 4, x: 14, y: 7, r: 0 },   // chair
+      { t: 4, x: 11, y: 10, r: 2 },  // chair
+      { t: 4, x: 14, y: 10, r: 2 },  // chair
+      { t: 10, x: 12, y: 8, r: 0 },  // couch
+      { t: 6, x: 9, y: 5, r: 0 },    // lamp
+      { t: 6, x: 17, y: 5, r: 0 },   // lamp
+      { t: 5, x: 8, y: 12, r: 0 },   // plant
+      { t: 5, x: 18, y: 12, r: 0 },  // plant
+      { t: 13, x: 15, y: 4, r: 0 },  // tv
+      { t: 11, x: 20, y: 8, r: 0 },  // console
+      { t: 15, x: 22, y: 6, r: 0 },  // cat
+      { t: 16, x: 7, y: 9, r: 0 },   // dog
+      { t: 0, x: 5, y: 5, r: 0 },    // cube decor
+      { t: 1, x: 5, y: 13, r: 0 },   // sphere decor
+      { t: 2, x: 21, y: 13, r: 0 },  // cylinder decor
+      { t: 3, x: 21, y: 5, r: 0 },   // pyramid decor
+    ],
+  },
+  {
+    id: 'GARDEN',
+    name: 'Zen Garden',
+    description: 'A quiet corner with soft light',
+    theme: 0,
+    width: 1600,
+    height: 1000,
+    maxPlayers: 20,
+    furniture: [
+      { t: 7, x: 8, y: 4, r: 0 },    // rug
+      { t: 7, x: 14, y: 10, r: 0 },  // rug
+      { t: 4, x: 9, y: 5, r: 0 },    // chair
+      { t: 4, x: 15, y: 11, r: 2 },  // chair
+      { t: 5, x: 7, y: 3, r: 0 },    // plant
+      { t: 5, x: 12, y: 7, r: 0 },   // plant
+      { t: 5, x: 18, y: 12, r: 0 },  // plant
+      { t: 5, x: 20, y: 4, r: 0 },   // plant
+      { t: 6, x: 10, y: 8, r: 0 },   // lamp
+      { t: 6, x: 16, y: 6, r: 0 },   // lamp
+      { t: 15, x: 11, y: 9, r: 0 },  // cat
+      { t: 17, x: 19, y: 8, r: 0 },  // rabbit
+      { t: 18, x: 6, y: 11, r: 0 },  // fishbowl
+      { t: 0, x: 5, y: 7, r: 0 },    // cube
+      { t: 1, x: 21, y: 10, r: 0 },  // sphere
+    ],
+  },
+  {
+    id: 'LIBRARY',
+    name: 'The Library',
+    description: 'Low light, soft chairs, good for lurking',
+    theme: 0,
+    width: 1600,
+    height: 1000,
+    maxPlayers: 20,
+    furniture: [
+      { t: 7, x: 6, y: 5, r: 0 },    // rug
+      { t: 7, x: 16, y: 5, r: 0 },   // rug
+      { t: 7, x: 11, y: 11, r: 0 },  // rug
+      { t: 4, x: 7, y: 6, r: 0 },    // chair
+      { t: 4, x: 17, y: 6, r: 0 },   // chair
+      { t: 4, x: 12, y: 12, r: 2 },  // chair
+      { t: 10, x: 9, y: 5, r: 0 },   // couch
+      { t: 10, x: 19, y: 5, r: 0 },  // couch
+      { t: 6, x: 8, y: 4, r: 0 },    // lamp
+      { t: 6, x: 18, y: 4, r: 0 },   // lamp
+      { t: 6, x: 13, y: 10, r: 0 },  // lamp
+      { t: 5, x: 5, y: 10, r: 0 },   // plant
+      { t: 5, x: 22, y: 10, r: 0 },  // plant
+      { t: 13, x: 14, y: 3, r: 0 },  // tv
+      { t: 12, x: 10, y: 8, r: 0 },  // computer
+      { t: 15, x: 20, y: 9, r: 0 },  // cat
+      { t: 16, x: 6, y: 9, r: 0 },   // dog
+    ],
+  },
+];
 
 const FURNITURE_FOOTPRINTS = [
   { w: 1, h: 1, walkable: false }, // 0: Cube
@@ -76,7 +166,7 @@ const PLAYER_COLORS = [
 function generateRoomId() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   let id = '';
-  for (let i = 0; i < 4; i++) id += chars[Math.floor(Math.random() * chars.length)];
+  for (let i = 0; i < 6; i++) id += chars[Math.floor(Math.random() * chars.length)];
   return rooms.has(id) ? generateRoomId() : id;
 }
 
@@ -87,13 +177,42 @@ function getNextColor(room) {
 function findJoinableRoom() {
   const available = [];
   for (const [roomId, room] of rooms) {
-    if (room.isPublic !== false && room.players.size < MAX_PLAYERS_PER_ROOM) available.push(roomId);
+    const max = room.maxPlayers || MAX_PLAYERS_PER_ROOM;
+    if (room.isPublic !== false && room.players.size < max) available.push(roomId);
   }
-  
+
   if (available.length === 0) return null;
 
   // Distribute the player randomly across any of the available active public rooms
   return available[Math.floor(Math.random() * available.length)];
+}
+
+function getCommonRoomsList() {
+  return COMMON_ROOMS_DEF.map(def => {
+    const room = rooms.get(def.id);
+    return {
+      id: def.id,
+      name: def.name,
+      description: def.description,
+      playerCount: room ? room.players.size : 0,
+      maxPlayers: def.maxPlayers || MAX_PLAYERS_PER_COMMON_ROOM,
+    };
+  });
+}
+
+function getPublicRoomsList() {
+  const list = [];
+  for (const [roomId, room] of rooms) {
+    if (room.isCommon) continue;
+    if (!room.isPublic) continue;
+    if (room.players.size === 0) continue;
+    list.push({
+      id: roomId,
+      playerCount: room.players.size,
+      maxPlayers: room.maxPlayers || MAX_PLAYERS_PER_ROOM,
+    });
+  }
+  return list;
 }
 
 /** Create a canonical pair key for two socket IDs */
@@ -116,6 +235,9 @@ function removePlayerFromRoom(socket) {
   socket.to(roomId).emit('playerLeft', { id: socket.id });
   console.log(`   ↳ Removed from room ${roomId} (${room.players.size} left)`);
 
+  // Common rooms never die
+  if (room.isCommon) return;
+
   if (room.players.size === 0) {
     rooms.delete(roomId);
     console.log(`   ↳ Room ${roomId} deleted (empty)`);
@@ -123,7 +245,47 @@ function removePlayerFromRoom(socket) {
 }
 
 function createRoom() {
-  return { players: new Map(), revealedPairs: new Set(), occupiedCells: new Set(), blockedCells: new Set(), theme: 0, emoteWindow: { startMs: 0, count: 0 } };
+  return { players: new Map(), revealedPairs: new Set(), occupiedCells: new Set(), blockedCells: new Set(), theme: 0, emoteWindow: { startMs: 0, count: 0 }, width: 1200, height: 800 };
+}
+
+function initCommonRooms() {
+  for (const def of COMMON_ROOMS_DEF) {
+    const room = {
+      players: new Map(),
+      revealedPairs: new Set(),
+      ownerId: null,
+      isPublic: true,
+      isCommon: true,
+      furniture: [],
+      occupiedCells: new Set(),
+      blockedCells: new Set(),
+      theme: def.theme || 0,
+      emoteWindow: { startMs: 0, count: 0 },
+      nextFurnitureId: 1,
+      interactiveStates: new Map(),
+      ambientTrack: 0,
+      width: def.width || 1600,
+      height: def.height || 1000,
+      maxPlayers: def.maxPlayers || MAX_PLAYERS_PER_COMMON_ROOM,
+      commonName: def.name,
+      commonDescription: def.description,
+    };
+
+    // Pre-place furniture
+    for (const item of def.furniture) {
+      const fp = getFootprint(item.t, item.r);
+      const cells = getCells(item);
+      for (const cell of cells) {
+        room.occupiedCells.add(cell);
+        if (!fp.walkable) room.blockedCells.add(cell);
+      }
+      item.id = room.nextFurnitureId++;
+      room.furniture.push(item);
+    }
+
+    rooms.set(def.id, room);
+    console.log(`   ↳ Common room created: ${def.name} (${def.id}) ${def.width}x${def.height}`);
+  }
 }
 
 function sanitizeName(raw) {
@@ -140,7 +302,7 @@ function joinPlayerToRoom(socket, roomId, name, customization) {
   const room = rooms.get(roomId);
   const color = getNextColor(room);
   const safeName = sanitizeName(name);
-  
+
   // Assign a unique stranger name
   const existingAliases = new Set(Array.from(room.players.values()).map(p => p.strangerName));
   let strangerName = 'Stranger X';
@@ -151,12 +313,15 @@ function joinPlayerToRoom(socket, roomId, name, customization) {
      }
   }
 
+  const spawnX = (room.width || 1200) / 2;
+  const spawnY = (room.height || 800) / 2;
+
   const playerData = {
     id: socket.id,
     name: safeName,
     strangerName,
-    x: 600,
-    y: 400,
+    x: spawnX,
+    y: spawnY,
     color,
     lastActive: Date.now(),
     customization: customization || { colorIdx: 0, shape: 0, accessory: 0, pulse: 1 },
@@ -202,10 +367,13 @@ io.on('connection', (socket) => {
       players: sanitizedPlayers,
       isOwner: true,
       isPublic: false,
+      isCommon: false,
       furniture: room.furniture,
       theme: room.theme,
       interactiveStates: interactiveStatesObj,
       ambientTrack: room.ambientTrack || 0,
+      width: room.width || 1200,
+      height: room.height || 800,
     });
     console.log(`   ↳ Created private room ${roomId} (name: "${playerData.name}")`);
   });
@@ -214,7 +382,8 @@ io.on('connection', (socket) => {
   socket.on('joinRoom', ({ roomId, name, customization }) => {
     const room = rooms.get(roomId);
     if (!room) { socket.emit('error', { message: `Room "${roomId}" not found.` }); return; }
-    if (room.players.size >= MAX_PLAYERS_PER_ROOM) { socket.emit('error', { message: 'That room is full.' }); return; }
+    const maxPlayers = room.maxPlayers || MAX_PLAYERS_PER_ROOM;
+    if (room.players.size >= maxPlayers) { socket.emit('error', { message: 'That room is full.' }); return; }
 
     const playerData = joinPlayerToRoom(socket, roomId, name, customization);
 
@@ -230,10 +399,14 @@ io.on('connection', (socket) => {
       players: sanitizedPlayers,
       isOwner: room.ownerId === socket.id,
       isPublic: room.isPublic !== false,
+      isCommon: !!room.isCommon,
+      commonName: room.commonName || null,
       furniture: room.furniture,
       theme: room.theme,
       interactiveStates: interactiveStatesObj2,
       ambientTrack: room.ambientTrack || 0,
+      width: room.width || 1200,
+      height: room.height || 800,
     });
     
     const scrubbedPlayerData = { ...playerData, name: playerData.strangerName };
@@ -267,15 +440,24 @@ io.on('connection', (socket) => {
       players: sanitizedPlayers,
       isOwner: room.ownerId === socket.id,
       isPublic: room.isPublic !== false,
+      isCommon: !!room.isCommon,
+      commonName: room.commonName || null,
       furniture: room.furniture,
       theme: room.theme,
       interactiveStates: interactiveStatesObj3,
       ambientTrack: room.ambientTrack || 0,
+      width: room.width || 1200,
+      height: room.height || 800,
     });
     
     const scrubbedPlayerData = { ...playerData, name: playerData.strangerName };
     socket.to(roomId).emit('playerJoined', scrubbedPlayerData);
     console.log(`   ↳ Joined random room ${roomId} (name: "${playerData.name}", total: ${room.players.size})`);
+  });
+
+  socket.on('leaveRoom', () => {
+    removePlayerFromRoom(socket);
+    socket.roomId = null;
   });
 
   socket.on('fleeRoom', ({ name, customization }) => {
@@ -298,12 +480,61 @@ io.on('connection', (socket) => {
       players: sanitizedPlayers,
       isOwner: true,
       isPublic: false,
+      isCommon: false,
       furniture: room.furniture,
       theme: room.theme,
       interactiveStates: interactiveStatesObj4,
       ambientTrack: room.ambientTrack || 0,
+      width: room.width || 1200,
+      height: room.height || 800,
     });
     console.log(`   ↳ Fled to private room ${roomId} (name: "${playerData.name}")`);
+  });
+
+  // ── Get Common Rooms ──
+  socket.on('getCommonRooms', () => {
+    socket.emit('commonRoomsList', getCommonRoomsList());
+  });
+
+  // ── Get Public Rooms ──
+  socket.on('getPublicRooms', () => {
+    socket.emit('publicRoomsList', getPublicRoomsList());
+  });
+
+  // ── Join Common Room ──
+  socket.on('joinCommonRoom', ({ roomId, name, customization }) => {
+    const room = rooms.get(roomId);
+    if (!room || !room.isCommon) { socket.emit('error', { message: 'Common room not found.' }); return; }
+    const maxPlayers = room.maxPlayers || MAX_PLAYERS_PER_COMMON_ROOM;
+    if (room.players.size >= maxPlayers) { socket.emit('error', { message: 'That room is full.' }); return; }
+
+    const playerData = joinPlayerToRoom(socket, roomId, name, customization);
+
+    const sanitizedPlayers = {};
+    for (const [id, pd] of room.players.entries()) {
+      sanitizedPlayers[id] = id === socket.id ? pd : { ...pd, name: pd.strangerName };
+    }
+
+    const interactiveStatesObjC = {};
+    for (const [k, v] of room.interactiveStates) interactiveStatesObjC[k] = v;
+    socket.emit('roomJoined', {
+      roomId, you: playerData,
+      players: sanitizedPlayers,
+      isOwner: false,
+      isPublic: true,
+      isCommon: true,
+      commonName: room.commonName || null,
+      furniture: room.furniture,
+      theme: room.theme,
+      interactiveStates: interactiveStatesObjC,
+      ambientTrack: room.ambientTrack || 0,
+      width: room.width || 1600,
+      height: room.height || 1000,
+    });
+
+    const scrubbedPlayerData = { ...playerData, name: playerData.strangerName };
+    socket.to(roomId).emit('playerJoined', scrubbedPlayerData);
+    console.log(`   ↳ Joined common room ${roomId} (${room.commonName}) (name: "${playerData.name}", total: ${room.players.size})`);
   });
 
   // ── Furniture Placement ──
@@ -650,6 +881,9 @@ setInterval(() => {
   }
 }, 60000); // Verify AFK players every minute
 
+// ─── Initialize Common Rooms ────────────────────────────
+initCommonRooms();
+
 // ─── Start server ───────────────────────────────────────
 server.listen(PORT, () => {
   console.log(`
@@ -657,7 +891,7 @@ server.listen(PORT, () => {
   ║         ✦  FreeLobby  ✦             ║
   ║   Server running on port ${PORT}        ║
   ║   http://localhost:${PORT}              ║
-  ║   Max rooms: ${MAX_ROOMS}  |  Per room: ${MAX_PLAYERS_PER_ROOM}   ║
+  ║   Max rooms: ${MAX_ROOMS}  |  Private: ${MAX_PLAYERS_PER_ROOM}  |  Common: ${MAX_PLAYERS_PER_COMMON_ROOM}   ║
   ╚══════════════════════════════════════╝
   `);
 });

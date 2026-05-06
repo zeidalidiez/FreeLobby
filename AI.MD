@@ -1,4 +1,4 @@
-# FreeLobby — Work In Progress (Phase 3.5 Hardening)
+# FreeLobby — Work In Progress (Phase 5: Common Rooms & Discovery)
 
 > **Project:** FreeLobby  
 > **Repo:** https://github.com/zeidalidiez/FreeLobby  
@@ -6,6 +6,8 @@
 > **Updated:** 2026-05-06  
 > **Owner:** Zeid  
 > **Coding agent:** Kimi K2.6 via opencode
+
+> **Status:** Phase 3.5 (hardening) ✅ | Phase 4 (presence enrichment) ✅ | Phase 5 (common rooms & discovery) 🚧
 
 ---
 
@@ -51,14 +53,13 @@ These were handled outside opencode and are already in the repo or are committed
 
 To avoid drift, do **not** start any of these in this pass — they belong to later phases:
 
-- Phase 4 (the room as instrument): interactive ambient objects (lights, minibars, bells, record players, lava lamps), sit/idle animations, Quiet Mode (avatar semi-transparent, auto-decline Vibe Checks), shared ambient audio, light music maker (4×4 sequencer). NOTE: "Leave a Note" was reconsidered and dropped — text visible outside a Vibe-Checked pair breaches Lens 1 regardless of length.
-- Phase 5: Common Rooms (server-curated themed rooms — The Lobby / Zen Garden / Library), Room Bookmarks, mobile pass, accessibility
 - Docker / containerization (separate WIP coming)
 - Federation, multi-instance discovery, contributor governance docs
+- Phase 6: Accessibility audit, full mobile touch-control overhaul, PWA support
 
 ---
 
-## 3. Task list (COMPLETED)
+## 3. Phase 3.5 Task list (COMPLETED)
 
 - [x] Task 1 — Remove Top Notch QA sponsor block
 - [x] Task 2 — Add MIT LICENSE file
@@ -70,6 +71,19 @@ To avoid drift, do **not** start any of these in this pass — they belong to la
 - [x] Task 8 — Invite to Room (PAUSED — consent concern)
 - [x] Task 9 — Flee Button creates private room
 - [x] Task 10 — Fix `.vscode/launch.json` port (8080 → 3000)
+
+## 3. Phase 4 Task list (COMPLETED)
+
+- [x] Phase 4a — Sit/Idle Animations: 5-second idle timer triggers smooth sit tween (`scaleY: 0.7`, `y + 10`). Movement/click stands back up. Sitting skips pulse breathe.
+- [x] Phase 4b — Quiet Mode: Toggle button makes avatar 35% opaque. Server stores `quietMode` per player. Vibe Check requests auto-declined silently against quiet targets. Remote state syncs in real-time.
+- [x] Phase 4c — Interactive Ambient Objects: Lamps (type 6) and TVs (type 13) clickable by anyone. Toggle state synced across room via `furnitureToggled`. Lamp emits warm radial glow + tint; TV emits cyan screen glow. Furniture IDs auto-assigned; states persist across joins.
+- [x] Phase 4d — Shared Ambient Audio: Bottom-center panel with Silence/Rain/Drone tracks. Procedural Web Audio (pink noise + lowpass for rain; stacked sines for drone). Room owner controls track; all players hear same. Individual mute toggle. Private rooms only.
+- [x] Phase 4e — Light Music Maker: 4×4 step sequencer (kick, snare, hi-hat, synth). Click cells to toggle, play/stop, BPM slider (60–180). Purely local Web Audio synthesis. Private rooms only.
+- [x] Phase 4 polish — Music maker and ambient audio both restricted to private rooms only (public rooms = quiet).
+
+## 3. Phase 5 Task list (IN PROGRESS)
+
+- [x] Phase 5a — Common Rooms: Server-curated persistent rooms (The Lobby, Zen Garden, Library) with pre-placed furniture. Larger dimensions (1600×1000), higher player caps (20–25). Never die when empty. Landing screen redesigned with two-column layout: Common Rooms list on left, private options on right. Default action is "Enter The Lobby". Variable room dimensions supported in client.
 
 ---
 
@@ -336,6 +350,7 @@ The `socket.emit('joinedRoom', { ... isPublic: false, isOwner: true ... })` payl
 
 ## 6. Completion log
 
+### Phase 3.5
 - Task 1 done. Sponsor block removed from love modal. Modal renders cleanly.
 - Task 2 done. MIT LICENSE file created at repo root.
 - Task 3 done. Furniture limit string now interpolates `MAX_FURNITURE` (currently 100).
@@ -346,3 +361,25 @@ The `socket.emit('joinedRoom', { ... isPublic: false, isOwner: true ... })` payl
 - Task 8 PAUSED. Invite to Room feature punted due to consent/coercion concerns.
 - Task 9 done. Flee Button now creates a private room (`isPublic: false`, owner = fleer).
 - Task 10 done. VS Code launch.json port corrected: 8080 → 3000.
+
+### Phase 4
+- Phase 4a done. Sit/idle animations with 5s idle timer and smooth tweens.
+- Phase 4b done. Quiet Mode toggle with semi-transparent avatars and auto-decline Vibe Checks.
+- Phase 4c done. Interactive lamps and TVs with synced toggle states and glow effects.
+- Phase 4d done. Shared ambient audio (Rain/Drone/Silence) via Web Audio API, private rooms only.
+- Phase 4e done. Light music maker — 4×4 step sequencer with 4 instrument tracks, private rooms only.
+- README updated to reflect all Phase 4 features.
+
+---
+
+## 7. Phase 5 Roadmap (proposed)
+
+**Goal:** Give the server a persistent public layer — curated common rooms that don't die when empty, plus better room discovery and mobile UX.
+
+| # | Feature | Description | Room type impact |
+|---|---------|-------------|------------------|
+| 5a | **Common Rooms** | Server-curated persistent rooms (The Lobby, Zen Garden, Library, etc.) with pre-placed furniture. These rooms never empty-die and serve as default landing / browsing spaces. | New: **Common** |
+| 5b | **Room Browser** | A "Browse Rooms" view on the landing screen showing active public/common rooms with live player counts. Click to join. No invites, no coercion — pure information. | Public + Common |
+| 5c | **Room Bookmarks** | Client-side session bookmarks for room codes you've visited. Rejoin quickly without retyping. | Private |
+| 5d | **Mobile Polish** | Touch-friendly emote panel, larger tap targets, virtual joystick option, safe-area-inset refinements. | All |
+| 5e | **Accessibility** | Keyboard navigation for all UI panels, ARIA labels, reduced-motion preference support, high-contrast mode. | All |

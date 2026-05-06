@@ -9,8 +9,11 @@
 </head>
 <body>
 
+  <!-- ═══ LIVE REGION FOR SCREEN READER ANNOUNCEMENTS ═══ -->
+  <div id="sr-announcer" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+
   <!-- ═══ LANDING SCREEN ═══ -->
-  <div id="landing-screen">
+  <div id="landing-screen" role="main" aria-label="FreeLobby landing page">
     <div class="landing-card">
       <h1 class="landing-title">FreeLobby</h1>
       <p class="landing-subtitle">a calm corner of the internet</p>
@@ -24,131 +27,169 @@
           maxlength="24"
           autocomplete="off"
           spellcheck="false"
+          aria-label="Enter your display name"
         >
       </div>
 
-      <div class="btn-group">
-        <button class="btn btn-primary" id="btn-join">
-          <span class="btn-icon">✦</span>
-          Join Random Room
-        </button>
-        <button class="btn btn-secondary" id="btn-create">
-          <span class="btn-icon">＋</span>
-          Create Private Room
-        </button>
-      </div>
+      <button class="btn btn-primary btn-enter" id="btn-enter" aria-label="Enter the Lobby common room">
+        <span class="btn-icon" aria-hidden="true">✦</span>
+        Enter The Lobby
+      </button>
 
-      <div class="join-specific">
-        <button class="join-specific-toggle" id="btn-toggle-specific">
-          Have a Room Code?
-        </button>
-        <div class="join-specific-panel" id="join-specific-panel">
-          <div class="join-specific-row">
-            <input
-              type="text"
-              id="room-code-input"
-              placeholder="ABCD"
-              maxlength="4"
-              autocomplete="off"
-              spellcheck="false"
-            >
-            <button class="btn btn-primary btn-sm" id="btn-join-code">
-              Join
+      <div class="landing-columns">
+        <div class="landing-col">
+          <h3 class="col-title">Common Rooms</h3>
+          <div class="common-rooms" id="common-rooms" role="list" aria-label="Common rooms list">
+            <div class="common-room-skeleton" role="status" aria-live="polite">Loading…</div>
+          </div>
+        </div>
+        <div class="landing-col landing-col-right">
+          <h3 class="col-title">Your Space</h3>
+          <div class="private-actions">
+            <button class="btn btn-secondary" id="btn-create" aria-label="Create a new private room">
+              <span class="btn-icon" aria-hidden="true">＋</span>
+              Create Private Room
             </button>
+            <button class="btn btn-secondary" id="btn-join" aria-label="Join a random public room">
+              <span class="btn-icon" aria-hidden="true">🎲</span>
+              Go to a Random Room
+            </button>
+            <div class="join-specific">
+              <button class="join-specific-toggle" id="btn-toggle-specific" aria-expanded="false" aria-controls="join-specific-panel">
+                Have a Room Code?
+              </button>
+              <div class="join-specific-panel" id="join-specific-panel" role="region" aria-label="Join room by code">
+                <div class="join-specific-row">
+                  <input
+                    type="text"
+                    id="room-code-input"
+                    placeholder="ABC123"
+                    maxlength="6"
+                    autocomplete="off"
+                    spellcheck="false"
+                    aria-label="Room code"
+                  >
+                  <button class="btn btn-primary btn-sm" id="btn-join-code" aria-label="Join room with code">
+                    Join
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
+      <div class="bookmarks-section" id="bookmarks-section">
+        <h3 class="col-title">Bookmarks</h3>
+        <div class="bookmarks-list" id="bookmarks-list" role="list" aria-label="Bookmarked rooms">
+          <div class="bookmark-empty">Bookmark rooms to find them again</div>
+        </div>
+      </div>
+
+      <div class="public-rooms-section" id="public-rooms-section">
+        <h3 class="col-title">Active Public Rooms</h3>
+        <div class="public-rooms" id="public-rooms" role="list" aria-label="Active public rooms">
+          <div class="common-room-skeleton" role="status" aria-live="polite">Loading…</div>
+        </div>
+      </div>
+
       <div class="customize-section">
-        <button class="join-specific-toggle" id="btn-toggle-customize">
+        <button class="join-specific-toggle" id="btn-toggle-customize" aria-expanded="false" aria-controls="customize-panel">
           Customize Avatar
         </button>
-        <div class="join-specific-panel" id="customize-panel">
+        <div class="join-specific-panel" id="customize-panel" role="region" aria-label="Avatar customization">
           <div class="customize-row">
             <label class="customize-label">Color</label>
-            <div class="swatch-group" id="color-swatches"></div>
+            <div class="swatch-group" id="color-swatches" role="radiogroup" aria-label="Avatar color"></div>
           </div>
           <div class="customize-row">
             <label class="customize-label">Shape</label>
-            <div class="shape-group" id="shape-btns">
-              <button class="shape-btn active" data-shape="0">●</button>
-              <button class="shape-btn" data-shape="1">■</button>
-              <button class="shape-btn" data-shape="2">◆</button>
+            <div class="shape-group" id="shape-btns" role="radiogroup" aria-label="Avatar shape">
+              <button class="shape-btn active" data-shape="0" role="radio" aria-checked="true" aria-label="Circle shape">●</button>
+              <button class="shape-btn" data-shape="1" role="radio" aria-checked="false" aria-label="Square shape">■</button>
+              <button class="shape-btn" data-shape="2" role="radio" aria-checked="false" aria-label="Diamond shape">◆</button>
             </div>
           </div>
           <div class="customize-row">
             <label class="customize-label">Accessory</label>
-            <div class="acc-group" id="acc-btns">
-              <button class="acc-btn active" data-acc="0">None</button>
-              <button class="acc-btn" data-acc="1">🎧</button>
-              <button class="acc-btn" data-acc="2">😇</button>
-              <button class="acc-btn" data-acc="3">🧢</button>
+            <div class="acc-group" id="acc-btns" role="radiogroup" aria-label="Avatar accessory">
+              <button class="acc-btn active" data-acc="0" role="radio" aria-checked="true" aria-label="No accessory">None</button>
+              <button class="acc-btn" data-acc="1" role="radio" aria-checked="false" aria-label="Headphones accessory">🎧</button>
+              <button class="acc-btn" data-acc="2" role="radio" aria-checked="false" aria-label="Halo accessory">😇</button>
+              <button class="acc-btn" data-acc="3" role="radio" aria-checked="false" aria-label="Beanie accessory">🧢</button>
             </div>
           </div>
           <div class="customize-row">
             <label class="customize-label">Glow Pulse</label>
-            <input type="range" id="pulse-slider" min="0" max="2" step="1" value="1">
+            <input type="range" id="pulse-slider" min="0" max="2" step="1" value="1" aria-label="Glow pulse speed">
             <div class="pulse-labels"><span>Slow</span><span>Normal</span><span>Fast</span></div>
           </div>
           <div class="customize-hash-row">
-            <input type="text" id="avatar-hash" readonly maxlength="4" value="0001">
-            <button class="btn btn-primary btn-sm" id="btn-copy-hash">Copy</button>
+            <input type="text" id="avatar-hash" readonly maxlength="4" value="0001" aria-label="Avatar hash code">
+            <button class="btn btn-primary btn-sm" id="btn-copy-hash" aria-label="Copy avatar hash">Copy</button>
           </div>
           <div class="customize-import-row">
-            <input type="text" id="import-hash" placeholder="Paste hash..." maxlength="4">
-            <button class="btn btn-primary btn-sm" id="btn-import-hash">Import</button>
+            <input type="text" id="import-hash" placeholder="Paste hash..." maxlength="4" aria-label="Paste avatar hash to import">
+            <button class="btn btn-primary btn-sm" id="btn-import-hash" aria-label="Import avatar hash">Import</button>
           </div>
         </div>
       </div>
 
       <p class="landing-footer">
-        made with <span class="heart">♥</span> for quiet people
+        made with <span class="heart" aria-hidden="true">♥</span> for quiet people
       </p>
     </div>
   </div>
 
   <!-- ═══ GAME VIEW ═══ -->
-  <div id="game-container"></div>
+  <div id="game-container" role="application" aria-label="FreeLobby game world. Use arrow keys or WASD to move. Click to move. Tab through UI elements."></div>
+
+  <!-- ═══ MOBILE ZOOM CONTROLS ═══ -->
+  <div id="zoom-controls" class="zoom-controls" role="group" aria-label="Zoom controls">
+    <button id="zoom-in" title="Zoom in" aria-label="Zoom in">＋</button>
+    <button id="zoom-out" title="Zoom out" aria-label="Zoom out">−</button>
+  </div>
 
   <!-- ═══ HUD OVERLAYS ═══ -->
-  <div id="connection-status">
-    <span class="status-dot"></span>
+  <div id="connection-status" role="status" aria-live="polite">
+    <span class="status-dot" aria-hidden="true"></span>
     <span id="status-text">Connected</span>
   </div>
 
-  <div id="room-info">
+  <div id="room-info" role="region" aria-label="Room information">
     <span class="room-label">Room</span>
-    <span id="room-id-display" class="room-code">----</span>
-    <span id="owner-badge" class="owner-badge">Owner</span>
-    <button id="copy-room-btn" class="copy-btn" title="Copy room code">📋</button>
+    <span id="room-id-display" class="room-code" aria-live="polite">----</span>
+    <span id="owner-badge" class="owner-badge" aria-hidden="true">Owner</span>
+    <button id="bookmark-btn" class="bookmark-btn" title="Bookmark this room" aria-label="Bookmark this room" aria-pressed="false">☆</button>
+    <button id="copy-room-btn" class="copy-btn" title="Copy room code" aria-label="Copy room code">📋</button>
   </div>
 
-  <div id="player-count">
+  <div id="player-count" role="status" aria-live="polite">
     <span id="player-count-text">1 player</span>
   </div>
 
-  <button id="flee-btn" title="Escape to an empty room">Go to empty room</button>
+  <button id="flee-btn" title="Escape to an empty room" aria-label="Flee to a new empty private room">Go to empty room</button>
 
-  <button id="quiet-btn" title="Quiet Mode: appear invisible, auto-decline Vibe Checks">Quiet</button>
+  <button id="quiet-btn" title="Quiet Mode: appear invisible, auto-decline Vibe Checks" aria-label="Toggle quiet mode">Quiet</button>
 
-  <button id="build-btn" title="Toggle build mode">Build</button>
+  <button id="build-btn" title="Toggle build mode" aria-label="Toggle furniture build mode">Build</button>
 
-  <button id="back-btn">← Lobby</button>
+  <button id="back-btn" aria-label="Return to lobby">← Lobby</button>
 
   <!-- ═══ FURNITURE PANEL ═══ -->
-  <div id="furniture-panel">
-    <div class="furniture-palette" id="furniture-palette"></div>
-    <div class="furniture-tools">
-      <button class="tool-btn active" id="tool-place" title="Place">＋</button>
-      <button class="tool-btn" id="tool-remove" title="Remove">−</button>
+  <div id="furniture-panel" role="dialog" aria-label="Furniture build panel" aria-hidden="true">
+    <div class="furniture-palette" id="furniture-palette" role="radiogroup" aria-label="Furniture selection"></div>
+    <div class="furniture-tools" role="group" aria-label="Build tools">
+      <button class="tool-btn active" id="tool-place" title="Place furniture" aria-label="Place tool" aria-pressed="true">＋</button>
+      <button class="tool-btn" id="tool-remove" title="Remove furniture" aria-label="Remove tool" aria-pressed="false">−</button>
     </div>
     <div class="furniture-hash-section">
-      <button class="hash-toggle" id="btn-toggle-hash">Memory Card</button>
-      <div class="hash-panel" id="hash-panel">
-        <button class="btn btn-primary btn-sm" id="btn-download-card" style="width:100%;margin-bottom:8px;">Download Room Card</button>
+      <button class="hash-toggle" id="btn-toggle-hash" aria-expanded="false" aria-controls="hash-panel">Memory Card</button>
+      <div class="hash-panel" id="hash-panel" role="region" aria-label="Room memory card">
+        <button class="btn btn-primary btn-sm" id="btn-download-card" style="width:100%;margin-bottom:8px;" aria-label="Download room memory card">Download Room Card</button>
         <div class="hash-row">
           <label class="file-input-label" style="flex:1;text-align:center;padding:8px;font-size:0.78rem;color:var(--text-secondary);cursor:pointer;border:1px dashed var(--border-glass);border-radius:var(--radius-sm);">
-            <input type="file" id="card-file-input" accept="image/png" style="display:none;">
+            <input type="file" id="card-file-input" accept="image/png" style="display:none;" aria-label="Upload room memory card">
             Upload Room Card
           </label>
         </div>
@@ -157,105 +198,103 @@
   </div>
 
   <!-- ═══ EMOTE PANEL ═══ -->
-  <div id="emote-panel">
-    <button class="emote-toggle" id="emote-toggle" title="Emotes">😊</button>
-    <div class="emote-grid" id="emote-grid">
-      <button class="emote-btn" data-emote="😊">😊</button>
-      <button class="emote-btn" data-emote="👋">👋</button>
-      <button class="emote-btn" data-emote="☕">☕</button>
-      <button class="emote-btn" data-emote="😴">😴</button>
-      <button class="emote-btn" data-emote="❤️">❤️</button>
-      <button class="emote-btn" data-emote="😂">😂</button>
-      <button class="emote-btn" data-emote="🎵">🎵</button>
-      <button class="emote-btn" data-emote="✨">✨</button>
-      <button class="emote-btn" data-emote="🤔">🤔</button>
-      <button class="emote-btn" data-emote="👍">👍</button>
-      <button class="emote-btn" data-emote="🌙">🌙</button>
-      <button class="emote-btn" data-emote="🔥">🔥</button>
-      <button class="emote-btn" data-emote="🎮">🎮</button>
-      <button class="emote-btn" data-emote="📖">📖</button>
-      <button class="emote-btn" data-emote="🐱">🐱</button>
-      <button class="emote-btn" data-emote="🌿">🌿</button>
-      <button class="emote-btn" data-emote="🎧">🎧</button>
-      <button class="emote-btn" data-emote="💤">💤</button>
-      <button class="emote-btn" data-emote="🫂">🫂</button>
-      <button class="emote-btn" data-emote="🍵">🍵</button>
-      <button class="emote-btn" data-emote="🌸">🌸</button>
-      <button class="emote-btn" data-emote="😌">😌</button>
-      <button class="emote-btn" data-emote="🎨">🎨</button>
-      <button class="emote-btn" data-emote="🧸">🧸</button>
-      <button class="emote-btn" data-emote="🍃">🍃</button>
-      <button class="emote-btn" data-emote="💫">💫</button>
-      <button class="emote-btn" data-emote="🎶">🎶</button>
-      <button class="emote-btn" data-emote="🌈">🌈</button>
-      <button class="emote-btn" data-emote="🕯️">🕯️</button>
-      <button class="emote-btn" data-emote="🤗">🤗</button>
+  <div id="emote-panel" role="region" aria-label="Emote panel">
+    <button class="emote-toggle" id="emote-toggle" title="Toggle emotes" aria-label="Toggle emote grid" aria-expanded="false" aria-controls="emote-grid">😊</button>
+    <div class="emote-grid" id="emote-grid" role="menu" aria-label="Emote selection">
+      <button class="emote-btn" data-emote="😊" role="menuitem" aria-label="Smile emote">😊</button>
+      <button class="emote-btn" data-emote="👋" role="menuitem" aria-label="Wave emote">👋</button>
+      <button class="emote-btn" data-emote="☕" role="menuitem" aria-label="Coffee emote">☕</button>
+      <button class="emote-btn" data-emote="😴" role="menuitem" aria-label="Sleep emote">😴</button>
+      <button class="emote-btn" data-emote="❤️" role="menuitem" aria-label="Heart emote">❤️</button>
+      <button class="emote-btn" data-emote="😂" role="menuitem" aria-label="Laugh emote">😂</button>
+      <button class="emote-btn" data-emote="🎵" role="menuitem" aria-label="Music emote">🎵</button>
+      <button class="emote-btn" data-emote="✨" role="menuitem" aria-label="Sparkles emote">✨</button>
+      <button class="emote-btn" data-emote="🤔" role="menuitem" aria-label="Think emote">🤔</button>
+      <button class="emote-btn" data-emote="👍" role="menuitem" aria-label="Thumbs up emote">👍</button>
+      <button class="emote-btn" data-emote="🌙" role="menuitem" aria-label="Moon emote">🌙</button>
+      <button class="emote-btn" data-emote="🔥" role="menuitem" aria-label="Fire emote">🔥</button>
+      <button class="emote-btn" data-emote="🎮" role="menuitem" aria-label="Game emote">🎮</button>
+      <button class="emote-btn" data-emote="📖" role="menuitem" aria-label="Book emote">📖</button>
+      <button class="emote-btn" data-emote="🐱" role="menuitem" aria-label="Cat emote">🐱</button>
+      <button class="emote-btn" data-emote="🌿" role="menuitem" aria-label="Plant emote">🌿</button>
+      <button class="emote-btn" data-emote="🎧" role="menuitem" aria-label="Headphones emote">🎧</button>
+      <button class="emote-btn" data-emote="💤" role="menuitem" aria-label="Zzz emote">💤</button>
+      <button class="emote-btn" data-emote="🫂" role="menuitem" aria-label="Hug emote">🫂</button>
+      <button class="emote-btn" data-emote="🍵" role="menuitem" aria-label="Tea emote">🍵</button>
+      <button class="emote-btn" data-emote="🌸" role="menuitem" aria-label="Flower emote">🌸</button>
+      <button class="emote-btn" data-emote="😌" role="menuitem" aria-label="Relieved emote">😌</button>
+      <button class="emote-btn" data-emote="🎨" role="menuitem" aria-label="Art emote">🎨</button>
+      <button class="emote-btn" data-emote="🧸" role="menuitem" aria-label="Teddy bear emote">🧸</button>
+      <button class="emote-btn" data-emote="🍃" role="menuitem" aria-label="Leaf emote">🍃</button>
+      <button class="emote-btn" data-emote="💫" role="menuitem" aria-label="Dizzy emote">💫</button>
+      <button class="emote-btn" data-emote="🎶" role="menuitem" aria-label="Notes emote">🎶</button>
+      <button class="emote-btn" data-emote="🌈" role="menuitem" aria-label="Rainbow emote">🌈</button>
+      <button class="emote-btn" data-emote="🕯️" role="menuitem" aria-label="Candle emote">🕯️</button>
+      <button class="emote-btn" data-emote="🤗" role="menuitem" aria-label="Hug face emote">🤗</button>
     </div>
   </div>
 
   <!-- ═══ SIGN INPUT ═══ -->
-  <div id="sign-bar">
-    <input type="text" id="sign-input" placeholder="Pass a Vibe Check to type…" maxlength="10" autocomplete="off" spellcheck="false" disabled>
-    <button class="sign-send-btn" id="sign-send" disabled>↑</button>
+  <div id="sign-bar" role="region" aria-label="Sign message input">
+    <input type="text" id="sign-input" placeholder="Pass a Vibe Check to type…" maxlength="10" autocomplete="off" spellcheck="false" disabled aria-label="Type a sign message">
+    <button class="sign-send-btn" id="sign-send" disabled aria-label="Send sign message">↑</button>
   </div>
 
   <!-- ═══ AMBIENT AUDIO PANEL ═══ -->
-  <div id="ambient-panel" class="ambient-panel">
+  <div id="ambient-panel" class="ambient-panel" role="region" aria-label="Ambient audio controls">
     <span class="ambient-label">Ambience</span>
-    <div class="ambient-tracks">
-      <button class="ambient-track-btn" data-track="0" title="Silence">🚫</button>
-      <button class="ambient-track-btn" data-track="1" title="Rain">🌧️</button>
-      <button class="ambient-track-btn" data-track="2" title="Drone">🎵</button>
+    <div class="ambient-tracks" role="radiogroup" aria-label="Select ambient track">
+      <button class="ambient-track-btn" data-track="0" title="Silence" role="radio" aria-checked="true" aria-label="Silence">🚫</button>
+      <button class="ambient-track-btn" data-track="1" title="Rain" role="radio" aria-checked="false" aria-label="Rain">🌧️</button>
+      <button class="ambient-track-btn" data-track="2" title="Drone" role="radio" aria-checked="false" aria-label="Drone">🎵</button>
     </div>
-    <button id="ambient-mute" class="ambient-mute-btn" title="Mute ambience">🔊</button>
+    <button id="ambient-mute" class="ambient-mute-btn" title="Mute ambience" aria-label="Mute ambient audio" aria-pressed="false">🔊</button>
   </div>
 
   <!-- ═══ MUSIC MAKER ═══ -->
-  <button id="music-btn" class="music-btn" title="Open music maker">🎹</button>
-  <div id="music-panel" class="music-panel">
+  <button id="music-btn" class="music-btn" title="Open music maker" aria-label="Open music sequencer">🎹</button>
+  <div id="music-panel" class="music-panel" role="dialog" aria-label="Music sequencer" aria-hidden="true">
     <div class="music-header">
       <span class="music-title">Sequencer</span>
-      <button id="music-close" class="music-close">✕</button>
+      <button id="music-close" class="music-close" aria-label="Close sequencer">✕</button>
     </div>
-    <div class="music-grid" id="music-grid"></div>
+    <div class="music-grid" id="music-grid" role="grid" aria-label="Step sequencer grid"></div>
     <div class="music-controls">
-      <button id="music-play" class="music-play">▶</button>
-      <input type="range" id="music-bpm" min="60" max="180" value="120" class="music-bpm">
-      <span id="music-bpm-label" class="music-bpm-label">120</span>
+      <button id="music-play" class="music-play" aria-label="Play or stop sequencer">▶</button>
+      <input type="range" id="music-bpm" min="60" max="180" value="120" class="music-bpm" aria-label="Sequencer BPM">
+      <span id="music-bpm-label" class="music-bpm-label" aria-live="polite">120</span>
     </div>
   </div>
 
   <!-- ═══ VIBE CHECK ACTION POPUP ═══ -->
-  <!-- Shown when local player clicks on another player -->
-  <div id="vibe-action" class="vibe-action">
-    <button id="vibe-action-btn" class="vibe-action-btn">✦ Vibe Check</button>
-    <button id="mute-action-btn" class="vibe-action-btn mute-btn">Mute</button>
+  <div id="vibe-action" class="vibe-action" role="dialog" aria-label="Player actions" aria-hidden="true">
+    <button id="vibe-action-btn" class="vibe-action-btn" aria-label="Request vibe check">✦ Vibe Check</button>
+    <button id="mute-action-btn" class="vibe-action-btn mute-btn" aria-label="Mute this player">Mute</button>
   </div>
 
   <!-- ═══ VIBE CHECK PROMPT ═══ -->
-  <!-- Shown when another player requests a vibe check on you -->
-  <div id="vibe-prompt" class="vibe-prompt">
+  <div id="vibe-prompt" class="vibe-prompt" role="alertdialog" aria-label="Vibe check request" aria-hidden="true">
     <p id="vibe-prompt-text" class="vibe-prompt-text">A Stranger wants to share names.<br>Comfortable?</p>
     <div class="vibe-prompt-actions">
-      <button id="vibe-accept" class="vibe-prompt-btn vibe-accept">Sure ✦</button>
-      <button id="vibe-decline" class="vibe-prompt-btn vibe-decline">Not now</button>
+      <button id="vibe-accept" class="vibe-prompt-btn vibe-accept" aria-label="Accept vibe check">Sure ✦</button>
+      <button id="vibe-decline" class="vibe-prompt-btn vibe-decline" aria-label="Decline vibe check">Not now</button>
     </div>
   </div>
 
   <!-- ═══ MADE WITH LOVE BUTTON ═══ -->
-  <button id="love-btn" class="love-btn">♥</button>
+  <button id="love-btn" class="love-btn" aria-label="Made with love">♥</button>
 
   <!-- ═══ MADE WITH LOVE MODAL ═══ -->
-  <div id="love-modal" class="love-modal-overlay">
+  <div id="love-modal" class="love-modal-overlay" role="dialog" aria-label="Support FreeLobby" aria-hidden="true">
     <div class="love-modal">
-      <button id="love-modal-close" class="love-modal-close">×</button>
-      <div class="love-modal-heart">♥</div>
+      <button id="love-modal-close" class="love-modal-close" aria-label="Close modal">×</button>
+      <div class="love-modal-heart" aria-hidden="true">♥</div>
       <h2 class="love-modal-title">Made with Love</h2>
       <p class="love-modal-text">
         FreeLobby is a free, no-login space for quiet connection.
         If it brightened your day, consider supporting its existence.
       </p>
-      <a href="https://ko-fi.com/zeiddiez" class="love-modal-link" id="donate-link" target="_blank" rel="noopener">
+      <a href="https://ko-fi.com/zeiddiez" class="love-modal-link" id="donate-link" target="_blank" rel="noopener" aria-label="Support FreeLobby on Ko-fi">
         Support FreeLobby →
       </a>
       <p class="love-modal-thanks">Thank you for being here. 💛</p>
@@ -263,7 +302,7 @@
   </div>
 
   <!-- Error toast -->
-  <div id="error-toast" class="error-toast"></div>
+  <div id="error-toast" class="error-toast" role="alert" aria-live="assertive"></div>
 
   <!-- ═══ SCRIPTS ═══ -->
   <script src="https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.min.js"></script>

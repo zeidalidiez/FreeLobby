@@ -10,8 +10,12 @@ const statusDot          = document.querySelector('.status-dot');
 const statusText         = document.getElementById('status-text');
 const backBtn            = document.getElementById('back-btn');
 const nameInput          = document.getElementById('player-name');
+const btnEnter           = document.getElementById('btn-enter');
 const btnJoin            = document.getElementById('btn-join');
 const btnCreate          = document.getElementById('btn-create');
+const commonRoomsContainer = document.getElementById('common-rooms');
+const publicRoomsContainer = document.getElementById('public-rooms');
+const publicRoomsSection   = document.getElementById('public-rooms-section');
 const fleeBtn            = document.getElementById('flee-btn');
 const btnToggleSpecific  = document.getElementById('btn-toggle-specific');
 const joinSpecificPanel  = document.getElementById('join-specific-panel');
@@ -23,6 +27,7 @@ const playerCountEl      = document.getElementById('player-count');
 const playerCountText    = document.getElementById('player-count-text');
 const copyRoomBtn        = document.getElementById('copy-room-btn');
 const errorToast         = document.getElementById('error-toast');
+const srAnnouncer        = document.getElementById('sr-announcer');
 
 // Phase 3 — Emote & Sign
 const emotePanel   = document.getElementById('emote-panel');
@@ -59,7 +64,7 @@ let game = null;
 let socket = null;
 let playerName = 'Stranger';
 let currentRoomId = null;
-let joinMode = 'random';
+let joinMode = null;
 let joinRoomCode = '';
 let isRoomOwner = false;
 let quietMode = false;
@@ -385,6 +390,101 @@ function showError(msg) {
   setTimeout(() => errorToast.classList.remove('visible'), 3500);
 }
 
+function renderCommonRooms(rooms) {
+  if (!commonRoomsContainer) return;
+  commonRoomsContainer.innerHTML = '';
+  for (const room of rooms) {
+    const item = document.createElement('div');
+    item.className = 'common-room-item';
+    item.innerHTML = `
+      <div class="common-room-info">
+        <span class="common-room-name">${escapeHtml(room.name)}</span>
+        <span class="common-room-desc">${escapeHtml(room.description)}</span>
+      </div>
+      <span class="common-room-count">${room.playerCount}/${room.maxPlayers}</span>
+    `;
+    item.addEventListener('click', () => {
+      enterGame('common', room.id);
+    });
+    commonRoomsContainer.appendChild(item);
+  }
+}
+
+function renderPublicRooms(rooms) {
+  if (!publicRoomsContainer) return;
+  publicRoomsContainer.innerHTML = '';
+  if (rooms.length === 0) {
+    publicRoomsContainer.innerHTML = '<div class="public-room-empty">No active public rooms right now</div>';
+    return;
+  }
+  for (const room of rooms) {
+    const item = document.createElement('div');
+    item.className = 'public-room-item';
+    item.innerHTML = `
+      <span class="public-room-id">Room ${escapeHtml(room.id)}</span>
+      <span class="public-room-count">${room.playerCount}/${room.maxPlayers}</span>
+    `;
+    item.addEventListener('click', () => {
+      enterGame('code', room.id);
+    });
+    publicRoomsContainer.appendChild(item);
+  }
+}
+
+function renderBookmarks() {
+  if (!bookmarksList) return;
+  bookmarksList.innerHTML = '';
+  if (bookmarkedRooms.size === 0) {
+    bookmarksList.innerHTML = '<div class="bookmark-empty">Bookmark rooms to find them again</div>';
+    return;
+  }
+  for (const code of bookmarkedRooms) {
+    const item = document.createElement('div');
+    item.className = 'bookmark-item';
+    item.innerHTML = `
+      <span class="public-room-id">Room ${escapeHtml(code)}</span>
+      <button class="bookmark-remove" data-code="${escapeHtml(code)}">✕</button>
+    `;
+    item.addEventListener('click', (e) => {
+      if (e.target.classList.contains('bookmark-remove')) {
+        bookmarkedRooms.delete(code);
+        renderBookmarks();
+        if (currentRoomId === code) {
+          bookmarkBtn.classList.remove('active');
+          bookmarkBtn.textContent = '☆';
+          bookmarkBtn.title = 'Bookmark this room';
+        }
+      } else {
+        enterGame('code', code);
+      }
+    });
+    bookmarksList.appendChild(item);
+  }
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+// Poll public rooms while on landing screen
+let publicRoomsInterval = null;
+function startPublicRoomsPolling() {
+  if (publicRoomsInterval) return;
+  publicRoomsInterval = setInterval(() => {
+    if (socket && socket.connected && !currentRoomId) {
+      socket.emit('getPublicRooms');
+    }
+  }, 3000);
+}
+function stopPublicRoomsPolling() {
+  if (publicRoomsInterval) {
+    clearInterval(publicRoomsInterval);
+    publicRoomsInterval = null;
+  }
+}
+
 // ─── Landing UI Logic ──────────────────────────────────
 
 btnToggleSpecific.addEventListener('click', () => {
@@ -400,8 +500,10 @@ roomCodeInput.addEventListener('input', () => {
 // PHASER CONFIG (must be defined before enterGame)
 // ═══════════════════════════════════════════════════════
 
-const WORLD_WIDTH  = 1200;
-const WORLD_HEIGHT = 800;
+let WORLD_WIDTH  = 2000;
+let WORLD_HEIGHT = 1200;
+let ROOM_WIDTH  = 1200;
+let ROOM_HEIGHT = 800;
 const PLAYER_SPEED = 220;
 const LERP_FACTOR  = 0.15;
 const SEND_RATE    = 50;
@@ -449,6 +551,7 @@ let lastY = -1;
 let scene;
 let roomFurniture = [];
 let roomTheme = 0;
+let pendingRoomJoined = null;
 
 // Idle animation state
 let localIdleSince = null;
@@ -473,18 +576,18 @@ function enterGame(mode, roomCode) {
   loveBtn.classList.add('visible');
   fleeBtn.classList.add('visible');
   quietBtn.classList.add('visible');
-  ambientPanel.classList.add('visible');
-  musicBtn.classList.add('visible');
-  buildMusicGrid();
+  if (zoomControls) zoomControls.classList.add('visible');
 
   // Reset sign input to blocked until vibe check
   signInput.disabled = true;
   signSendBtn.disabled = true;
   signInput.placeholder = 'Pass a Vibe Check to type…';
 
-  if (!game) {
-    game = new Phaser.Game(gameConfig);
-  }
+  stopPublicRoomsPolling();
+
+  // Create or recreate the Phaser game — join is emitted from create() once ready
+  if (game) { game.destroy(true); game = null; }
+  game = new Phaser.Game(gameConfig);
 }
 
 function exitGame() {
@@ -510,6 +613,8 @@ function exitGame() {
   musicBtn.classList.remove('visible');
   musicPanel.classList.remove('visible');
   seqStop();
+  if (zoomControls) zoomControls.classList.remove('visible');
+  currentZoom = 1;
   buildBtn.classList.remove('visible');
   buildBtn.classList.remove('active');
   furniturePanel.classList.remove('visible');
@@ -522,8 +627,16 @@ function exitGame() {
   });
   roomFurniture = [];
 
+  // Tell server we left the room, but KEEP socket alive for fast rejoin
+  if (socket && socket.connected) {
+    socket.emit('leaveRoom');
+    socket.emit('getCommonRooms');
+    socket.emit('getPublicRooms');
+    startPublicRoomsPolling();
+    renderBookmarks();
+  }
+
   if (game) { game.destroy(true); game = null; }
-  if (socket) { socket.disconnect(); socket = null; }
   if (playerAccessory) { playerAccessory.destroy(); playerAccessory = null; }
 
   currentRoomId = null;
@@ -534,14 +647,18 @@ function exitGame() {
   playerAccessory = null;
   targetPosition = null;
   isPanning = false;
+  pendingRoomJoined = null;
+  joinMode = null;
+  joinRoomCode = '';
 }
 
 // Button listeners
+btnEnter.addEventListener('click', () => enterGame('common', 'LOBBY'));
 btnJoin.addEventListener('click', () => enterGame('random'));
 btnCreate.addEventListener('click', () => enterGame('create'));
 btnJoinCode.addEventListener('click', () => {
   const code = roomCodeInput.value.trim();
-  if (code.length !== 4) { showError('Room code must be 4 characters'); return; }
+  if (code.length !== 6) { showError('Room code must be 6 characters'); return; }
   enterGame('code', code);
 });
 backBtn.addEventListener('click', exitGame);
@@ -568,14 +685,31 @@ quietBtn.addEventListener('click', () => {
   }
 });
 
-ambientTrackBtns.forEach(btn => {
-  btn.addEventListener('click', () => {
-    if (!isRoomOwner) return;
-    const track = Number(btn.dataset.track);
-    setAmbientTrack(track);
-    if (socket && socket.connected) socket.emit('setAmbientTrack', { track });
-  });
+bookmarkBtn.addEventListener('click', () => {
+  if (!currentRoomId || currentRoomId.length !== 6) return;
+  if (bookmarkedRooms.has(currentRoomId)) {
+    bookmarkedRooms.delete(currentRoomId);
+    bookmarkBtn.classList.remove('active');
+    bookmarkBtn.textContent = '☆';
+    bookmarkBtn.title = 'Bookmark this room';
+  } else {
+    bookmarkedRooms.add(currentRoomId);
+    bookmarkBtn.classList.add('active');
+    bookmarkBtn.textContent = '★';
+    bookmarkBtn.title = 'Remove bookmark';
+  }
+  renderBookmarks();
 });
+
+zoomInBtn.addEventListener('click', () => setZoom(currentZoom + 0.25));
+zoomOutBtn.addEventListener('click', () => setZoom(currentZoom - 0.25));
+
+function setZoom(z) {
+  currentZoom = Math.max(0.5, Math.min(2.0, z));
+  if (scene && scene.cameras && scene.cameras.main) {
+    scene.cameras.main.setZoom(currentZoom);
+  }
+}
 
 ambientMuteBtn.addEventListener('click', () => {
   setAmbientMuted(!ambientMuted);
@@ -602,7 +736,7 @@ musicBpmInput.addEventListener('input', (e) => {
   }
 });
 
-nameInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') enterGame('random'); });
+nameInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') enterGame('common', 'LOBBY'); });
 roomCodeInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') btnJoinCode.click(); });
 
 copyRoomBtn.addEventListener('click', () => {
@@ -666,7 +800,13 @@ loveModal.addEventListener('click', (e) => {
 // ─── Vibe Check & Mute UI ──────────────────────────────
 
 const mutedPlayers = new Set(); // socket IDs of muted strangers
-const muteActionBtn = document.getElementById('mute-action-btn');
+const bookmarkBtn = document.getElementById('bookmark-btn');
+const bookmarksList = document.getElementById('bookmarks-list');
+const zoomInBtn = document.getElementById('zoom-in');
+const zoomOutBtn = document.getElementById('zoom-out');
+const zoomControls = document.getElementById('zoom-controls');
+let bookmarkedRooms = new Set();
+let currentZoom = 1;
 
 // "✦ Vibe Check" button in the action popup
 vibeActionBtn.addEventListener('click', () => {
@@ -899,6 +1039,7 @@ function preload() {
 function create() {
   scene = this;
 
+  // Draw floor at max possible world size
   for (let x = 0; x < WORLD_WIDTH; x += 128) {
     for (let y = 0; y < WORLD_HEIGHT; y += 128) {
       this.add.image(x + 64, y + 64, 'floor-tile');
@@ -907,19 +1048,28 @@ function create() {
 
   const wallGroup = this.physics.add.staticGroup();
   const furnitureGroup = this.physics.add.staticGroup();
-  for (let x = 0; x < WORLD_WIDTH; x += 64) {
-    wallGroup.add(this.add.image(x + 32, 0, 'wall-tile'));
-    wallGroup.add(this.add.image(x + 32, WORLD_HEIGHT, 'wall-tile'));
-  }
-  for (let y = 0; y < WORLD_HEIGHT; y += 64) {
-    wallGroup.add(this.add.image(0, y + 32, 'wall-tile'));
-    wallGroup.add(this.add.image(WORLD_WIDTH, y + 32, 'wall-tile'));
-  }
+  this.wallGroup = wallGroup;
+  this.furnitureGroup = furnitureGroup;
+
+  // Initial walls at default room size (will be redrawn in roomJoined)
+  this.drawRoomWalls = (w, h) => {
+    wallGroup.clear(true, true);
+    for (let x = 0; x < w; x += 64) {
+      wallGroup.add(this.add.image(x + 32, 0, 'wall-tile'));
+      wallGroup.add(this.add.image(x + 32, h, 'wall-tile'));
+    }
+    for (let y = 0; y < h; y += 64) {
+      wallGroup.add(this.add.image(0, y + 32, 'wall-tile'));
+      wallGroup.add(this.add.image(w, y + 32, 'wall-tile'));
+    }
+  };
+  this.drawRoomWalls(ROOM_WIDTH, ROOM_HEIGHT);
 
   player = null;
 
   this.cameras.main.setBackgroundColor('#050508');
-  this.physics.world.setBounds(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
+  this.cameras.main.setZoom(currentZoom);
+  this.physics.world.setBounds(0, 0, ROOM_WIDTH, ROOM_HEIGHT);
 
   cursors = this.input.keyboard.createCursorKeys();
   wasd = this.input.keyboard.addKeys({
@@ -929,9 +1079,24 @@ function create() {
     right: Phaser.Input.Keyboard.KeyCodes.D,
   });
 
-  // Mobile Controls: Drag-to-Pan & Click-to-Move
+  // Mobile Controls: Drag-to-Pan, Click-to-Move, Pinch-to-Zoom
+  let pinchStartDist = 0;
+  let pinchStartZoom = 1;
+
   this.input.on('pointerdown', (pointer) => {
     if (pointer.event.target.tagName !== 'CANVAS') return;
+
+    // Pinch-to-zoom: if two pointers are down, start pinch
+    const activePointers = this.input.manager.pointers.filter(p => p.isDown);
+    if (activePointers.length === 2) {
+      const p1 = activePointers[0];
+      const p2 = activePointers[1];
+      pinchStartDist = Phaser.Math.Distance.Between(p1.x, p1.y, p2.x, p2.y);
+      pinchStartZoom = this.cameras.main.zoom;
+      isPanning = false;
+      return;
+    }
+
     isPanning = false;
     panStartX = pointer.x;
     panStartY = pointer.y;
@@ -941,6 +1106,20 @@ function create() {
 
   this.input.on('pointermove', (pointer) => {
     if (!pointer.isDown || pointer.event.target.tagName !== 'CANVAS') return;
+
+    // Pinch-to-zoom
+    const activePointers = this.input.manager.pointers.filter(p => p.isDown);
+    if (activePointers.length === 2) {
+      const p1 = activePointers[0];
+      const p2 = activePointers[1];
+      const dist = Phaser.Math.Distance.Between(p1.x, p1.y, p2.x, p2.y);
+      if (pinchStartDist > 0) {
+        const scale = dist / pinchStartDist;
+        setZoom(pinchStartZoom * scale);
+      }
+      return;
+    }
+
     const dist = Phaser.Math.Distance.Between(panStartX, panStartY, pointer.x, pointer.y);
     if (dist > 10) {
       if (!isPanning) {
@@ -950,6 +1129,10 @@ function create() {
       this.cameras.main.scrollX = camStartScrollX + (panStartX - pointer.x) / this.cameras.main.zoom;
       this.cameras.main.scrollY = camStartScrollY + (panStartY - pointer.y) / this.cameras.main.zoom;
     }
+  });
+
+  this.input.on('pointerup', () => {
+    pinchStartDist = 0;
   });
 
   this.input.on('pointerup', (pointer, currentlyOver) => {
@@ -979,8 +1162,8 @@ function create() {
 
     if (!isPanning && player) {
       // Clamp target to map bounds
-      const clampedX = Phaser.Math.Clamp(pointer.worldX, 24, WORLD_WIDTH - 24);
-      const clampedY = Phaser.Math.Clamp(pointer.worldY, 24, WORLD_HEIGHT - 24);
+      const clampedX = Phaser.Math.Clamp(pointer.worldX, 24, ROOM_WIDTH - 24);
+      const clampedY = Phaser.Math.Clamp(pointer.worldY, 24, ROOM_HEIGHT - 24);
       
       targetPosition = { x: clampedX, y: clampedY };
       createClickPulse(clampedX, clampedY);
@@ -989,9 +1172,22 @@ function create() {
     isPanning = false;
   });
 
-  connectSocket();
   this.wallGroup = wallGroup;
   this.furnitureGroup = furnitureGroup;
+
+  // Game is now fully ready — emit join so roomJoined arrives AFTER textures load
+  if (socket && socket.connected && joinMode) {
+    if (joinMode === 'random') socket.emit('joinRandomRoom', { name: playerName, customization: CUSTOMIZATION });
+    else if (joinMode === 'create') socket.emit('createRoom', { name: playerName, customization: CUSTOMIZATION, isPublic: false });
+    else if (joinMode === 'code') socket.emit('joinRoom', { roomId: joinRoomCode, name: playerName, customization: CUSTOMIZATION });
+    else if (joinMode === 'common') socket.emit('joinCommonRoom', { roomId: joinRoomCode, name: playerName, customization: CUSTOMIZATION });
+  }
+
+  // If roomJoined arrived before create() finished, process it now
+  if (pendingRoomJoined) {
+    processRoomJoined(pendingRoomJoined);
+    pendingRoomJoined = null;
+  }
 }
 
 function update(_time, _delta) {
@@ -1611,13 +1807,29 @@ function connectSocket() {
   socket.on('connect', () => {
     console.log('✦ Connected to FreeLobby server:', socket.id);
     setConnectionStatus(true);
+    socket.emit('getCommonRooms');
+    socket.emit('getPublicRooms');
+    startPublicRoomsPolling();
+    renderBookmarks();
+
+    if (!joinMode) return; // Still on landing page
 
     if (joinMode === 'random') socket.emit('joinRandomRoom', { name: playerName, customization: CUSTOMIZATION });
     else if (joinMode === 'create') socket.emit('createRoom', { name: playerName, customization: CUSTOMIZATION, isPublic: false });
     else if (joinMode === 'code') socket.emit('joinRoom', { roomId: joinRoomCode, name: playerName, customization: CUSTOMIZATION });
+    else if (joinMode === 'common') socket.emit('joinCommonRoom', { roomId: joinRoomCode, name: playerName, customization: CUSTOMIZATION });
   });
 
-  socket.on('roomJoined', ({ roomId, you, players, isOwner, isPublic, furniture, theme, interactiveStates, ambientTrack }) => {
+  socket.on('roomJoined', (data) => {
+    if (!scene) {
+      // Game not ready yet — queue for processing in create()
+      pendingRoomJoined = data;
+      return;
+    }
+    processRoomJoined(data);
+  });
+
+  function processRoomJoined({ roomId, you, players, isOwner, isPublic, isCommon, commonName, furniture, theme, interactiveStates, ambientTrack, width, height }) {
     currentRoomId = roomId;
     roomIdDisplay.textContent = roomId;
     isRoomOwner = !!isOwner;
@@ -1627,6 +1839,31 @@ function connectSocket() {
     if (canBuild) { ownerBadge.classList.add('visible'); buildBtn.classList.add('visible'); }
     else { ownerBadge.classList.remove('visible'); buildBtn.classList.remove('visible'); buildBtn.classList.remove('active'); furniturePanel.classList.remove('visible'); buildMode = false; }
     console.log(`✦ Joined room ${roomId}. Local player: ${you.name}. Owner: ${isRoomOwner}. Public: ${isPublic !== false}. Theme: ${roomTheme}.`);
+
+    // Update room dimensions
+    ROOM_WIDTH = width || 1200;
+    ROOM_HEIGHT = height || 800;
+    if (scene) {
+      scene.physics.world.setBounds(0, 0, ROOM_WIDTH, ROOM_HEIGHT);
+      scene.cameras.main.setBounds(0, 0, ROOM_WIDTH, ROOM_HEIGHT);
+      if (scene.drawRoomWalls) scene.drawRoomWalls(ROOM_WIDTH, ROOM_HEIGHT);
+    }
+
+    // Update room info display for common rooms
+    if (isCommon && commonName) {
+      roomIdDisplay.textContent = commonName;
+    }
+
+    // Update bookmark button state
+    if (bookmarkedRooms.has(roomId)) {
+      bookmarkBtn.classList.add('active');
+      bookmarkBtn.textContent = '★';
+      bookmarkBtn.title = 'Remove bookmark';
+    } else {
+      bookmarkBtn.classList.remove('active');
+      bookmarkBtn.textContent = '☆';
+      bookmarkBtn.title = 'Bookmark this room';
+    }
 
     // Clean up previous room state if fleeing
     for (const [id, _] of otherPlayers) {
@@ -1655,11 +1892,27 @@ function connectSocket() {
       }
     }
 
-    // Ambient audio setup
-    ambientTrackBtns.forEach(btn => {
-      btn.classList.toggle('disabled', !isRoomOwner);
-    });
-    setAmbientTrack(ambientTrack || 0);
+    // Ambient audio setup (private rooms only)
+    if (!isPublic) {
+      ambientPanel.classList.add('visible');
+      ambientTrackBtns.forEach(btn => {
+        btn.classList.toggle('disabled', !isRoomOwner);
+      });
+      setAmbientTrack(ambientTrack || 0);
+    } else {
+      ambientPanel.classList.remove('visible');
+      stopAmbient();
+    }
+
+    // Music maker only in private rooms
+    if (!isPublic) {
+      musicBtn.classList.add('visible');
+      buildMusicGrid();
+    } else {
+      musicBtn.classList.remove('visible');
+      musicPanel.classList.remove('visible');
+      seqStop();
+    }
 
     if (player) {
       // Reposition and update color for local player
@@ -1676,24 +1929,36 @@ function connectSocket() {
       if (id !== socket.id) spawnOtherPlayer(pData);
     }
     updatePlayerCount();
+  }
+
+  socket.on('commonRoomsList', (rooms) => {
+    renderCommonRooms(rooms);
+  });
+
+  socket.on('publicRoomsList', (rooms) => {
+    renderPublicRooms(rooms);
   });
 
   socket.on('playerJoined', (data) => {
+    if (!scene) return;
     console.log(`✦ Player joined: ${data.strangerName || 'Stranger'} [${data.id}]`);
     spawnOtherPlayer(data);
   });
 
   socket.on('playerLeft', ({ id }) => {
+    if (!scene) return;
     console.log(`✧ Player left: [${id}]`);
     removeOtherPlayer(id);
   });
 
   socket.on('playerMoved', ({ id, x, y }) => {
+    if (!scene) return;
     const other = otherPlayers.get(id);
     if (other) { other.targetX = x; other.targetY = y; }
   });
 
   socket.on('playerQuietMode', ({ id, enabled }) => {
+    if (!scene) return;
     const other = otherPlayers.get(id);
     if (!other) return;
     other.quietMode = enabled;
@@ -1705,28 +1970,31 @@ function connectSocket() {
 
   // ── Phase 3: Emotes & Signs ──
   socket.on('playerEmote', ({ id, emote }) => {
+    if (!scene) return;
     if (mutedPlayers.has(id)) return; // Mute filter
     const sprite = getSpriteForPlayer(id);
     if (sprite) showEmoteBubble(sprite, emote);
   });
 
   socket.on('playerSign', ({ id, text }) => {
+    if (!scene) return;
     const sprite = getSpriteForPlayer(id);
     if (sprite) showSignBubble(sprite, text);
   });
 
   // ── Phase 4: Vibe Check ──
   socket.on('vibeCheckPrompt', ({ fromId }) => {
+    if (!scene) return;
     // Someone wants to vibe check us
     vibePromptFromId = fromId;
-    
+
     // Update prompt text with the stranger's name
     const other = otherPlayers.get(fromId);
     if (other) {
       const displayName = other.revealed ? other.realName : other.strangerName;
       document.getElementById('vibe-prompt-text').innerText = `${displayName} initiated a vibe check, do you wish to allow chat and share names with this user?`;
     }
-    
+
     vibePrompt.classList.add('visible');
 
     // Auto-dismiss after 15s if no response
@@ -1739,15 +2007,18 @@ function connectSocket() {
   });
 
   socket.on('vibeCheckRevealed', ({ playerId, name }) => {
+    if (!scene) return;
     // Mutual name reveal!
     revealPlayerName(playerId, name);
   });
 
   socket.on('furniturePlaced', ({ item }) => {
+    if (!scene) return;
     renderFurnitureItem(item);
   });
 
   socket.on('furnitureToggled', ({ id, state }) => {
+    if (!scene) return;
     const f = roomFurniture.find(rf => rf.item.id === id);
     if (!f || !f.glow) return;
     if (state) {
@@ -1766,6 +2037,7 @@ function connectSocket() {
   });
 
   socket.on('furnitureRemoved', ({ index }) => {
+    if (!scene) return;
     if (index >= 0 && index < roomFurniture.length) {
       const f = roomFurniture[index];
       if (scene.furnitureGroup) scene.furnitureGroup.remove(f.sprite);
@@ -1776,6 +2048,7 @@ function connectSocket() {
   });
 
   socket.on('roomFurnitureReset', ({ furniture, theme }) => {
+    if (!scene) return;
     roomFurniture.forEach(f => {
       if (scene && scene.furnitureGroup) scene.furnitureGroup.remove(f.sprite);
       f.sprite.destroy();
@@ -1786,14 +2059,17 @@ function connectSocket() {
   });
 
   socket.on('roomThemeChanged', ({ theme }) => {
+    if (!scene) return;
     if (typeof theme === 'number') roomTheme = theme;
   });
 
   socket.on('ambientTrackChanged', ({ track }) => {
+    if (!scene) return;
     setAmbientTrack(track);
   });
 
   socket.on('buildError', ({ message }) => {
+    if (!scene) return;
     showError(message);
   });
 
@@ -1817,3 +2093,7 @@ function setConnectionStatus(connected) {
     statusText.textContent = 'Reconnecting…';
   }
 }
+
+// Connect on page load so common rooms populate before user clicks anything
+connectSocket();
+renderBookmarks();

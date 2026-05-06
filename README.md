@@ -29,15 +29,24 @@ I built this because I wanted a space where quiet people can just *be* around ot
 - Procedural glow pulse animation. Everyone sees your custom avatar.
 
 ### Rooms & Furniture
+- **Common Rooms** — server-curated persistent spaces (The Lobby, Zen Garden, Library) that never die when empty. Larger dimensions (1600×1000), higher player caps (20–25), pre-placed furniture. This is where you land by default.
 - **Public or Private rooms** — create an open space or a hidden retreat.
-- **Build Mode (owner-only):** Place up to 100 furniture items per room. Grid-snapped, Sims/Habbo-style.
-- **8 furniture types:** Cube, Sphere, Cylinder, Pyramid, Chair, Plant, Lamp, Rug.
-- **Walkable vs. Solid:** Chairs and rugs let you walk through them. Tables and plants block movement. No overlapping placement.
-- **Room Memory Cards:** Download a cyberpunk PNG card of your room layout. Upload it later to reconstruct everything — including room theme and stacking layers for future-proofing.
+- **Build Mode (owner-only, private rooms only):** Place up to 100 furniture items per room. Grid-snapped, Sims/Habbo-style.
+- **20 furniture types:** Cube, Sphere, Cylinder, Pyramid, Chair, Plant, Lamp, Rug, Bed, Bathtub, Couch, Console, Computer, TV, Toilet, plus pets (Cat, Dog, Rabbit, Fishbowl, Bird).
+- **Walkable vs. Solid:** Chairs, rugs, beds, couches, and pets let you walk through them. Tables, plants, and appliances block movement. No overlapping placement.
+- **Interactive objects:** Lamps and TVs can be clicked by anyone to toggle on/off — glow and tint effects sync across the room.
+- **Room Memory Cards:** Download a cyberpunk PNG card of your room layout. Upload it later to reconstruct everything — including room theme and interactive states.
+
+### Presence & Comfort
+- **Sit / Idle Animations:** Stand still for 5 seconds and your avatar smoothly sits down. Move or click and you stand back up.
+- **Quiet Mode:** Toggle semi-transparency (35% opacity). While quiet, all incoming Vibe Checks are silently auto-declined. No notifications, no pressure.
+- **Ambient Audio (private rooms):** Room owner can set shared ambience — Rain (pink noise), Drone (stacked sines), or Silence. Individual mute toggle available.
+- **Music Maker (private rooms):** A personal 4×4 step sequencer with kick, snare, hi-hat, and synth tracks. BPM control, play/stop, purely local Web Audio synthesis.
 
 ### Communication
 - **Emotes:** A full grid of emoji reactions that float above your head.
 - **Signs:** 10-character text bubbles (only visible between Vibe-Checked pairs).
+- **Mute Stranger:** Right-click any avatar to mute their emotes — session-only, silent, reversible.
 - **No global chat. No room chat.** Text is always gated behind mutual consent.
 
 ---
@@ -46,11 +55,11 @@ I built this because I wanted a space where quiet people can just *be* around ot
 
 | Layer | Tech |
 |-------|------|
-| Frontend | Phaser 3 (Canvas/WebGL), vanilla JS, HTML/CSS overlays |
+| Frontend | Phaser 3 (Canvas/WebGL), vanilla JS, HTML/CSS overlays, Web Audio API |
 | Backend | Node.js, Express, Socket.IO |
 | Hosting | Oracle Cloud Free Tier (1 vCPU, ~5GB disk, Ubuntu) |
 | Process Manager | PM2 |
-| Assets | **100% procedural for now. Potentially image based/sprites** No user uploads. No database for core state. |
+| Assets | Procedural graphics + curated PNG sprites. No user uploads. No database for core state. |
 
 All room state lives in-memory. Rooms die when empty. No persistent database required.
 
