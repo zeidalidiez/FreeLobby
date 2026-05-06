@@ -43,6 +43,17 @@ const loveModal     = document.getElementById('love-modal');
 const loveModalClose = document.getElementById('love-modal-close');
 
 const ownerBadge    = document.getElementById('owner-badge');
+const quietBtn      = document.getElementById('quiet-btn');
+const ambientPanel  = document.getElementById('ambient-panel');
+const ambientMuteBtn = document.getElementById('ambient-mute');
+const ambientTrackBtns = document.querySelectorAll('.ambient-track-btn');
+const musicBtn      = document.getElementById('music-btn');
+const musicPanel    = document.getElementById('music-panel');
+const musicCloseBtn = document.getElementById('music-close');
+const musicPlayBtn  = document.getElementById('music-play');
+const musicBpmInput = document.getElementById('music-bpm');
+const musicBpmLabel = document.getElementById('music-bpm-label');
+const musicGrid     = document.getElementById('music-grid');
 
 let game = null;
 let socket = null;
@@ -51,6 +62,24 @@ let currentRoomId = null;
 let joinMode = 'random';
 let joinRoomCode = '';
 let isRoomOwner = false;
+let quietMode = false;
+
+// Ambient Audio state
+let ambientAudioCtx = null;
+let ambientMasterGain = null;
+let ambientCurrentNodes = [];
+let ambientMuted = false;
+let ambientTrack = 0;
+
+// Music Maker state
+const SEQ_ROWS = 4;
+const SEQ_COLS = 4;
+let seqGrid = Array.from({ length: SEQ_ROWS }, () => Array(SEQ_COLS).fill(false));
+let seqPlaying = false;
+let seqBpm = 120;
+let seqCurrentBeat = 0;
+let seqInterval = null;
+let seqAudioCtx = null;
 
 // Vibe Check state
 let vibeTargetId = null;     // who we clicked on
@@ -76,6 +105,192 @@ const COLOR_HEX_STR = [
   '#00f0ff', '#ff00ff', '#39ff14', '#ff007f', '#ffff00',
   '#ff8800', '#bd00ff', '#0088ff', '#ff3333', '#00ffcc',
 ];
+
+// ── Ambient Audio Engine ──
+function ensureAudioContext() {
+  if (!ambientAudioCtx) {
+    ambientAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    ambientMasterGain = ambientAudioCtx.createGain();
+    ambientMasterGain.gain.value = ambientMuted ? 0 : 0.15;
+    ambientMasterGain.connect(ambientAudioCtx.destination);
+  }
+  if (ambientAudioCtx.state === 'suspended') {
+    ambientAudioCtx.resume();
+  }
+}
+
+function stopAmbient() {
+  for (const node of ambientCurrentNodes) {
+    try { node.stop && node.stop(); node.disconnect(); } catch (e) {}
+  }
+  ambientCurrentNodes = [];
+}
+
+function startAmbientRain() {
+  ensureAudioContext();
+  stopAmbient();
+  const bufferSize = 2 * ambientAudioCtx.sampleRate;
+  const buffer = ambientAudioCtx.createBuffer(1, bufferSize, ambientAudioCtx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < bufferSize; i++) {
+    data[i] = Math.random() * 2 - 1;
+  }
+  const noise = ambientAudioCtx.createBufferSource();
+  noise.buffer = buffer;
+  noise.loop = true;
+  const filter = ambientAudioCtx.createBiquadFilter();
+  filter.type = 'lowpass';
+  filter.frequency.value = 400;
+  const gain = ambientAudioCtx.createGain();
+  gain.gain.value = 1.0;
+  noise.connect(filter);
+  filter.connect(gain);
+  gain.connect(ambientMasterGain);
+  noise.start();
+  ambientCurrentNodes.push(noise, filter, gain);
+}
+
+function startAmbientDrone() {
+  ensureAudioContext();
+  stopAmbient();
+  const freqs = [55, 110, 165];
+  for (const f of freqs) {
+    const osc = ambientAudioCtx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.value = f;
+    const gain = ambientAudioCtx.createGain();
+    gain.gain.value = 0.12;
+    osc.connect(gain);
+    gain.connect(ambientMasterGain);
+    osc.start();
+    ambientCurrentNodes.push(osc, gain);
+  }
+}
+
+function setAmbientTrack(track) {
+  ambientTrack = track;
+  if (track === 1) startAmbientRain();
+  else if (track === 2) startAmbientDrone();
+  else stopAmbient();
+  // Update UI
+  ambientTrackBtns.forEach(btn => {
+    const t = Number(btn.dataset.track);
+    btn.classList.toggle('active', t === track);
+  });
+}
+
+function setAmbientMuted(muted) {
+  ambientMuted = muted;
+  if (ambientMasterGain) {
+    ambientMasterGain.gain.setTargetAtTime(muted ? 0 : 0.15, ambientAudioCtx.currentTime, 0.3);
+  }
+  ambientMuteBtn.classList.toggle('muted', muted);
+  ambientMuteBtn.textContent = muted ? '🔇' : '🔊';
+}
+
+// ── Music Maker ──
+function ensureSeqAudio() {
+  if (!seqAudioCtx) {
+    seqAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if (seqAudioCtx.state === 'suspended') seqAudioCtx.resume();
+}
+
+function seqPlayNote(row, time) {
+  ensureSeqAudio();
+  const osc = seqAudioCtx.createOscillator();
+  const gain = seqAudioCtx.createGain();
+  gain.connect(seqAudioCtx.destination);
+  osc.connect(gain);
+
+  if (row === 0) {
+    // Kick
+    osc.frequency.setValueAtTime(150, time);
+    osc.frequency.exponentialRampToValueAtTime(0.01, time + 0.15);
+    gain.gain.setValueAtTime(0.8, time);
+    gain.gain.exponentialRampToValueAtTime(0.01, time + 0.15);
+    osc.start(time);
+    osc.stop(time + 0.15);
+  } else if (row === 1) {
+    // Snare
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(250, time);
+    gain.gain.setValueAtTime(0.5, time);
+    gain.gain.exponentialRampToValueAtTime(0.01, time + 0.1);
+    osc.start(time);
+    osc.stop(time + 0.1);
+  } else if (row === 2) {
+    // Hi-hat
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(800, time);
+    gain.gain.setValueAtTime(0.15, time);
+    gain.gain.exponentialRampToValueAtTime(0.01, time + 0.05);
+    osc.start(time);
+    osc.stop(time + 0.05);
+  } else if (row === 3) {
+    // Synth
+    osc.type = 'sine';
+    const freqs = [261.63, 329.63, 392.00, 523.25];
+    osc.frequency.setValueAtTime(freqs[seqCurrentBeat % 4], time);
+    gain.gain.setValueAtTime(0.2, time);
+    gain.gain.exponentialRampToValueAtTime(0.01, time + 0.2);
+    osc.start(time);
+    osc.stop(time + 0.2);
+  }
+}
+
+function seqTick() {
+  if (!seqPlaying) return;
+  const now = seqAudioCtx ? seqAudioCtx.currentTime : 0;
+  for (let r = 0; r < SEQ_ROWS; r++) {
+    if (seqGrid[r][seqCurrentBeat]) {
+      seqPlayNote(r, now);
+    }
+  }
+  // Visual beat indicator
+  const cells = musicGrid.querySelectorAll('.music-cell');
+  cells.forEach((c, i) => {
+    const col = i % SEQ_COLS;
+    c.classList.toggle('beat', col === seqCurrentBeat);
+  });
+  seqCurrentBeat = (seqCurrentBeat + 1) % SEQ_COLS;
+}
+
+function seqStart() {
+  ensureSeqAudio();
+  seqPlaying = true;
+  musicPlayBtn.textContent = '⏸';
+  musicPlayBtn.classList.add('playing');
+  const ms = (60 / seqBpm) * 1000 / 2; // 8th notes feel for 4-step
+  seqInterval = setInterval(seqTick, ms);
+}
+
+function seqStop() {
+  seqPlaying = false;
+  musicPlayBtn.textContent = '▶';
+  musicPlayBtn.classList.remove('playing');
+  if (seqInterval) { clearInterval(seqInterval); seqInterval = null; }
+  const cells = musicGrid.querySelectorAll('.music-cell');
+  cells.forEach(c => c.classList.remove('beat'));
+}
+
+function buildMusicGrid() {
+  musicGrid.innerHTML = '';
+  for (let r = 0; r < SEQ_ROWS; r++) {
+    for (let c = 0; c < SEQ_COLS; c++) {
+      const cell = document.createElement('div');
+      cell.className = 'music-cell';
+      if (seqGrid[r][c]) cell.classList.add('active');
+      cell.dataset.row = r;
+      cell.dataset.col = c;
+      cell.addEventListener('click', () => {
+        seqGrid[r][c] = !seqGrid[r][c];
+        cell.classList.toggle('active', seqGrid[r][c]);
+      });
+      musicGrid.appendChild(cell);
+    }
+  }
+}
 
 let CUSTOMIZATION = { colorIdx: 0, shape: 0, accessory: 0, pulse: 1 };
 
@@ -235,6 +450,11 @@ let scene;
 let roomFurniture = [];
 let roomTheme = 0;
 
+// Idle animation state
+let localIdleSince = null;
+let isLocalSitting = false;
+const IDLE_SIT_MS = 5000; // 5 seconds of stillness before sitting
+
 // ─── Enter / Exit Game ─────────────────────────────────
 
 function enterGame(mode, roomCode) {
@@ -252,6 +472,10 @@ function enterGame(mode, roomCode) {
   signBar.classList.add('visible');
   loveBtn.classList.add('visible');
   fleeBtn.classList.add('visible');
+  quietBtn.classList.add('visible');
+  ambientPanel.classList.add('visible');
+  musicBtn.classList.add('visible');
+  buildMusicGrid();
 
   // Reset sign input to blocked until vibe check
   signInput.disabled = true;
@@ -278,6 +502,14 @@ function exitGame() {
   vibePrompt.classList.remove('visible');
   loveModal.classList.remove('visible');
   fleeBtn.classList.remove('visible');
+  quietBtn.classList.remove('visible');
+  quietBtn.classList.remove('active');
+  quietMode = false;
+  ambientPanel.classList.remove('visible');
+  stopAmbient();
+  musicBtn.classList.remove('visible');
+  musicPanel.classList.remove('visible');
+  seqStop();
   buildBtn.classList.remove('visible');
   buildBtn.classList.remove('active');
   furniturePanel.classList.remove('visible');
@@ -320,6 +552,53 @@ fleeBtn.addEventListener('click', () => {
     signInput.disabled = true;
     signSendBtn.disabled = true;
     signInput.placeholder = 'Pass a Vibe Check to type…';
+  }
+});
+
+quietBtn.addEventListener('click', () => {
+  quietMode = !quietMode;
+  quietBtn.classList.toggle('active', quietMode);
+  if (player) {
+    scene.tweens.add({ targets: [player], alpha: quietMode ? 0.35 : 1, duration: 400, ease: 'Power2' });
+    if (playerAccessory) scene.tweens.add({ targets: [playerAccessory], alpha: quietMode ? 0.35 : 1, duration: 400, ease: 'Power2' });
+    if (nameLabel) scene.tweens.add({ targets: [nameLabel], alpha: quietMode ? 0.35 : 1, duration: 400, ease: 'Power2' });
+  }
+  if (socket && socket.connected) {
+    socket.emit('quietMode', { enabled: quietMode });
+  }
+});
+
+ambientTrackBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    if (!isRoomOwner) return;
+    const track = Number(btn.dataset.track);
+    setAmbientTrack(track);
+    if (socket && socket.connected) socket.emit('setAmbientTrack', { track });
+  });
+});
+
+ambientMuteBtn.addEventListener('click', () => {
+  setAmbientMuted(!ambientMuted);
+});
+
+musicBtn.addEventListener('click', () => {
+  musicPanel.classList.toggle('visible');
+});
+
+musicCloseBtn.addEventListener('click', () => {
+  musicPanel.classList.remove('visible');
+});
+
+musicPlayBtn.addEventListener('click', () => {
+  if (seqPlaying) seqStop(); else seqStart();
+});
+
+musicBpmInput.addEventListener('input', (e) => {
+  seqBpm = Number(e.target.value);
+  musicBpmLabel.textContent = seqBpm;
+  if (seqPlaying) {
+    seqStop();
+    seqStart();
   }
 });
 
@@ -452,17 +731,33 @@ const cardFileInput    = document.getElementById('card-file-input');
 let buildMode = false;
 let buildTool = 'place';
 let selectedFurnitureType = 0;
-const FURNITURE_NAMES = ['Cube', 'Sphere', 'Cylinder', 'Pyramid', 'Chair', 'Plant', 'Lamp', 'Rug'];
-const FURNITURE_FOOTPRINTS = [
-  { w: 1, h: 1, walkable: false }, // 0: Cube
-  { w: 1, h: 1, walkable: false }, // 1: Sphere
-  { w: 1, h: 1, walkable: false }, // 2: Cylinder
-  { w: 1, h: 1, walkable: false }, // 3: Pyramid
-  { w: 1, h: 1, walkable: true  }, // 4: Chair
-  { w: 1, h: 1, walkable: false }, // 5: Plant
-  { w: 1, h: 1, walkable: false }, // 6: Lamp
-  { w: 2, h: 2, walkable: true  }, // 7: Rug
+
+const FURNITURE_DEFS = [
+  { name: 'Cube',       icon: '🧊', file: 'furn-cube',       w: 1, h: 1, walkable: false },
+  { name: 'Sphere',     icon: '🔮', file: 'furn-sphere',     w: 1, h: 1, walkable: false },
+  { name: 'Cylinder',   icon: '🛢️', file: 'furn-cylinder',   w: 1, h: 1, walkable: false },
+  { name: 'Pyramid',    icon: '🔺', file: 'furn-pyramid',    w: 1, h: 1, walkable: false },
+  { name: 'Chair',      icon: '🪑', file: 'furn-chair',      w: 1, h: 1, walkable: true  },
+  { name: 'Plant',      icon: '🪴', file: 'furn-plant',      w: 1, h: 1, walkable: false },
+  { name: 'Lamp',       icon: '🛋️', file: 'furn-lamp',       w: 1, h: 1, walkable: false },
+  { name: 'Rug',        icon: '🟪', file: 'furn-rug',        w: 2, h: 2, walkable: true  },
+  { name: 'Bed',        icon: '🛏️', file: 'furn-bed',        w: 2, h: 2, walkable: true  },
+  { name: 'Bathtub',    icon: '🛁', file: 'furn-bathtub',    w: 2, h: 1, walkable: false },
+  { name: 'Couch',      icon: '🛋️', file: 'furn-couch',      w: 2, h: 1, walkable: true  },
+  { name: 'Console',    icon: '🎮', file: 'furn-console',    w: 1, h: 1, walkable: false },
+  { name: 'Computer',   icon: '💻', file: 'furn-computer',   w: 1, h: 1, walkable: false },
+  { name: 'TV',         icon: '📺', file: 'furn-tv',         w: 2, h: 1, walkable: false },
+  { name: 'Toilet',     icon: '🚽', file: 'furn-toilet',     w: 1, h: 1, walkable: false },
+  { name: 'Cat',        icon: '🐱', file: 'pet-cat',         w: 1, h: 1, walkable: true  },
+  { name: 'Dog',        icon: '🐶', file: 'pet-dog',         w: 1, h: 1, walkable: true  },
+  { name: 'Rabbit',     icon: '🐰', file: 'pet-rabbit',      w: 1, h: 1, walkable: true  },
+  { name: 'Fishbowl',   icon: '🐠', file: 'pet-fishbowl',    w: 1, h: 1, walkable: false },
+  { name: 'Bird',       icon: '🐦', file: 'pet-bird',        w: 1, h: 1, walkable: true  },
 ];
+
+const FURNITURE_NAMES = FURNITURE_DEFS.map(d => d.name);
+const FURNITURE_FOOTPRINTS = FURNITURE_DEFS.map(d => ({ w: d.w, h: d.h, walkable: d.walkable }));
+const FURNITURE_ICONS = FURNITURE_DEFS.map(d => d.icon);
 
 function getClientFootprint(type, rotation) {
   const fp = FURNITURE_FOOTPRINTS[type];
@@ -474,7 +769,6 @@ function getClientFootprint(type, rotation) {
 }
 
 // Generate furniture palette
-const FURNITURE_ICONS = ['🟦','⚪','⏺️','🔺','🪑','🌱','💡','🟩'];
 FURNITURE_NAMES.forEach((name, i) => {
   const btn = document.createElement('button');
   btn.className = 'furn-btn' + (i === 0 ? ' active' : '');
@@ -580,33 +874,10 @@ function preload() {
   accG.generateTexture('acc-beanie', 48, 48);
   accG.destroy();
 
-  // Furniture (64x64 textures for clean integer scaling)
-  const furnGfx = this.make.graphics({ add: false });
-  // 0: Cube
-  furnGfx.clear(); furnGfx.lineStyle(2, 0xffffff, 0.9); furnGfx.strokeRect(0, 0, 64, 64); furnGfx.lineStyle(1, 0xffffff, 0.5); furnGfx.strokeRect(12, 12, 40, 40);
-  furnGfx.generateTexture('furn-0', 64, 64);
-  // 1: Sphere
-  furnGfx.clear(); furnGfx.lineStyle(2, 0xffffff, 0.9); furnGfx.strokeCircle(32, 32, 28); furnGfx.lineStyle(1, 0xffffff, 0.5); furnGfx.strokeCircle(32, 32, 14);
-  furnGfx.generateTexture('furn-1', 64, 64);
-  // 2: Cylinder
-  furnGfx.clear(); furnGfx.lineStyle(2, 0xffffff, 0.9); furnGfx.strokeEllipse(32, 32, 56, 40); furnGfx.lineStyle(1, 0xffffff, 0.5); furnGfx.lineBetween(4, 32, 60, 32);
-  furnGfx.generateTexture('furn-2', 64, 64);
-  // 3: Pyramid
-  furnGfx.clear(); furnGfx.lineStyle(2, 0xffffff, 0.9); furnGfx.beginPath(); furnGfx.moveTo(32, 4); furnGfx.lineTo(56, 52); furnGfx.lineTo(8, 52); furnGfx.closePath(); furnGfx.strokePath();
-  furnGfx.generateTexture('furn-3', 64, 64);
-  // 4: Chair
-  furnGfx.clear(); furnGfx.lineStyle(2, 0xffffff, 0.9); furnGfx.strokeRect(16, 28, 32, 24); furnGfx.lineBetween(16, 28, 16, 8); furnGfx.lineBetween(48, 28, 48, 8); furnGfx.lineBetween(16, 8, 48, 8);
-  furnGfx.generateTexture('furn-4', 64, 64);
-  // 5: Plant
-  furnGfx.clear(); furnGfx.lineStyle(2, 0x39ff14, 0.9); furnGfx.strokeCircle(32, 22, 14); furnGfx.lineStyle(2, 0xffffff, 0.6); furnGfx.lineBetween(32, 36, 32, 56);
-  furnGfx.generateTexture('furn-5', 64, 64);
-  // 6: Lamp
-  furnGfx.clear(); furnGfx.lineStyle(2, 0xffffff, 0.6); furnGfx.lineBetween(32, 4, 32, 44); furnGfx.fillStyle(0xffff00, 0.8); furnGfx.fillCircle(32, 6, 6);
-  furnGfx.generateTexture('furn-6', 64, 64);
-  // 7: Rug
-  furnGfx.clear(); furnGfx.fillStyle(0xffffff, 0.15); furnGfx.fillRect(0, 16, 64, 32); furnGfx.lineStyle(1, 0xffffff, 0.4); furnGfx.strokeRect(0, 16, 64, 32);
-  furnGfx.generateTexture('furn-7', 64, 64);
-  furnGfx.destroy();
+  // Load furniture assets from images
+  FURNITURE_DEFS.forEach((def, i) => {
+    this.load.image(`furn-${i}`, `assets/${def.file}.png`);
+  });
 
   const floor = this.make.graphics({ add: false });
   floor.fillStyle(0x050508, 1); floor.fillRect(0, 0, 128, 128);
@@ -761,13 +1032,15 @@ function update(_time, _delta) {
     nameLabel.setPosition(player.x, player.y - 30);
     if (playerAccessory) playerAccessory.setPosition(player.x, player.y);
 
-    // Pulse animation
-    const pulseSpeeds = [0.02, 0.04, 0.08];
-    const pulseT = scene.time.now / 1000;
-    const pulseSpeed = pulseSpeeds[CUSTOMIZATION.pulse] || 0.04;
-    const pulseScale = 1 + Math.sin(pulseT * pulseSpeed * Math.PI * 2) * 0.05;
-    player.setScale(pulseScale);
-    if (playerAccessory) playerAccessory.setScale(pulseScale);
+    // Pulse animation (skip if sitting)
+    if (!isLocalSitting) {
+      const pulseSpeeds = [0.02, 0.04, 0.08];
+      const pulseT = scene.time.now / 1000;
+      const pulseSpeed = pulseSpeeds[CUSTOMIZATION.pulse] || 0.04;
+      const pulseScale = 1 + Math.sin(pulseT * pulseSpeed * Math.PI * 2) * 0.05;
+      player.setScale(pulseScale);
+      if (playerAccessory) playerAccessory.setScale(pulseScale);
+    }
 
     const now = Date.now();
     const moved = (Math.abs(player.x - lastX) > 0.5 || Math.abs(player.y - lastY) > 0.5);
@@ -776,6 +1049,18 @@ function update(_time, _delta) {
       lastX = player.x;
       lastY = player.y;
       lastSendTime = now;
+    }
+
+    // ── Idle / Sit animation for local player ──
+    const isMoving = (Math.abs(vx) > 0.1 || Math.abs(vy) > 0.1 || targetPosition !== null);
+    if (isMoving) {
+      if (isLocalSitting) standUp(player, playerAccessory);
+      localIdleSince = null;
+    } else {
+      if (localIdleSince === null) localIdleSince = now;
+      if (!isLocalSitting && now - localIdleSince > IDLE_SIT_MS) {
+        sitDown(player, playerAccessory);
+      }
     }
   }
 
@@ -786,15 +1071,45 @@ function update(_time, _delta) {
       other.nameLabel.setPosition(other.sprite.x, other.sprite.y - 30);
       if (other.accessory) other.accessory.setPosition(other.sprite.x, other.sprite.y);
 
-      // Pulse animation
-      const pulseSpeeds = [0.02, 0.04, 0.08];
-      const pulseT = scene.time.now / 1000;
-      const pulseSpeed = pulseSpeeds[other.customization.pulse] || 0.04;
-      const pulseScale = 1 + Math.sin(pulseT * pulseSpeed * Math.PI * 2) * 0.05;
-      other.sprite.setScale(pulseScale);
-      if (other.accessory) other.accessory.setScale(pulseScale);
+      // ── Idle / Sit animation for other players ──
+      const now = Date.now();
+      const isMovingOther = (Math.abs(other.targetX - other.sprite.x) > 1 || Math.abs(other.targetY - other.sprite.y) > 1);
+      if (isMovingOther) {
+        if (other.isSitting) standUp(other.sprite, other.accessory);
+        other.idleSince = null;
+      } else {
+        if (other.idleSince === undefined || other.idleSince === null) other.idleSince = now;
+        if (!other.isSitting && now - other.idleSince > IDLE_SIT_MS) {
+          sitDown(other.sprite, other.accessory);
+          other.isSitting = true;
+        }
+      }
+
+      // Pulse animation (skip if sitting — sit tween handles scale)
+      if (!isLocalSitting && !other.isSitting) {
+        const pulseSpeeds = [0.02, 0.04, 0.08];
+        const pulseT = scene.time.now / 1000;
+        const pulseSpeed = pulseSpeeds[other.customization.pulse] || 0.04;
+        const pulseScale = 1 + Math.sin(pulseT * pulseSpeed * Math.PI * 2) * 0.05;
+        other.sprite.setScale(pulseScale);
+        if (other.accessory) other.accessory.setScale(pulseScale);
+      }
     }
   }
+}
+
+function sitDown(sprite, accessory) {
+  if (!sprite) return;
+  isLocalSitting = true;
+  scene.tweens.add({ targets: sprite, scaleY: 0.7, y: sprite.y + 10, duration: 400, ease: 'Power2' });
+  if (accessory) scene.tweens.add({ targets: accessory, scaleY: 0.7, y: accessory.y + 10, duration: 400, ease: 'Power2' });
+}
+
+function standUp(sprite, accessory) {
+  if (!sprite) return;
+  isLocalSitting = false;
+  scene.tweens.add({ targets: sprite, scaleY: 1, y: sprite.y - 10, duration: 300, ease: 'Back.easeOut' });
+  if (accessory) scene.tweens.add({ targets: accessory, scaleY: 1, y: accessory.y - 10, duration: 300, ease: 'Back.easeOut' });
 }
 
 function createClickPulse(x, y) {
@@ -887,13 +1202,15 @@ function spawnOtherPlayer(data) {
     strokeThickness: 3,
   }).setOrigin(0.5).setDepth(7);
 
+  const isQuiet = !!data.quietMode;
+  const targetAlpha = isQuiet ? 0.35 : 1;
   sprite.setAlpha(0); sprite.setScale(0.3);
-  scene.tweens.add({ targets: [sprite], alpha: 1, scale: 1, duration: 400, ease: 'Back.easeOut' });
+  scene.tweens.add({ targets: [sprite], alpha: targetAlpha, scale: 1, duration: 400, ease: 'Back.easeOut' });
   label.setAlpha(0);
-  scene.tweens.add({ targets: [label], alpha: 1, duration: 400, delay: 150 });
+  scene.tweens.add({ targets: [label], alpha: targetAlpha, duration: 400, delay: 150 });
   if (accessory) {
     accessory.setAlpha(0); accessory.setScale(0.3);
-    scene.tweens.add({ targets: [accessory], alpha: 1, scale: 1, duration: 400, ease: 'Back.easeOut' });
+    scene.tweens.add({ targets: [accessory], alpha: targetAlpha, scale: 1, duration: 400, ease: 'Back.easeOut' });
   }
 
   sprite.setInteractive({ useHandCursor: true });
@@ -923,7 +1240,10 @@ function spawnOtherPlayer(data) {
     revealed: false,
     realName: data.name,
     strangerName: data.strangerName || 'Stranger',
+    quietMode: isQuiet,
     customization: cust,
+    isSitting: false,
+    idleSince: null,
   });
 
   updatePlayerCount();
@@ -955,6 +1275,8 @@ function updatePlayerCount() {
   playerCountText.textContent = total === 1 ? '1 player' : `${total} players`;
 }
 
+const INTERACTIVE_FURNITURE_TYPES = new Set([6, 13]); // Lamp, TV
+
 function renderFurnitureItem(item) {
   if (!scene) return;
   const fp = getClientFootprint(item.t, item.r);
@@ -963,12 +1285,34 @@ function renderFurnitureItem(item) {
   const sprite = scene.add.sprite(x, y, `furn-${item.t}`);
   sprite.setDepth(1);
   sprite.setAlpha(0.8);
-  sprite.setScale(fp.w, fp.h);
+  // Force high-res assets to fit their grid footprint
+  sprite.setDisplaySize(fp.w * 64, fp.h * 64);
   if (item.r) sprite.setAngle(item.r * 90);
   if (!fp.walkable && scene.furnitureGroup) {
     scene.furnitureGroup.add(sprite);
   }
-  roomFurniture.push({ sprite, item, fp });
+
+  let glow = null;
+  if (INTERACTIVE_FURNITURE_TYPES.has(item.t)) {
+    sprite.setInteractive({ useHandCursor: true });
+    sprite.on('pointerdown', () => {
+      if (socket && socket.connected && item.id != null) {
+        socket.emit('toggleFurniture', { id: item.id });
+      }
+    });
+    // Create glow overlay (initially invisible)
+    if (item.t === 6) {
+      // Lamp — soft radial glow
+      glow = scene.add.circle(x, y, Math.max(fp.w, fp.h) * 40, 0xffaa00, 0);
+      glow.setDepth(0);
+    } else if (item.t === 13) {
+      // TV — cyan screen glow
+      glow = scene.add.rectangle(x, y - 6, fp.w * 48, fp.h * 32, 0x00f0ff, 0);
+      glow.setDepth(0);
+    }
+  }
+
+  roomFurniture.push({ sprite, item, fp, glow });
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1273,7 +1617,7 @@ function connectSocket() {
     else if (joinMode === 'code') socket.emit('joinRoom', { roomId: joinRoomCode, name: playerName, customization: CUSTOMIZATION });
   });
 
-  socket.on('roomJoined', ({ roomId, you, players, isOwner, isPublic, furniture, theme }) => {
+  socket.on('roomJoined', ({ roomId, you, players, isOwner, isPublic, furniture, theme, interactiveStates, ambientTrack }) => {
     currentRoomId = roomId;
     roomIdDisplay.textContent = roomId;
     isRoomOwner = !!isOwner;
@@ -1291,9 +1635,31 @@ function connectSocket() {
     roomFurniture.forEach(f => {
       if (scene && scene.furnitureGroup) scene.furnitureGroup.remove(f.sprite);
       f.sprite.destroy();
+      if (f.glow) f.glow.destroy();
     });
     roomFurniture = [];
     if (furniture) furniture.forEach(item => renderFurnitureItem(item));
+
+    // Apply interactive states after rendering
+    if (interactiveStates) {
+      for (const [idStr, state] of Object.entries(interactiveStates)) {
+        const id = Number(idStr);
+        const f = roomFurniture.find(rf => rf.item.id === id);
+        if (f && f.glow) {
+          if (state) {
+            f.glow.setAlpha(0.25);
+            if (f.item.t === 6) f.sprite.setTint(0xffeebb);
+            else if (f.item.t === 13) f.sprite.setTint(0xaaddff);
+          }
+        }
+      }
+    }
+
+    // Ambient audio setup
+    ambientTrackBtns.forEach(btn => {
+      btn.classList.toggle('disabled', !isRoomOwner);
+    });
+    setAmbientTrack(ambientTrack || 0);
 
     if (player) {
       // Reposition and update color for local player
@@ -1325,6 +1691,16 @@ function connectSocket() {
   socket.on('playerMoved', ({ id, x, y }) => {
     const other = otherPlayers.get(id);
     if (other) { other.targetX = x; other.targetY = y; }
+  });
+
+  socket.on('playerQuietMode', ({ id, enabled }) => {
+    const other = otherPlayers.get(id);
+    if (!other) return;
+    other.quietMode = enabled;
+    const alpha = enabled ? 0.35 : 1;
+    if (other.sprite) other.sprite.setAlpha(alpha);
+    if (other.accessory) other.accessory.setAlpha(alpha);
+    if (other.nameLabel) other.nameLabel.setAlpha(alpha);
   });
 
   // ── Phase 3: Emotes & Signs ──
@@ -1371,11 +1747,30 @@ function connectSocket() {
     renderFurnitureItem(item);
   });
 
+  socket.on('furnitureToggled', ({ id, state }) => {
+    const f = roomFurniture.find(rf => rf.item.id === id);
+    if (!f || !f.glow) return;
+    if (state) {
+      scene.tweens.add({ targets: [f.glow], alpha: 0.25, duration: 300, ease: 'Power2' });
+      if (f.item.t === 6) {
+        // Lamp — warm tint boost
+        scene.tweens.add({ targets: [f.sprite], tint: 0xffeebb, duration: 300 });
+      } else if (f.item.t === 13) {
+        // TV — cyan tint boost
+        scene.tweens.add({ targets: [f.sprite], tint: 0xaaddff, duration: 300 });
+      }
+    } else {
+      scene.tweens.add({ targets: [f.glow], alpha: 0, duration: 300, ease: 'Power2' });
+      scene.tweens.add({ targets: [f.sprite], tint: 0xffffff, duration: 300 });
+    }
+  });
+
   socket.on('furnitureRemoved', ({ index }) => {
     if (index >= 0 && index < roomFurniture.length) {
       const f = roomFurniture[index];
       if (scene.furnitureGroup) scene.furnitureGroup.remove(f.sprite);
       f.sprite.destroy();
+      if (f.glow) f.glow.destroy();
       roomFurniture.splice(index, 1);
     }
   });
@@ -1392,6 +1787,10 @@ function connectSocket() {
 
   socket.on('roomThemeChanged', ({ theme }) => {
     if (typeof theme === 'number') roomTheme = theme;
+  });
+
+  socket.on('ambientTrackChanged', ({ track }) => {
+    setAmbientTrack(track);
   });
 
   socket.on('buildError', ({ message }) => {

@@ -25,6 +25,18 @@ const FURNITURE_FOOTPRINTS = [
   { w: 1, h: 1, walkable: false }, // 5: Plant
   { w: 1, h: 1, walkable: false }, // 6: Lamp
   { w: 2, h: 2, walkable: true  }, // 7: Rug
+  { w: 2, h: 2, walkable: true  }, // 8: Bed
+  { w: 2, h: 1, walkable: false }, // 9: Bathtub
+  { w: 2, h: 1, walkable: true  }, // 10: Couch
+  { w: 1, h: 1, walkable: false }, // 11: Console
+  { w: 1, h: 1, walkable: false }, // 12: Computer
+  { w: 2, h: 1, walkable: false }, // 13: TV
+  { w: 1, h: 1, walkable: false }, // 14: Toilet
+  { w: 1, h: 1, walkable: true  }, // 15: Cat
+  { w: 1, h: 1, walkable: true  }, // 16: Dog
+  { w: 1, h: 1, walkable: true  }, // 17: Rabbit
+  { w: 1, h: 1, walkable: false }, // 18: Fishbowl
+  { w: 1, h: 1, walkable: true  }, // 19: Bird
 ];
 
 function getFootprint(type, rotation) {
@@ -148,6 +160,7 @@ function joinPlayerToRoom(socket, roomId, name, customization) {
     color,
     lastActive: Date.now(),
     customization: customization || { colorIdx: 0, shape: 0, accessory: 0, pulse: 1 },
+    quietMode: false,
   };
 
   room.players.set(socket.id, playerData);
@@ -173,7 +186,7 @@ io.on('connection', (socket) => {
     }
     const roomId = generateRoomId();
     // Create Room always creates a PRIVATE room with the creator as owner
-    rooms.set(roomId, { players: new Map(), revealedPairs: new Set(), ownerId: socket.id, isPublic: false, furniture: [], occupiedCells: new Set(), blockedCells: new Set(), theme: 0, emoteWindow: { startMs: 0, count: 0 } });
+    rooms.set(roomId, { players: new Map(), revealedPairs: new Set(), ownerId: socket.id, isPublic: false, furniture: [], occupiedCells: new Set(), blockedCells: new Set(), theme: 0, emoteWindow: { startMs: 0, count: 0 }, nextFurnitureId: 1, interactiveStates: new Map(), ambientTrack: 0 });
     const playerData = joinPlayerToRoom(socket, roomId, name, customization);
 
     const room = rooms.get(roomId);
@@ -182,6 +195,8 @@ io.on('connection', (socket) => {
       sanitizedPlayers[id] = id === socket.id ? pd : { ...pd, name: pd.strangerName };
     }
 
+    const interactiveStatesObj = {};
+    for (const [k, v] of room.interactiveStates) interactiveStatesObj[k] = v;
     socket.emit('roomJoined', {
       roomId, you: playerData,
       players: sanitizedPlayers,
@@ -189,6 +204,8 @@ io.on('connection', (socket) => {
       isPublic: false,
       furniture: room.furniture,
       theme: room.theme,
+      interactiveStates: interactiveStatesObj,
+      ambientTrack: room.ambientTrack || 0,
     });
     console.log(`   ↳ Created private room ${roomId} (name: "${playerData.name}")`);
   });
@@ -206,6 +223,8 @@ io.on('connection', (socket) => {
       sanitizedPlayers[id] = id === socket.id ? pd : { ...pd, name: pd.strangerName };
     }
 
+    const interactiveStatesObj2 = {};
+    for (const [k, v] of room.interactiveStates) interactiveStatesObj2[k] = v;
     socket.emit('roomJoined', {
       roomId, you: playerData,
       players: sanitizedPlayers,
@@ -213,6 +232,8 @@ io.on('connection', (socket) => {
       isPublic: room.isPublic !== false,
       furniture: room.furniture,
       theme: room.theme,
+      interactiveStates: interactiveStatesObj2,
+      ambientTrack: room.ambientTrack || 0,
     });
     
     const scrubbedPlayerData = { ...playerData, name: playerData.strangerName };
@@ -227,7 +248,7 @@ io.on('connection', (socket) => {
       if (rooms.size >= MAX_ROOMS) { socket.emit('error', { message: 'Server is full. Try again later.' }); return; }
       roomId = generateRoomId();
       // Auto-created random rooms have NO owner and are PUBLIC
-      rooms.set(roomId, { players: new Map(), revealedPairs: new Set(), ownerId: null, isPublic: true, furniture: [], occupiedCells: new Set(), blockedCells: new Set(), theme: 0, emoteWindow: { startMs: 0, count: 0 } });
+      rooms.set(roomId, { players: new Map(), revealedPairs: new Set(), ownerId: null, isPublic: true, furniture: [], occupiedCells: new Set(), blockedCells: new Set(), theme: 0, emoteWindow: { startMs: 0, count: 0 }, nextFurnitureId: 1, interactiveStates: new Map(), ambientTrack: 0 });
       console.log(`   ↳ No open rooms, auto-created random ${roomId}`);
     }
 
@@ -239,6 +260,8 @@ io.on('connection', (socket) => {
       sanitizedPlayers[id] = id === socket.id ? pd : { ...pd, name: pd.strangerName };
     }
 
+    const interactiveStatesObj3 = {};
+    for (const [k, v] of room.interactiveStates) interactiveStatesObj3[k] = v;
     socket.emit('roomJoined', {
       roomId, you: playerData,
       players: sanitizedPlayers,
@@ -246,6 +269,8 @@ io.on('connection', (socket) => {
       isPublic: room.isPublic !== false,
       furniture: room.furniture,
       theme: room.theme,
+      interactiveStates: interactiveStatesObj3,
+      ambientTrack: room.ambientTrack || 0,
     });
     
     const scrubbedPlayerData = { ...playerData, name: playerData.strangerName };
@@ -257,7 +282,7 @@ io.on('connection', (socket) => {
     removePlayerFromRoom(socket);
     const roomId = generateRoomId();
     // Flee always creates a PRIVATE room owned by the fleer
-    rooms.set(roomId, { players: new Map(), revealedPairs: new Set(), ownerId: socket.id, isPublic: false, furniture: [], occupiedCells: new Set(), blockedCells: new Set(), theme: 0, emoteWindow: { startMs: 0, count: 0 } });
+    rooms.set(roomId, { players: new Map(), revealedPairs: new Set(), ownerId: socket.id, isPublic: false, furniture: [], occupiedCells: new Set(), blockedCells: new Set(), theme: 0, emoteWindow: { startMs: 0, count: 0 }, nextFurnitureId: 1, interactiveStates: new Map(), ambientTrack: 0 });
     const room = rooms.get(roomId);
     const playerData = joinPlayerToRoom(socket, roomId, name, customization);
 
@@ -266,6 +291,8 @@ io.on('connection', (socket) => {
       sanitizedPlayers[id] = id === socket.id ? pd : { ...pd, name: pd.strangerName };
     }
 
+    const interactiveStatesObj4 = {};
+    for (const [k, v] of room.interactiveStates) interactiveStatesObj4[k] = v;
     socket.emit('roomJoined', {
       roomId, you: playerData,
       players: sanitizedPlayers,
@@ -273,6 +300,8 @@ io.on('connection', (socket) => {
       isPublic: false,
       furniture: room.furniture,
       theme: room.theme,
+      interactiveStates: interactiveStatesObj4,
+      ambientTrack: room.ambientTrack || 0,
     });
     console.log(`   ↳ Fled to private room ${roomId} (name: "${playerData.name}")`);
   });
@@ -313,6 +342,7 @@ io.on('connection', (socket) => {
       if (!fp.walkable) room.blockedCells.add(cell);
     }
 
+    item.id = room.nextFurnitureId++;
     room.furniture.push(item);
     io.in(roomId).emit('furniturePlaced', { item });
   });
@@ -330,9 +360,25 @@ io.on('connection', (socket) => {
         room.occupiedCells.delete(cell);
         room.blockedCells.delete(cell);
       }
+      if (item.id != null) room.interactiveStates.delete(item.id);
       room.furniture.splice(index, 1);
       io.in(roomId).emit('furnitureRemoved', { index });
     }
+  });
+
+  // ── Toggle Interactive Furniture ──
+  const INTERACTIVE_TYPES = new Set([6, 13]); // Lamp, TV
+  socket.on('toggleFurniture', ({ id }) => {
+    const roomId = socket.roomId;
+    if (!roomId || !rooms.has(roomId)) return;
+    const room = rooms.get(roomId);
+    const item = room.furniture.find(f => f.id === id);
+    if (!item || !INTERACTIVE_TYPES.has(item.t)) return;
+    const current = room.interactiveStates.get(id);
+    const next = !current;
+    room.interactiveStates.set(id, next);
+    io.in(roomId).emit('furnitureToggled', { id, state: next });
+    console.log(`   ↳ Furniture toggled: id=${id} type=${item.t} state=${next}`);
   });
 
   // ── Helper: validate & compute occupancy for a furniture array ──
@@ -384,6 +430,10 @@ io.on('connection', (socket) => {
     const result = validateFurnitureArray(furniture);
     if (!result.ok) { socket.emit('buildError', { message: result.error }); return; }
 
+    // Reassign IDs on import
+    room.nextFurnitureId = 1;
+    room.interactiveStates = new Map();
+    for (const item of furniture) item.id = room.nextFurnitureId++;
     room.furniture = furniture;
     room.occupiedCells = result.occupied;
     room.blockedCells = result.blocked;
@@ -402,6 +452,10 @@ io.on('connection', (socket) => {
 
     if (typeof theme === 'number' && theme >= 0) room.theme = theme;
 
+    // Reassign IDs on load
+    room.nextFurnitureId = 1;
+    room.interactiveStates = new Map();
+    for (const item of furniture) item.id = room.nextFurnitureId++;
     room.furniture = furniture;
     room.occupiedCells = result.occupied;
     room.blockedCells = result.blocked;
@@ -418,6 +472,18 @@ io.on('connection', (socket) => {
       room.theme = theme;
       io.in(roomId).emit('roomThemeChanged', { theme: room.theme });
     }
+  });
+
+  // ── Ambient Audio Track ──
+  socket.on('setAmbientTrack', ({ track }) => {
+    const roomId = socket.roomId;
+    if (!roomId || !rooms.has(roomId)) return;
+    const room = rooms.get(roomId);
+    if (room.ownerId !== socket.id) return;
+    if (typeof track !== 'number' || track < 0 || track > 2) return;
+    room.ambientTrack = track;
+    io.in(roomId).emit('ambientTrackChanged', { track });
+    console.log(`   ↳ Ambient track set to ${track} in room ${roomId}`);
   });
 
   // ── Player Movement ──
@@ -476,6 +542,18 @@ io.on('connection', (socket) => {
     }
   });
 
+  // ── Quiet Mode ──
+  socket.on('quietMode', ({ enabled }) => {
+    const roomId = socket.roomId;
+    if (!roomId || !rooms.has(roomId)) return;
+    const room = rooms.get(roomId);
+    if (socket.playerData) {
+      socket.playerData.quietMode = !!enabled;
+      socket.playerData.lastActive = Date.now();
+    }
+    socket.to(roomId).emit('playerQuietMode', { id: socket.id, enabled: !!enabled });
+  });
+
   // ── Vibe Check: Request ──
   // Player A clicks "Vibe Check" on Player B
   socket.on('vibeCheckRequest', ({ targetId }) => {
@@ -494,6 +572,13 @@ io.on('connection', (socket) => {
     if (socket._lastVibeCheck && now - socket._lastVibeCheck < 5000) return;
     socket._lastVibeCheck = now;
     if (socket.playerData) socket.playerData.lastActive = now;
+
+    // Auto-decline if target is in quiet mode
+    const targetData = room.players.get(targetId);
+    if (targetData && targetData.quietMode) {
+      console.log(`   ↳ Vibe Check auto-declined: [${targetId}] is in quiet mode`);
+      return;
+    }
 
     // Send prompt to target
     io.to(targetId).emit('vibeCheckPrompt', {

@@ -129,6 +129,8 @@
 
   <button id="flee-btn" title="Escape to an empty room">Go to empty room</button>
 
+  <button id="quiet-btn" title="Quiet Mode: appear invisible, auto-decline Vibe Checks">Quiet</button>
+
   <button id="build-btn" title="Toggle build mode">Build</button>
 
   <button id="back-btn">← Lobby</button>
@@ -195,6 +197,32 @@
   <div id="sign-bar">
     <input type="text" id="sign-input" placeholder="Pass a Vibe Check to type…" maxlength="10" autocomplete="off" spellcheck="false" disabled>
     <button class="sign-send-btn" id="sign-send" disabled>↑</button>
+  </div>
+
+  <!-- ═══ AMBIENT AUDIO PANEL ═══ -->
+  <div id="ambient-panel" class="ambient-panel">
+    <span class="ambient-label">Ambience</span>
+    <div class="ambient-tracks">
+      <button class="ambient-track-btn" data-track="0" title="Silence">🚫</button>
+      <button class="ambient-track-btn" data-track="1" title="Rain">🌧️</button>
+      <button class="ambient-track-btn" data-track="2" title="Drone">🎵</button>
+    </div>
+    <button id="ambient-mute" class="ambient-mute-btn" title="Mute ambience">🔊</button>
+  </div>
+
+  <!-- ═══ MUSIC MAKER ═══ -->
+  <button id="music-btn" class="music-btn" title="Open music maker">🎹</button>
+  <div id="music-panel" class="music-panel">
+    <div class="music-header">
+      <span class="music-title">Sequencer</span>
+      <button id="music-close" class="music-close">✕</button>
+    </div>
+    <div class="music-grid" id="music-grid"></div>
+    <div class="music-controls">
+      <button id="music-play" class="music-play">▶</button>
+      <input type="range" id="music-bpm" min="60" max="180" value="120" class="music-bpm">
+      <span id="music-bpm-label" class="music-bpm-label">120</span>
+    </div>
   </div>
 
   <!-- ═══ VIBE CHECK ACTION POPUP ═══ -->

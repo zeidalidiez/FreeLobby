@@ -420,6 +420,43 @@ body::before {
   color: #ff80c0;
 }
 
+/* ─── Quiet Mode Button ─────────────────────────────── */
+#quiet-btn {
+  position: fixed;
+  top: calc(224px + env(safe-area-inset-top));
+  right: calc(16px + env(safe-area-inset-right));
+  z-index: 200;
+  display: none;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: var(--bg-card);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border-glass);
+  border-radius: 999px;
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  animation: fadeIn 0.6s ease 0.3s both;
+}
+
+#quiet-btn.visible {
+  display: flex;
+}
+
+#quiet-btn:hover {
+  border-color: var(--accent-primary);
+  color: var(--text-primary);
+}
+
+#quiet-btn.active {
+  border-color: #bd00ff;
+  background: rgba(189, 0, 255, 0.1);
+  color: #bd00ff;
+}
+
 /* ─── Join Specific Room Panel ──────────────────────── */
 .join-specific {
   margin-top: 16px;
@@ -1232,7 +1269,8 @@ body::before {
 }
 
 .furniture-palette {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
   gap: 6px;
 }
 
@@ -1361,6 +1399,237 @@ body::before {
 
 .hash-row input::placeholder {
   color: var(--text-muted);
+}
+
+/* ─── Ambient Audio Panel ───────────────────────────── */
+.ambient-panel {
+  position: fixed;
+  bottom: calc(72px + env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 200;
+  display: none;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: var(--bg-card);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border-glass);
+  border-radius: 999px;
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  animation: fadeIn 0.6s ease 0.4s both;
+}
+
+.ambient-panel.visible {
+  display: flex;
+}
+
+.ambient-label {
+  margin-right: 4px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.ambient-tracks {
+  display: flex;
+  gap: 4px;
+}
+
+.ambient-track-btn {
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  opacity: 0.6;
+}
+
+.ambient-track-btn:hover {
+  opacity: 1;
+  border-color: var(--border-glass);
+}
+
+.ambient-track-btn.active {
+  opacity: 1;
+  border-color: var(--accent-primary);
+  background: rgba(0, 240, 255, 0.08);
+}
+
+.ambient-track-btn.disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.ambient-mute-btn {
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  opacity: 0.6;
+  margin-left: 4px;
+}
+
+.ambient-mute-btn:hover {
+  opacity: 1;
+  border-color: var(--border-glass);
+}
+
+.ambient-mute-btn.muted {
+  opacity: 1;
+  border-color: #ff007f;
+}
+
+/* ─── Music Maker ───────────────────────────────────── */
+#music-btn {
+  position: fixed;
+  bottom: calc(16px + env(safe-area-inset-bottom));
+  left: calc(16px + env(safe-area-inset-left));
+  z-index: 200;
+  display: none;
+  width: 40px;
+  height: 40px;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-card);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border-glass);
+  border-radius: 50%;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+#music-btn.visible {
+  display: flex;
+}
+
+#music-btn:hover {
+  border-color: var(--accent-primary);
+}
+
+.music-panel {
+  position: fixed;
+  bottom: calc(64px + env(safe-area-inset-bottom));
+  left: calc(16px + env(safe-area-inset-left));
+  z-index: 250;
+  display: none;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  background: var(--bg-card);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--border-glass);
+  border-radius: 16px;
+  width: 220px;
+  animation: fadeIn 0.3s ease both;
+}
+
+.music-panel.visible {
+  display: flex;
+}
+
+.music-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.music-title {
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  color: var(--text-primary);
+}
+
+.music-close {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1rem;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.music-close:hover {
+  color: #ff007f;
+}
+
+.music-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.music-cell {
+  aspect-ratio: 1;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-glass);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.music-cell:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.music-cell.active {
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 8px rgba(0, 240, 255, 0.3);
+}
+
+.music-cell.beat {
+  border-color: rgba(0, 240, 255, 0.4);
+}
+
+.music-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.music-play {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--bg-card);
+  border: 1px solid var(--border-glass);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.music-play:hover {
+  border-color: var(--accent-primary);
+}
+
+.music-play.playing {
+  border-color: #39ff14;
+  color: #39ff14;
+}
+
+.music-bpm {
+  flex: 1;
+  accent-color: var(--accent-primary);
+}
+
+.music-bpm-label {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  min-width: 28px;
+  text-align: right;
 }
 
 /* ═══════════════════════════════════════════════════════
