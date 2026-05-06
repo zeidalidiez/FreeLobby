@@ -58,7 +58,7 @@ All room state lives in-memory. Rooms die when empty. No persistent database req
 
 ## Deployment & Server Workflow
 
-This project is deployed on an Oracle Cloud Ubuntu server.
+This project is deployed on an Oracle Cloud Ubuntu server. A Docker-based setup is in the works to make self-hosting a one-liner — until then, the manual steps below work fine.
 
 ### Local Development
 
@@ -80,7 +80,7 @@ Then open `http://localhost:3000`.
 
 2. **SSH into the server:**
    ```bash
-   ssh ubuntu@147.224.35.250 -i "C:\Users\zeidd\.ssh\ssh.key"
+   ssh ubuntu@<your-server-ip> -i <path-to-your-key>
    ```
 
 3. **Pull and restart:**
@@ -129,6 +129,8 @@ pm2 startup ubuntu
 pm2 save
 ```
 
+> **Production note:** the server itself listens on plain HTTP at port 3000. The live instance terminates TLS at a reverse proxy (Caddy/nginx + certbot). If you're self-hosting publicly, put a reverse proxy in front — a Docker-based setup that does this automatically is on the roadmap.
+
 ---
 
 ## License
@@ -137,3 +139,12 @@ MIT — FreeLobby is FOSS and anyone can run their own servers or build off of i
 
 If it brightened your day, consider supporting its existence: https://ko-fi.com/zeiddiez
 
+---
+
+## Special Thanks
+
+A handful of friends and contributors have helped FreeLobby exist. In particular:
+
+- **[Top Notch QA](https://topnotchqa.com)** — my employer. Grateful for the work, the people, and the slack to make things like this.
+
+FreeLobby does not accept paid placement inside the product. The names listed here are personal thanks, not advertisers.

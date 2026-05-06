@@ -1,349 +1,337 @@
-# FreeLobby — AI Living Document
+# FreeLobby — Work In Progress (Phase 3.5 Hardening)
 
 > **Project:** FreeLobby  
 > **Repo:** https://github.com/zeidalidiez/FreeLobby  
-> **Live:** https://freelobby.zeiddiez.com/  
 > **Stack:** Node.js + Express + Socket.IO + Phaser 3  
-> **License:** MIT (FOSS — non-commercial ethos)  
-> **Updated:** 2026-05-04
+> **Updated:** 2026-05-06  
+> **Owner:** Zeid  
+> **Coding agent:** Kimi K2.6 via opencode
 
 ---
 
-## 1. Core Philosophy
+## 0. Read this first
 
-FreeLobby is a **safe, consent-first social space** for introverts and anyone seeking low-pressure human connection. It is explicitly *not* a commercial product. It is a public good.
+This document is a focused punch-list of fixes between Phase 3 (shipped) and Phase 4 (presence enrichment, not started). Do these tasks **in the order listed**. They've been prioritized by a strategic review and are designed to harden the existing surface before new features layer on top.
 
-- **No login, no passwords, no tracking.**
-- **No one can communicate with you without your explicit consent.** The "Vibe Check" is the central gatekeeper for all text.
-- **Minimalist but atmospheric.** Low-fi, procedural graphics. No user-uploaded assets (moderation nightmare).
-- **Ephemeral by default.** Rooms die when empty. No persistent database required for core experience.
-- **Introvert-friendly.** Lurking is a valid playstyle. Silence is not awkward here.
+**Hard rules from `AI.MD §4 (Safety & Consent Architecture)` are non-negotiable.** If any task below seems to require violating them — global chat, message bypassing the Vibe Check pair gate, user-uploaded sprites, broken silent-rejection, etc. — stop and flag it. Do not ship.
 
----
+**Locked-in room taxonomy (governs Tasks 7 and 9):**
 
-## 2. Tech Stack & Constraints
+| Room type | Owner | User decoration | Matchmaker | Discovery |
+|-----------|-------|-----------------|------------|-----------|
+| **Common** | None (server) | None — Phase 5a, not in this WIP | No | Browse list (Phase 5a) |
+| **Random** | None | None — always empty | Yes | Random join only |
+| **Private** | The creator | Owner-only build mode, Memory-Card-savable | No | Code only |
 
-| Layer | Tech |
-|-------|------|
-| Frontend | Phaser 3 (Canvas/WebGL), vanilla JS, HTML/CSS overlays |
-| Backend | Node.js, Express, Socket.IO |
-| Hosting | Oracle Cloud Free Tier (1 vCPU, ~5GB disk, Ubuntu) |
-| Process Manager | PM2 |
-| Assets | **Procedural / Code-generated only.** No user uploads. Minimal static images if absolutely necessary. |
+The structural rule: **decoration requires individual ownership; only private rooms have an individual owner; therefore only private rooms allow user-placed furniture.**
 
-**Server Hard Limits (Current):**
-- Max 50 concurrent rooms
-- Max 10 players per room
-- Player idle timeout: 15 minutes
-- All state lives in-memory (`Map` objects). No database for core loop.
+When you finish each task, update its checkbox in §3 below and append a one-line note to §6.
 
 ---
 
-## 3. Visual Identity: Neon/Tron Aesthetic
+## 1. Already done (don't redo)
 
-The game world is a **retro-futuristic wireframe grid**.
+These were handled outside opencode and are already in the repo or are committed alongside this WIP doc. Do not reimplement.
 
-### Palette
-- **Background:** Deep black/void (`#050508` to `#0a0a10`)
-- **Grid Lines:** Electric cyan/blue (`#00f0ff`, `#0088ff`) with low opacity, pulsing subtly
-- **Accents:** Neon Magenta (`#ff00ff`), Lime (`#39ff14`), Hot Pink (`#ff007f`), Electric Yellow (`#ffff00`), Cyan (`#00ffff`)
-- **UI:** Glassmorphism dark panels with neon borders
-- **Text:** Cool whites (`#e0f7ff`), muted blues for secondary
-
-### Player Avatars
-- Procedurally drawn glowing circles or geometric shapes.
-- Customizable via **safe, procedural options only** (color, glow intensity, shape variant, tiny accessories like pixel headphones or a halo — all drawn in code).
-- **NO user-uploaded sprites.** This is a hard rule to prevent offensive imagery.
-
-### Environment
-- Floor is an infinite-feeling **perspective grid** or flat Tron-style tile grid.
-- Walls are glowing neon barriers.
-- Furniture (future) will be glowing wireframe primitives (cube, sphere, cylinder) in neon colors.
+- [x] **README cleanup** — production server IP and personal SSH key path scrubbed and replaced with `<your-server-ip>` / `<path-to-your-key>` placeholders. New `Special Thanks` section added at the bottom (Top Notch QA listed there as personal thanks, with explicit "no paid placement" line). Brief production-note paragraph added under `First-Time Server Setup` mentioning that TLS lives at a reverse proxy.
 
 ---
 
-## 4. Safety & Consent Architecture
+## 2. Out of scope for this WIP
 
-This is non-negotiable. Every AI working on this must preserve these mechanics.
+To avoid drift, do **not** start any of these in this pass — they belong to later phases:
 
-1. **Anonymity by Default:** All players appear as "Stranger N" until a mutual Vibe Check passes.
-2. **Vibe Check Gate:** All text chat (`sendSign`) is only visible between pairs who have mutually accepted a Vibe Check.
-3. **Silent Rejection:** Declining a Vibe Check gives zero feedback to the requester. No guilt, no pressure.
-4. **Flee Button:** One-click escape to a new, empty room. Always available.
-5. **Rate Limiting:** Emotes (500ms), Signs (500ms), Vibe Checks (5s).
-
-**Rule:** Do NOT implement global chat, room chat, or any text communication that bypasses the Vibe Check pair system.
+- Phase 4: Leave-a-Note, sit/idle animations, shared ambient audio, light music maker (4×4 sequencer)
+- Phase 5: Common Rooms (server-curated themed rooms — The Lobby / Zen Garden / Library), Room Bookmarks, mobile pass, accessibility
+- Docker / containerization (separate WIP coming)
+- Federation, multi-instance discovery, contributor governance docs
 
 ---
 
-## 5. Feature Roadmap
+## 3. Task list (do in order)
 
-### Phase 1: Neon/Tron Visual Overhaul *(COMPLETE)*
-- [x] Rewrite CSS for neon blue/cyan theme
-- [x] Rewrite Phaser graphics for glowing neon avatars
-- [x] Implement animated grid floor
-- [x] Implement glowing neon walls
-- [x] Update player color palette to neon set
+### Task 1 — Remove the Top Notch QA sponsor block from the love modal
 
-### Phase 2: Character Customization *(COMPLETE)*
-- [x] Pre-lobby customization panel (toggleable)
-- [x] Options: Neon color swatch, Shape (Circle/Square/Diamond), Accessory (Headphones/Halo/Beanie), Glow pulse speed
-- [x] Procedural sprite generation for each shape + accessory combo
-- [x] **Avatar Hash:** Compact 4-char string encoding all choices (e.g., `0c10`)
-- [x] Copy/paste hash UI for saving and sharing avatars
-- [x] Send customization data to server so others see your avatar correctly
-- [x] Subtle glow pulse animation in-game
+**What:** Delete the sponsor block currently embedded inside the "Made with Love" modal. Top Notch QA has been moved to a `Special Thanks` section in the README; the in-product placement is being retired to keep the project's anti-commercial positioning honest.
 
-### Phase 3: Private Rooms & Furniture *(COMPLETE)*
-- [x] Room ownership: Creator is the owner
-- [x] Room settings: Public (joinable by code/random) or Private (invite only)
-- [x] Furniture system: Owner can place wireframe primitives from a palette
-- [x] **Grid-based placement:** All furniture snaps to a 64px grid
-- [x] **Placement limit:** 100 items per room (enforced server-side)
-- [x] Procedural neon furniture rendering (8 types: Cube, Sphere, Cylinder, Pyramid, Chair, Plant, Lamp, Rug)
-- [x] Owner-only build mode with place/remove tools
-- [x] **Room Memory Card:** Cyberpunk PNG card export/import with embedded RGBA data strip
-- [x] **Room Theme:** Stored in card + room state (prepared for multiple room aesthetics)
-- [x] All furniture unlocked for all users
-- [x] Non-owners can view furniture but cannot move it
-- [ ] "Invite to Room" via Vibe Check context menu
+**Where:** `public/index.html`, lines 238–244 (between the closing `<p class="love-modal-thanks">` tag on line 237 and the closing `</div>` of `.love-modal` on line 245). The exact block to remove:
 
-### Phase 4: Indirect Communication & Audio
-- [ ] "Leave a Note": One sticky note per player per room (10 chars), visible to all, no Vibe Check needed
-- [ ] Sit/Idle animations: Avatar sits down after inactivity
-- [ ] Shared ambient audio: Optional toggle for very quiet cyberpunk drone/lo-fi
-- [ ] Light music maker: Simple shared sequencer (e.g., 4x4 grid of notes) that plays for everyone in the room — purely indirect communication via sound
+```html
+      <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); text-align: center;">
+        <p style="font-size: 0.85rem; color: #a1a1aa; margin-bottom: 10px;">Looking for the world's best QA team? Consider <a href="https://topnotchqa.com" target="_blank" style="color: #fff; text-decoration: none;">Top Notch QA</a></p>
+        <a href="https://topnotchqa.com" target="_blank">
+          <img src="https://topnotchqa.com/wp-content/uploads/2018/05/tn-logo-small-white.png" alt="Top Notch QA Logo" style="height: 35px; opacity: 0.9;">
+        </a>
+      </div>
+```
 
-### Phase 5: Community & Polish
-- [ ] Public Hub Rooms: Always-on rooms with higher caps (The Lobby, The Zen Garden)
-- [ ] Room Bookmarks: `localStorage` save for favorite room codes
-- [ ] Mobile optimization pass: Ensure touch controls feel native
-- [ ] Accessibility: High contrast mode, reduced motion
+Plus the blank line above it (line 238).
+
+**Acceptance:**
+- The love modal no longer contains the QA block, the QA logo image, or any reference to topnotchqa.com.
+- The rest of the modal (heart icon, title, support copy, Ko-fi link, "Thank you for being here" line) is unchanged.
+- No broken layout: trailing whitespace cleaned, no orphan `<div>`s.
+- Verify by clicking the heart icon in the running game — modal opens, no sponsor block visible.
 
 ---
 
-## 6. Build Conventions for AI Agents
+### Task 2 — Add a `LICENSE` file (MIT)
 
-- **Minimal changes.** Do not refactor working code unless necessary. Prefer additive changes.
-- **No new dependencies** without explicit user approval. Keep the bundle light.
-- **No databases.** If persistence is needed, use flat files or SQLite only, and debate it first.
-- **Procedural assets > Static assets.** If you need an image, draw it in Phaser's `Graphics` first.
-- **Mobile-first overlays.** All HTML UI must respect `env(safe-area-inset-*)`.
-- **Preserve existing Socket.IO events.** New events are fine; changing old ones requires updating both client and server.
-- **Test locally** with `npm run dev` before considering a step done.
+**What:** The README and `package.json` declare MIT, but there is no `LICENSE` file in the repo root. GitHub doesn't recognize the license without it (no license badge in the repo sidebar). FOSS scanners flag the repo as unlicensed.
+
+**Where:** Create `/LICENSE` at repo root.
+
+**Acceptance:**
+- File contains the standard MIT License text with copyright `Copyright (c) 2026 Zeid Diez` (adjust year/name as preferred).
+- After commit + push, GitHub displays "MIT License" in the repo sidebar.
+
+**Reference text:** https://opensource.org/license/mit/ — copy the canonical block, fill in the year and copyright holder line.
 
 ---
 
-## 7. Furniture Developer Guide
+### Task 3 — Fix the furniture-limit error string
 
-This section explains how to add new furniture types, modify footprints, and understand the grid occupancy system.
+**What:** Server emits an error message saying the furniture limit is `20`, but the actual `MAX_FURNITURE` constant is `100`. Stale string left over from an earlier limit. Players currently see a wrong number in the error toast.
 
-### Overview
+**Where:** `server/index.js`. Search for the string `Room furniture limit reached (20)` and replace with `Room furniture limit reached (100)` — or, better, interpolate the constant so this can't drift again: `` `Room furniture limit reached (${MAX_FURNITURE}).` ``.
 
-Furniture uses a **grid occupancy system** similar to The Sims or Habbo Hotel. Every piece of furniture occupies one or more cells on a 64px grid. Cells can be:
-- **Occupied** — another furniture item cannot be placed here.
-- **Blocked** — players cannot walk through here (unless the furniture is `walkable`).
-- **Walkable** — players can walk through (e.g., chairs, rugs) but furniture still cannot overlap.
+**Acceptance:**
+- No string in the server file mentions `(20)` as a furniture cap.
+- If you place 101+ furniture items, the error toast shows `(100)` (or the current `MAX_FURNITURE` value).
 
-### Architecture
+---
 
-The system spans three areas: **Server validation**, **Client rendering**, and **Client physics**.
+### Task 4 — Server-side name sanitization
 
-#### 1. Server: `server/index.js`
+**What:** The 24-character player-name limit is enforced only via the HTML `<input maxlength>` attribute on the landing page. A custom Socket.IO client could send any string. Currently safe because Phaser renders names to canvas (not DOM), but this is a footgun for any future feature that touches the DOM.
 
-**Footprint Registry:**
+**Where:** `server/index.js`, in the handler where the player provides their name on join (search for where `playerData.name` is first assigned from the socket payload).
+
+**Implementation:**
 ```js
-const FURNITURE_FOOTPRINTS = [
-  { w: 1, h: 1, walkable: false }, // 0: Cube
-  { w: 1, h: 1, walkable: false }, // 1: Sphere
-  { w: 1, h: 1, walkable: false }, // 2: Cylinder
-  { w: 1, h: 1, walkable: false }, // 3: Pyramid
-  { w: 1, h: 1, walkable: true  }, // 4: Chair
-  { w: 1, h: 1, walkable: false }, // 5: Plant
-  { w: 1, h: 1, walkable: false }, // 6: Lamp
-  { w: 2, h: 2, walkable: true  }, // 7: Rug
-];
+function sanitizeName(raw) {
+  if (typeof raw !== 'string') return 'Anon';
+  // Strip control characters and zero-width characters, then clip to 24.
+  const cleaned = raw
+    .replace(/[\u0000-\u001F\u007F-\u009F\u200B-\u200F\u202A-\u202E\uFEFF]/g, '')
+    .trim()
+    .slice(0, 24);
+  return cleaned.length > 0 ? cleaned : 'Anon';
+}
 ```
 
-| Property | Type | Description |
-|----------|------|-------------|
-| `w` | integer | Width in grid cells |
-| `h` | integer | Height in grid cells |
-| `walkable` | boolean | `true` = players can walk through it |
+Apply `sanitizeName(payload.name)` before storing.
 
-**Rotation handling:** The footprint is automatically swapped (`w ↔ h`) when rotated 90° or 270° (`r = 1` or `r = 3`). This is handled by `getFootprint()` and `getCells()`.
-
-**Occupancy Tracking:** Every room maintains two `Set`s:
-- `room.occupiedCells` — all cells taken by furniture (prevents overlapping placement)
-- `room.blockedCells` — cells that block player movement (only non-walkable furniture)
-
-On placement, the server checks:
-1. Bounds: `x + w` and `y + h` must fit inside the world.
-2. Overlap: No cell in the footprint may already exist in `occupiedCells`.
-3. Limit: Max 100 items per room.
-
-On removal, all cells for that item are removed from both sets.
-
-#### 2. Client: `public/js/game.js`
-
-**Client Footprint Mirror:**
-The client mirrors the server's footprint array in `FURNITURE_FOOTPRINTS` and `getClientFootprint()`. These **must stay in sync** with the server array.
-
-**Texture Generation:**
-In `preload()`, furniture textures are drawn procedurally using Phaser's `Graphics`.
-```js
-const furnGfx = this.make.graphics({ add: false });
-// 0: Cube
-furnGfx.clear(); furnGfx.lineStyle(2, 0xffffff, 0.9); furnGfx.strokeRect(0, 0, 64, 64);
-furnGfx.generateTexture('furn-0', 64, 64);
-```
-
-**Important:** All furniture textures should be generated at **64×64 base resolution**. The renderer scales them by `(w, h)` to match the footprint. A 2×2 rug uses `sprite.setScale(2, 2)`.
-
-**Rendering:** `renderFurnitureItem(item)` calculates the sprite position as:
-```js
-x = item.x * 64 + (fp.w * 64) / 2;
-y = item.y * 64 + (fp.h * 64) / 2;
-```
-
-**Physics:** Non-walkable furniture sprites are added to `scene.furnitureGroup` (a Phaser `staticGroup`), which collides with the player. Walkable furniture is NOT added to the physics group.
-
-**Build Mode Click Handler:** When the owner clicks in build mode, the client calculates the grid cell from `pointer.worldX / 64` and `pointer.worldY / 64`. For removal, it finds any furniture whose footprint contains the clicked cell.
-
-#### 3. UI: `public/index.html` & `public/css/style.css`
-
-The build palette is generated dynamically in JavaScript. To add a new furniture button to the palette, push a new icon to `FURNITURE_ICONS` and name to `FURNITURE_NAMES`.
-
-### How to Add a New Furniture Type
-
-**Step 1 — Server footprint:**
-Add a new entry to `FURNITURE_FOOTPRINTS` in `server/index.js`:
-```js
-{ w: 2, h: 1, walkable: false }, // 8: Neon Sofa
-```
-
-**Step 2 — Client footprint:**
-Mirror it in `public/js/game.js` inside `FURNITURE_FOOTPRINTS` at the same index.
-
-**Step 3 — Texture:**
-In `preload()`, draw the new texture:
-```js
-// 8: Sofa
-furnGfx.clear(); furnGfx.lineStyle(2, 0xffffff, 0.9);
-furnGfx.strokeRect(0, 8, 64, 48); furnGfx.lineBetween(32, 8, 32, 56);
-furnGfx.generateTexture('furn-8', 64, 64);
-```
-
-**Step 4 — UI palette:**
-Add an icon and name:
-```js
-const FURNITURE_NAMES = ['Cube', ..., 'Rug', 'Sofa'];
-const FURNITURE_ICONS = ['🟦', ..., '🟩', '🛋️'];
-```
-
-**Step 5 — Test:**
-Boot the server, create a room, enter build mode, and verify placement, collision, and removal work correctly.
-
-### Switching from Procedural to Image Assets
-
-If you later want to use PNG sprites instead of procedural graphics:
-1. Remove the `generateTexture('furn-N')` call.
-2. Add a standard `this.load.image('furn-N', 'assets/furniture/sofa.png')`.
-3. Keep the footprint system, physics group logic, and rendering math exactly the same.
-4. The `setScale(w, h)` call will stretch the image to fit multi-cell footprints. For pixel-art, use `setScale(w, h)` with `sprite.texture.setFilter(Phaser.Textures.NEAREST)`.
+**Acceptance:**
+- A custom client sending a 1000-character name results in a stored name of 24 chars max.
+- A client sending control characters, zero-width spaces, or BOM gets them stripped server-side.
+- Empty / non-string input falls back to `'Anon'` rather than crashing or accepting garbage.
+- Existing players with valid names see no behavior change.
 
 ---
 
-## 8. Deployment Notes
+### Task 5 — Per-room emote rate cap
 
-```bash
-# Local dev
-npm install
-npm run dev
+**What:** Emotes are room-broadcast and gated only by a per-user 500ms rate limit. A determined user (or a botted client) can still flood a room with emotes at 2/second, and there's no remedy beyond Flee. Add a per-room aggregate cap so a single bad actor can't dominate the visual channel.
 
-# Deploy to Oracle Cloud
-ssh ubuntu@147.224.35.250 -i "C:\Users\zeidd\.ssh\ssh.key"
-cd ~/FreeLobby
-git pull
-pm2 restart freelobby
+**Design:**
+- Track per-room emote count in a sliding 1-second window.
+- Cap at e.g. **30 emotes per room per second** total (across all users in the room).
+- When the cap is exceeded, **silently drop** further emotes for the rest of that window. Do not notify anyone — silent dropping is consistent with the "silent rejection" posture.
+- The 500ms per-user rate limit stays in place. This is an additional layer, not a replacement.
+
+**Where:** `server/index.js`, in the `sendEmote` handler.
+
+**Implementation sketch:**
+```js
+// Add to room state:
+// room.emoteWindow = { startMs: 0, count: 0 };
+
+const ROOM_EMOTE_CAP_PER_SEC = 30;
+const now = Date.now();
+if (now - room.emoteWindow.startMs > 1000) {
+  room.emoteWindow.startMs = now;
+  room.emoteWindow.count = 0;
+}
+if (room.emoteWindow.count >= ROOM_EMOTE_CAP_PER_SEC) {
+  return; // silent drop
+}
+room.emoteWindow.count += 1;
+// existing broadcast logic continues
 ```
 
----
-
-## 9. Data Format Specifications (Open Standards)
-
-These formats are documented so users can build their own tools, bots, and room editors.
-
-### Avatar Hash (4 characters)
-`[Color][Shape][Accessory][Pulse]`
-
-| Char | Meaning | Values |
-|------|---------|--------|
-| 1 | Color Index | `0-9` (maps to PLAYER_COLORS array) |
-| 2 | Shape | `0`=Circle, `1`=Square, `2`=Diamond |
-| 3 | Accessory | `0`=None, `1`=Headphones, `2`=Halo, `3`=Beanie |
-| 4 | Pulse Speed | `0`=Slow, `1`=Normal, `2`=Fast |
-
-**Example:** `0101` = Color 0 (Cyan), Shape 1 (Square), Accessory 0 (None), Pulse 1 (Normal).
-
-### Room Memory Card (PNG Image)
-
-Instead of a text hash, FreeLobby uses a **cyberpunk memory card** — a small PNG image (320×200px) that owners can download, save, and upload later to reconstruct their room. This is more user-friendly, visually distinct, and supports far more metadata than a text string.
-
-**Card Appearance:**
-- Dark void background with electric cyan neon border and corner brackets
-- "ROOM CARD" header + room code
-- Abstract mini grid preview showing furniture placement (adapts to room theme)
-- "FreeLobby" branding
-- A 1-pixel data strip hidden at the very bottom row (row 199)
-
-**Data Encoding (Bottom Pixel Row):**
-
-To avoid alpha-channel corruption during PNG compression, we use **2 pixels per item** with alpha pinned to 255.
-
-| Pixel | R | G | B | A | Purpose |
-|-------|---|---|---|---|---------|
-| 0 | Version (1) | Theme ID | Reserved | 255 | Header |
-| 1 | Count | 0 | 0 | 255 | Furniture count |
-| 2+N×2 | Type | Grid X | Grid Y | 255 | Item N position |
-| 3+N×2 | Rotation | Layer | Reserved | 255 | Item N metadata |
-
-- **Version:** Always 1 (for future format changes)
-- **Theme ID:** 0–255 (for different room aesthetics)
-- **Rotation:** 0–3 (90° increments)
-- **Layer:** 0–63 (stacking support)
-
-This format supports:
-- **255 furniture items** per room (expandable)
-- **64 stacking layers** (for rugs-on-rugs, etc.)
-- **256 room themes** (for future aesthetic variations)
-- **Lossless preservation** via PNG export
-
-**Server Events:**
-- `setRoomFurniture({ furniture, theme })` — atomically replaces room layout + theme
-- `setRoomTheme({ theme })` — changes room theme only
-
-**Import behavior:** The server validates the entire furniture array atomically. If any item is invalid, out of bounds, overlapping, or exceeds the limit, the entire import is rejected and the existing room layout is preserved.
-
-**Legacy Support:** The old Base64 JSON `importRoomHash` event remains functional for backward compatibility, but the UI now exclusively uses memory cards.
-
-**Furniture Type IDs:**
-| ID | Name | Footprint | Walkable |
-|----|------|-----------|----------|
-| 0 | Neon Cube | 1×1 | No |
-| 1 | Neon Sphere | 1×1 | No |
-| 2 | Neon Cylinder | 1×1 | No |
-| 3 | Neon Pyramid | 1×1 | No |
-| 4 | Neon Chair | 1×1 | Yes |
-| 5 | Neon Plant | 1×1 | No |
-| 6 | Neon Lamp | 1×1 | No |
-| 7 | Neon Rug | 2×2 | Yes |
+**Acceptance:**
+- With 1 normal user emoting, behavior is unchanged.
+- With a scripted client trying to flood emotes, the room never displays more than ~30 emotes/sec total.
+- The flooding client gets no error and no notification — emotes simply stop appearing.
+- Tune the cap value with a comment if you find 30 too tight or too loose at low player counts.
 
 ---
 
-## 10. Open Questions & Ideas Backlog
+### Task 6 — "Mute Stranger N" personal toggle
 
-- Should we add a simple "Report" button for trolls who emote-spam?
-- Could we implement a "Do Not Disturb" mode where your avatar appears semi-transparent and Vibe Checks are auto-declined?
-- Should rooms have a "capacity" setting (e.g., 2 people for intimate 1-on-1, 10 for a party)?
-- Can we do a simple synced particle effect when two Vibe-Checked players stand close together for 10s? (A "resonance" effect.)
+**What:** A user-side option to silently hide all emotes (and any future ungated signals) coming from a specific stranger. Architecture-consistent with silent rejection: opt-in, no notification to the muted party, reversible.
+
+**Design:**
+- Right-click (or long-press on touch) on a stranger's avatar → context menu adds a "Mute" option (alongside the existing "Vibe Check" option).
+- Mute state is stored client-side only in the Phaser scene's player object. **It does not need to be sent to the server.** The client filters incoming `playerEmote` (and similar) events for muted player IDs and ignores them.
+- Mute persists for the current session only. Disconnect = mute clears. Match the project's ephemeral posture.
+- An "Unmute" option appears when right-clicking an already-muted stranger.
+- Muted strangers' avatars render normally — no visual indication. Silent.
+
+**Where:** `public/js/game.js` — wherever the avatar context menu is built and wherever incoming emote events are handled.
+
+**Acceptance:**
+- Muting Stranger 2 → their emotes stop appearing for me.
+- They see no notification, no greyed avatar, nothing.
+- I can still see Stranger 2's movement, sit/idle state, name (if Vibe-Checked), etc. — only the ungated signal channels (emotes, future notes) are filtered.
+- Refreshing the page or rejoining the room clears all mutes.
+- Ideally, a future Vibe Check from a muted player still arrives normally (mute applies to ungated channels, not the consent channel itself).
+
+---
+
+### Task 7 — Restrict build mode to private rooms only
+
+**What:** Decouple ownership and build-mode from random rooms. Today, when someone clicks "Create Public Room" or first lands in an auto-created random room, they become `ownerId` and get build-mode access. Under the locked-in room taxonomy, **only private rooms have owners and only private rooms allow decoration.** Random rooms become genuinely empty default boxes.
+
+**Why:** Cleaner architectural model: "decoration requires individual ownership; only private rooms have an individual owner; therefore only private rooms allow user-placed furniture." Eliminates a small abuse surface (a bad actor placing hostile/intimidating furniture and waiting for randoms to land in the room). Lets random rooms be genuinely public meeting spots without the ambient expectation of "whose space is this."
+
+**Where:**
+
+`server/index.js`:
+- **`createRoom` handler** — when `isPublic !== false`, set `ownerId: null` (currently sets `ownerId: socket.id` unconditionally). The path from "Create Public Room" should produce a no-owner room.
+- **`joinRandomRoom` auto-create branch** — set `ownerId: null` (currently sets `ownerId: socket.id`).
+- **All furniture event handlers** — `addFurniture`, `removeFurniture`, theme changes, anything that mutates room layout — guard with `if (room.isPublic) return;` (silent drop, no error to client). This is server-authoritative: even a custom Socket.IO client cannot cause furniture mutation in a public/random room.
+- **Joined-event payload** — when emitting `joinedRoom` / similar, ensure `isOwner` is `false` whenever `ownerId === null`. Should already be true via `room.ownerId === socket.id` returning false, but verify.
+
+`public/js/game.js`:
+- When the joined event indicates `isPublic: true` (or `isOwner: false`), **hide the build-mode entry/UI entirely**. The build palette button should not appear at all in random rooms — not even greyed out.
+- **Memory Card download/upload UI** — also hidden in non-private rooms (no layout to save, no layout to load into).
+
+`public/index.html` (landing page):
+- The "Create Room" path should default to creating a **private** room. If there's currently a public/private toggle on creation, replace it: the `Create` action always produces a private room with an owner. Public rooms are no longer user-creatable — they only come into existence via the `joinRandomRoom` auto-create path.
+- Update copy / button labels to match: `Create Private Room` is clearer than `Create Room`.
+
+**Acceptance:**
+- Creating a private room → owner can build, guests cannot, Memory Card works (current behavior preserved for the private flow).
+- Joining a random room (via "Join Random") → no one can build. No build-mode button visible. No "you are owner" indicator.
+- Server silently rejects furniture events from any client when `room.isPublic` is true. An attempted `addFurniture` via a custom Socket.IO client in a random room produces no state change on the server and no other clients see anything.
+- Auto-created random rooms (when the matchmaker has no available rooms) have `ownerId: null`. The first arrival is just a guest — they cannot build, and a second arrival has equivalent permissions.
+- Existing live behavior preserved: random rooms still match-make correctly, private rooms still get codes, Vibe Check still works in both.
+
+**Notes for Kimi:**
+- This is the largest task in the WIP. Do it as one logical commit.
+- Coordinates with Task 9 (Flee → private). Once both ship, the only paths to a buildable room are *Create Private Room* or *Flee*. Random rooms are permanently empty.
+- The strategy doc (Co-Founder Strategy Brief, "Room Taxonomy" section) is the canonical reference for the room model.
+
+---
+
+### Task 8 — Phase 3 closeout: "Invite to Room" via Vibe Check context menu
+
+**What:** The last unchecked Phase 3 item in `AI.MD §5`. Add an "Invite to my room" option to the Vibe Check context menu so players who have mutually Vibe-Checked can pull each other into a private room.
+
+**Constraints:**
+- The "Invite to my room" option **only appears when the inviter is currently in a private room they own.** It does not appear in random or common rooms (no ownership relationship; the matchmaker / browse-list is the right path for those).
+- Both players must already be in `revealedPairs` (mutual Vibe Check passed). Inviting a non-revealed stranger is a covert side-channel and a violation of the consent gate.
+
+**Design:**
+- Inviter sends `sendInvite` with their current room code.
+- Server validates:
+  - Both players exist
+  - The pair is in `revealedPairs`
+  - The inviter's room is private (`isPublic: false`)
+  - The inviter is the room owner (`ownerId === inviter.socketId`)
+  - The inviter's room isn't full
+- Invitee receives an `invitationReceived` event. UI shows a small toast: *"`<RealName>` invites you to room `<code>`. Join? / Decline?"*
+- Decline produces no event back to the inviter (silent — consistent with Vibe Check decline).
+- On accept, the invitee leaves their current room and joins the inviter's room as a guest.
+- Rate limit: max 1 invite from a given inviter to a given invitee per 30 seconds.
+
+**Where:** `server/index.js` (new event handlers `sendInvite` / `acceptInvite`), `public/js/game.js` (context menu entry, toast UI, accept handler).
+
+**Acceptance:**
+- The invite menu only appears when the inviter is in a private room they own AND the avatar right-clicked has been Vibe-Checked.
+- Decline produces no event back to the inviter (silent).
+- Accept moves the invitee into the inviter's room cleanly (no ghost player in the old room).
+- An attempt to invite a non-revealed player or invite from a non-private room is rejected server-side and produces no client-visible state change.
+- Invites cannot be spammed (rate limit enforced).
+
+---
+
+### Task 9 — Flee Button privacy default
+
+**What:** When a user clicks Flee, the new room they land in defaults to **private** (`isPublic: false`) so the random matchmaker can never drop strangers into their escape. The fleer becomes the owner of their new private retreat — they can build there, share the code, or just sit alone.
+
+**Why:** The Flee Button is a panic button. Panic buttons should default to the safer state without making the user think or click again. Today, fled-into rooms are `isPublic: true` which means the random matchmaker can place new strangers into the fleer's "escape" space silently. This undoes the flee.
+
+This decision falls out structurally from the locked-in room taxonomy: there are exactly three room types, and only Private fits the semantics of Flee.
+
+**Where:** `server/index.js`, in the `fleeRoom` handler. Around line 245.
+
+**Implementation:** Change the room creation to:
+```js
+rooms.set(roomId, {
+  players: new Map(),
+  revealedPairs: new Set(),
+  ownerId: socket.id,        // fleer is owner of their private retreat
+  isPublic: false,           // not in matchmaker pool — invisible to random join
+  furniture: [],
+  occupiedCells: new Set(),
+  blockedCells: new Set(),
+  theme: 0
+});
+```
+
+The `socket.emit('joinedRoom', { ... isPublic: false, isOwner: true ... })` payload should naturally reflect this. Verify the client UI shows the room as private (no "Public" indicator), the fleer has access to build mode (consistent with Task 7 — they own a private room, so they can build).
+
+**Acceptance:**
+- After Flee, the user is alone in the new room.
+- They are the owner (build palette appears for them — consistent with Task 7's private-rooms-only build rule).
+- If a different user clicks "Join Random Room" while the fleer is alone in their fled-into room, the matchmaker does NOT drop the random user into the fleer's room. Verify by opening a second browser tab and clicking Join Random — should not match into the fleer's room.
+- The fleer can flip the room to public via room settings if such a toggle exists (current behavior preserved if it does; not a new requirement).
+- No regression in Flee's existing UX: button is still always available, transition is fast, old room is properly cleaned up.
+
+---
+
+### Task 10 — Bonus: fix `.vscode/launch.json` port
+
+**What:** The Chrome debugger config points at `localhost:8080`, but the server runs on port 3000. Cosmetic dev-tooling inconsistency that would confuse a new contributor.
+
+**Where:** `.vscode/launch.json`.
+
+**Acceptance:** Replace `8080` with `3000`. Verify by running the game locally and clicking the VS Code "Debug" entry — the browser opens to the actual app, not a 404.
+
+---
+
+## 4. Done definition (whole WIP)
+
+- All required tasks (1–9) green-checked, plus Task 10 if you want the cosmetic fix.
+- Local manual smoke test:
+  - Open two browser tabs as two players.
+  - Both can see each other.
+  - Vibe Check accept / silent decline still works.
+  - Emote spam from one client gets dropped after the cap.
+  - Mute toggle hides emotes for the muting client only.
+  - Creating a private room → owner can build. Joining a random room → no one can build, no build UI.
+  - Fleeing → new room is private, fleer is alone, second tab's "Join Random" does not match in.
+  - Invite (after mutual Vibe Check, from inviter's private room) moves the invitee correctly.
+- README looks correct on GitHub (license badge present, no IP address visible).
+- Git push, `pm2 restart freelobby` on the live server, verify `https://freelobby.zeiddiez.com/` still loads.
+- Tag this milestone as `v0.4.0`.
+
+---
+
+## 5. Notes for Kimi
+
+- This is a **single-purpose hardening pass.** Resist the temptation to refactor `game.js` into modules during this WIP — that's a Phase 5/6 concern. Keep changes surgical.
+- All consent-architecture rules in `AI.MD §4` apply. If a task seems to require relaxing them, stop.
+- The locked-in room taxonomy (top of this doc + strategy brief) governs Tasks 7 and 9. If you find code that contradicts the taxonomy outside those tasks, note it in §6 — don't auto-expand scope.
+- Prefer small commits per task with the task number in the subject line, e.g. `WIP §3.4: server-side name sanitization`.
+- If you discover something else broken while doing one of these tasks, **note it at the bottom of this file** under §6 — don't auto-expand scope.
+
+---
+
+## 6. Completion log (append as you go)
+
+<!-- Add a one-line note per task as you ship it, e.g.: -->
+<!-- - Task 1 done (commit abcd123). Modal renders cleanly without sponsor block. -->
