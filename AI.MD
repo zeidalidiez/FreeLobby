@@ -25,6 +25,16 @@ This document is a focused punch-list of fixes between Phase 3 (shipped) and Pha
 
 The structural rule: **decoration requires individual ownership; only private rooms have an individual owner; therefore only private rooms allow user-placed furniture.**
 
+**Three design lenses (every new feature must pass ALL three):**
+
+1. **Verbal vs. non-verbal wall (Lens 1, the most fundamental):** The Vibe Check is the wall between *verbal/textual* (gated, only between consented pairs — Signs) and *non-verbal* (open to all — emotes, sounds, music, lights, room reactions, animations). Any text-shaped feature visible outside a Vibe-Checked pair is a violation, regardless of length. *Length doesn't matter; category matters.*
+
+2. **Summons vs. information (Lens 2):** Notifications that demand a decision (a toast asking accept/decline) are pressure. Information that can be acted on or ignored (a Sign saying "come hang — abcd") is not. Friction is the feature.
+
+3. **Consent doesn't generalize (Lens 3):** Consent for X does not authorize Y. A Vibe Check authorizes mutual conversation only — it doesn't authorize being moved into someone else's controlled space, being subscribed to broadcasts, or anything else. Each new dimension of trust needs its own gate.
+
+Reconsidered features that violated these lenses (Invite to Room, Leave-a-Note) are recorded in the strategy doc under *Reconsidered features (for the record)*.
+
 When you finish each task, update its checkbox in §3 below and append a one-line note to §6.
 
 ---
@@ -41,7 +51,7 @@ These were handled outside opencode and are already in the repo or are committed
 
 To avoid drift, do **not** start any of these in this pass — they belong to later phases:
 
-- Phase 4: Leave-a-Note, sit/idle animations, shared ambient audio, light music maker (4×4 sequencer)
+- Phase 4 (the room as instrument): interactive ambient objects (lights, minibars, bells, record players, lava lamps), sit/idle animations, Quiet Mode (avatar semi-transparent, auto-decline Vibe Checks), shared ambient audio, light music maker (4×4 sequencer). NOTE: "Leave a Note" was reconsidered and dropped — text visible outside a Vibe-Checked pair breaches Lens 1 regardless of length.
 - Phase 5: Common Rooms (server-curated themed rooms — The Lobby / Zen Garden / Library), Room Bookmarks, mobile pass, accessibility
 - Docker / containerization (separate WIP coming)
 - Federation, multi-instance discovery, contributor governance docs
