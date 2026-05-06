@@ -951,12 +951,7 @@ function generateRoomCard(roomId, furniture, theme) {
   ctx.fillStyle = '#00f0ff';
   ctx.font = 'bold 14px monospace';
   ctx.textAlign = 'center';
-  ctx.fillText('ROOM CARD', CARD_WIDTH / 2, 24);
-
-  // Room code
-  ctx.fillStyle = '#8aaabf';
-  ctx.font = '12px monospace';
-  ctx.fillText(roomId || '----', CARD_WIDTH / 2, 40);
+  ctx.fillText('ROOM CARD', CARD_WIDTH / 2, 28);
 
   // Mini grid preview
   const previewX = 80;
