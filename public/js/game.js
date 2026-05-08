@@ -40,6 +40,7 @@ const signSendBtn  = document.getElementById('sign-send');
 // Phase 4 — Vibe Check & Love
 const vibeAction    = document.getElementById('vibe-action');
 const vibeActionBtn = document.getElementById('vibe-action-btn');
+const muteActionBtn = document.getElementById('mute-action-btn');
 const vibePrompt    = document.getElementById('vibe-prompt');
 const vibeAcceptBtn = document.getElementById('vibe-accept');
 const vibeDeclineBtn = document.getElementById('vibe-decline');
@@ -59,6 +60,11 @@ const musicPlayBtn  = document.getElementById('music-play');
 const musicBpmInput = document.getElementById('music-bpm');
 const musicBpmLabel = document.getElementById('music-bpm-label');
 const musicGrid     = document.getElementById('music-grid');
+const bookmarkBtn   = document.getElementById('bookmark-btn');
+const bookmarksList = document.getElementById('bookmarks-list');
+const zoomInBtn     = document.getElementById('zoom-in');
+const zoomOutBtn    = document.getElementById('zoom-out');
+const zoomControls  = document.getElementById('zoom-controls');
 
 let game = null;
 let socket = null;
@@ -322,13 +328,19 @@ function decodeHash(str) {
 function updateCustomizationUI() {
   avatarHashInput.value = encodeHash(CUSTOMIZATION);
   colorSwatches.querySelectorAll('.swatch').forEach((el, i) => {
-    el.classList.toggle('active', i === CUSTOMIZATION.colorIdx);
+    const isActive = i === CUSTOMIZATION.colorIdx;
+    el.classList.toggle('active', isActive);
+    el.setAttribute('aria-checked', String(isActive));
   });
   shapeBtns.querySelectorAll('.shape-btn').forEach(el => {
-    el.classList.toggle('active', parseInt(el.dataset.shape, 10) === CUSTOMIZATION.shape);
+    const isActive = parseInt(el.dataset.shape, 10) === CUSTOMIZATION.shape;
+    el.classList.toggle('active', isActive);
+    el.setAttribute('aria-checked', String(isActive));
   });
   accBtns.querySelectorAll('.acc-btn').forEach(el => {
-    el.classList.toggle('active', parseInt(el.dataset.acc, 10) === CUSTOMIZATION.accessory);
+    const isActive = parseInt(el.dataset.acc, 10) === CUSTOMIZATION.accessory;
+    el.classList.toggle('active', isActive);
+    el.setAttribute('aria-checked', String(isActive));
   });
   pulseSlider.value = CUSTOMIZATION.pulse;
 }
@@ -338,14 +350,28 @@ COLOR_HEX_STR.forEach((hex, i) => {
   sw.className = 'swatch' + (i === 0 ? ' active' : '');
   sw.style.backgroundColor = hex;
   sw.style.boxShadow = `0 0 8px ${hex}66`;
+  sw.setAttribute('tabindex', '0');
+  sw.setAttribute('role', 'radio');
+  sw.setAttribute('aria-checked', String(i === 0));
+  sw.setAttribute('aria-label', `Color ${i + 1}`);
   sw.addEventListener('click', () => {
     CUSTOMIZATION.colorIdx = i;
     updateCustomizationUI();
   });
+  sw.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      sw.click();
+    }
+  });
   colorSwatches.appendChild(sw);
 });
 
-btnToggleCustomize.addEventListener('click', () => customizePanel.classList.toggle('open'));
+btnToggleCustomize.addEventListener('click', () => {
+  customizePanel.classList.toggle('open');
+  const isOpen = customizePanel.classList.contains('open');
+  btnToggleCustomize.setAttribute('aria-expanded', String(isOpen));
+});
 
 shapeBtns.addEventListener('click', (e) => {
   const btn = e.target.closest('.shape-btn');
@@ -354,11 +380,41 @@ shapeBtns.addEventListener('click', (e) => {
   updateCustomizationUI();
 });
 
+shapeBtns.addEventListener('keydown', (e) => {
+  const buttons = Array.from(shapeBtns.querySelectorAll('.shape-btn'));
+  const idx = buttons.indexOf(document.activeElement);
+  if (idx === -1) return;
+  let nextIdx = idx;
+  if (e.key === 'ArrowRight') nextIdx = idx + 1;
+  else if (e.key === 'ArrowLeft') nextIdx = idx - 1;
+  else return;
+  e.preventDefault();
+  if (nextIdx >= 0 && nextIdx < buttons.length) {
+    buttons[nextIdx].focus();
+    buttons[nextIdx].click();
+  }
+});
+
 accBtns.addEventListener('click', (e) => {
   const btn = e.target.closest('.acc-btn');
   if (!btn) return;
   CUSTOMIZATION.accessory = parseInt(btn.dataset.acc, 10);
   updateCustomizationUI();
+});
+
+accBtns.addEventListener('keydown', (e) => {
+  const buttons = Array.from(accBtns.querySelectorAll('.acc-btn'));
+  const idx = buttons.indexOf(document.activeElement);
+  if (idx === -1) return;
+  let nextIdx = idx;
+  if (e.key === 'ArrowRight') nextIdx = idx + 1;
+  else if (e.key === 'ArrowLeft') nextIdx = idx - 1;
+  else return;
+  e.preventDefault();
+  if (nextIdx >= 0 && nextIdx < buttons.length) {
+    buttons[nextIdx].focus();
+    buttons[nextIdx].click();
+  }
 });
 
 pulseSlider.addEventListener('input', () => {
@@ -389,6 +445,120 @@ function showError(msg) {
   errorToast.classList.add('visible');
   setTimeout(() => errorToast.classList.remove('visible'), 3500);
 }
+
+// ── Screen reader announcements ──
+function announce(msg) {
+  if (!srAnnouncer) return;
+  srAnnouncer.textContent = '';
+  // Force DOM update before setting new text
+  requestAnimationFrame(() => {
+    srAnnouncer.textContent = msg;
+  });
+}
+
+// ── Focus trap for modals ──
+function trapFocus(element) {
+  const focusable = element.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+  if (focusable.length === 0) return;
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  first.focus();
+
+  element._focusTrap = (e) => {
+    if (e.key !== 'Tab') return;
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  };
+  element.addEventListener('keydown', element._focusTrap);
+}
+
+function releaseFocus(element) {
+  if (element._focusTrap) {
+    element.removeEventListener('keydown', element._focusTrap);
+    delete element._focusTrap;
+  }
+}
+
+// ── Keyboard shortcuts ──
+document.addEventListener('keydown', (e) => {
+  // Ignore if typing in an input
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+  // Escape: close open panels
+  if (e.key === 'Escape') {
+    if (emoteGrid.classList.contains('open')) {
+      emoteGrid.classList.remove('open');
+      emoteToggle.setAttribute('aria-expanded', 'false');
+      return;
+    }
+    if (musicPanel.classList.contains('visible')) {
+      musicPanel.classList.remove('visible');
+      return;
+    }
+    if (furniturePanel.classList.contains('visible')) {
+      furniturePanel.classList.remove('visible');
+      buildMode = false;
+      return;
+    }
+    if (vibePrompt.classList.contains('visible')) {
+      vibePrompt.classList.remove('visible');
+      vibePromptFromId = null;
+      return;
+    }
+    if (loveModal.classList.contains('visible')) {
+      loveModal.classList.remove('visible');
+      return;
+    }
+    return;
+  }
+
+  // E: Toggle emote grid
+  if (e.key === 'e' || e.key === 'E') {
+    if (!currentRoomId) return;
+    emoteGrid.classList.toggle('open');
+    emoteToggle.setAttribute('aria-expanded', emoteGrid.classList.contains('open'));
+    return;
+  }
+
+  // B: Toggle build mode
+  if (e.key === 'b' || e.key === 'B') {
+    if (!currentRoomId || !isRoomOwner) return;
+    buildMode = !buildMode;
+    if (buildMode) {
+      furniturePanel.classList.add('visible');
+    } else {
+      furniturePanel.classList.remove('visible');
+    }
+    return;
+  }
+
+  // M: Toggle music maker
+  if (e.key === 'm' || e.key === 'M') {
+    if (!currentRoomId) return;
+    musicPanel.classList.toggle('visible');
+    return;
+  }
+
+  // Q: Toggle quiet mode
+  if (e.key === 'q' || e.key === 'Q') {
+    if (!currentRoomId) return;
+    quietBtn.click();
+    return;
+  }
+
+  // / or ?: Focus sign input
+  if (e.key === '/' || e.key === '?') {
+    if (!currentRoomId || signInput.disabled) return;
+    e.preventDefault();
+    signInput.focus();
+    return;
+  }
+});
 
 function renderCommonRooms(rooms) {
   if (!commonRoomsContainer) return;
@@ -489,7 +659,9 @@ function stopPublicRoomsPolling() {
 
 btnToggleSpecific.addEventListener('click', () => {
   joinSpecificPanel.classList.toggle('open');
-  roomCodeInput.focus();
+  const isOpen = joinSpecificPanel.classList.contains('open');
+  btnToggleSpecific.setAttribute('aria-expanded', String(isOpen));
+  if (isOpen) roomCodeInput.focus();
 });
 
 roomCodeInput.addEventListener('input', () => {
@@ -566,7 +738,9 @@ function enterGame(mode, roomCode) {
   joinRoomCode = roomCode || '';
 
   landingScreen.classList.add('hidden');
+  landingScreen.setAttribute('aria-hidden', 'true');
   gameContainer.classList.add('active');
+  gameContainer.setAttribute('aria-hidden', 'false');
   connectionStatus.classList.add('visible');
   backBtn.classList.add('visible');
   roomInfo.classList.add('visible');
@@ -592,7 +766,9 @@ function enterGame(mode, roomCode) {
 
 function exitGame() {
   landingScreen.classList.remove('hidden');
+  landingScreen.setAttribute('aria-hidden', 'false');
   gameContainer.classList.remove('active');
+  gameContainer.setAttribute('aria-hidden', 'true');
   connectionStatus.classList.remove('visible');
   backBtn.classList.remove('visible');
   roomInfo.classList.remove('visible');
@@ -754,6 +930,8 @@ emoteToggle.addEventListener('pointerdown', (e) => {
   e.stopPropagation();
   e.preventDefault();
   emoteGrid.classList.toggle('open');
+  const isOpen = emoteGrid.classList.contains('open');
+  emoteToggle.setAttribute('aria-expanded', String(isOpen));
 });
 
 emoteGrid.addEventListener('pointerdown', (e) => {
@@ -763,6 +941,41 @@ emoteGrid.addEventListener('pointerdown', (e) => {
   if (!btn) return;
   if (socket && socket.connected) socket.emit('sendEmote', { emote: btn.dataset.emote });
   emoteGrid.classList.remove('open');
+  emoteToggle.setAttribute('aria-expanded', 'false');
+});
+
+// Keyboard navigation for emote grid
+emoteGrid.addEventListener('keydown', (e) => {
+  const buttons = Array.from(emoteGrid.querySelectorAll('.emote-btn'));
+  const current = document.activeElement;
+  const idx = buttons.indexOf(current);
+  if (idx === -1) return;
+
+  let nextIdx = idx;
+  const cols = window.innerWidth <= 640 ? 5 : 6;
+
+  switch (e.key) {
+    case 'ArrowRight': nextIdx = idx + 1; break;
+    case 'ArrowLeft':  nextIdx = idx - 1; break;
+    case 'ArrowDown':  nextIdx = idx + cols; break;
+    case 'ArrowUp':    nextIdx = idx - cols; break;
+    case 'Enter':
+    case ' ':
+      e.preventDefault();
+      buttons[idx].click();
+      return;
+    case 'Escape':
+      emoteGrid.classList.remove('open');
+      emoteToggle.setAttribute('aria-expanded', 'false');
+      emoteToggle.focus();
+      return;
+    default: return;
+  }
+
+  e.preventDefault();
+  if (nextIdx >= 0 && nextIdx < buttons.length) {
+    buttons[nextIdx].focus();
+  }
 });
 
 signSendBtn.addEventListener('pointerdown', (e) => {
@@ -791,20 +1004,25 @@ loveBtn.addEventListener('pointerdown', (e) => {
   e.stopPropagation();
   e.preventDefault();
   loveModal.classList.add('visible');
+  loveModal.setAttribute('aria-hidden', 'false');
+  trapFocus(loveModal);
 });
-loveModalClose.addEventListener('click', () => loveModal.classList.remove('visible'));
+loveModalClose.addEventListener('click', () => {
+  loveModal.classList.remove('visible');
+  loveModal.setAttribute('aria-hidden', 'true');
+  releaseFocus(loveModal);
+});
 loveModal.addEventListener('click', (e) => {
-  if (e.target === loveModal) loveModal.classList.remove('visible');
+  if (e.target === loveModal) {
+    loveModal.classList.remove('visible');
+    loveModal.setAttribute('aria-hidden', 'true');
+    releaseFocus(loveModal);
+  }
 });
 
 // ─── Vibe Check & Mute UI ──────────────────────────────
 
 const mutedPlayers = new Set(); // socket IDs of muted strangers
-const bookmarkBtn = document.getElementById('bookmark-btn');
-const bookmarksList = document.getElementById('bookmarks-list');
-const zoomInBtn = document.getElementById('zoom-in');
-const zoomOutBtn = document.getElementById('zoom-out');
-const zoomControls = document.getElementById('zoom-controls');
 let bookmarkedRooms = new Set();
 let currentZoom = 1;
 
@@ -845,6 +1063,8 @@ vibeAcceptBtn.addEventListener('click', () => {
     socket.emit('vibeCheckRespond', { fromId: vibePromptFromId, accepted: true });
   }
   vibePrompt.classList.remove('visible');
+  vibePrompt.setAttribute('aria-hidden', 'true');
+  releaseFocus(vibePrompt);
   vibePromptFromId = null;
 });
 
@@ -854,6 +1074,8 @@ vibeDeclineBtn.addEventListener('click', () => {
     socket.emit('vibeCheckRespond', { fromId: vibePromptFromId, accepted: false });
   }
   vibePrompt.classList.remove('visible');
+  vibePrompt.setAttribute('aria-hidden', 'true');
+  releaseFocus(vibePrompt);
   vibePromptFromId = null;
 });
 
@@ -1929,6 +2151,11 @@ function connectSocket() {
       if (id !== socket.id) spawnOtherPlayer(pData);
     }
     updatePlayerCount();
+
+    // Announce room join to screen readers
+    const roomName = isCommon && commonName ? commonName : `Room ${roomId}`;
+    const playerCount = Object.keys(players).length;
+    announce(`Joined ${roomName}. ${playerCount} player${playerCount !== 1 ? 's' : ''} present.`);
   }
 
   socket.on('commonRoomsList', (rooms) => {
@@ -1943,12 +2170,18 @@ function connectSocket() {
     if (!scene) return;
     console.log(`✦ Player joined: ${data.strangerName || 'Stranger'} [${data.id}]`);
     spawnOtherPlayer(data);
+    announce(`${data.strangerName || 'A stranger'} joined the room`);
+    updatePlayerCount();
   });
 
   socket.on('playerLeft', ({ id }) => {
     if (!scene) return;
     console.log(`✧ Player left: [${id}]`);
+    const other = otherPlayers.get(id);
+    const name = other ? (other.revealed ? other.realName : other.strangerName) : 'A stranger';
     removeOtherPlayer(id);
+    announce(`${name} left the room`);
+    updatePlayerCount();
   });
 
   socket.on('playerMoved', ({ id, x, y }) => {
@@ -1996,11 +2229,16 @@ function connectSocket() {
     }
 
     vibePrompt.classList.add('visible');
+    vibePrompt.setAttribute('aria-hidden', 'false');
+    trapFocus(vibePrompt);
+    announce('Vibe check request received');
 
     // Auto-dismiss after 15s if no response
     setTimeout(() => {
       if (vibePromptFromId === fromId) {
         vibePrompt.classList.remove('visible');
+        vibePrompt.setAttribute('aria-hidden', 'true');
+        releaseFocus(vibePrompt);
         vibePromptFromId = null;
       }
     }, 15000);
@@ -2010,6 +2248,7 @@ function connectSocket() {
     if (!scene) return;
     // Mutual name reveal!
     revealPlayerName(playerId, name);
+    announce(`Vibe check accepted. ${name} revealed their name.`);
   });
 
   socket.on('furniturePlaced', ({ item }) => {
