@@ -148,12 +148,4 @@ MIT — FreeLobby is FOSS and anyone can run their own servers or build off of i
 
 If it brightened your day, consider supporting its existence: https://ko-fi.com/zeiddiez
 
----
 
-## Special Thanks
-
-A handful of friends and contributors have helped FreeLobby exist. In particular:
-
-- **[Top Notch QA](https://topnotchqa.com)** — my employer. Grateful for the work, the people, and the slack to make things like this.
-
-FreeLobby does not accept paid placement inside the product. The names listed here are personal thanks, not advertisers.
