@@ -1491,6 +1491,14 @@ function update(_time, _delta) {
         sitDown(player, playerAccessory);
       }
     }
+
+    // ── Camera soft clamp — keep player in view ──
+    const cam = scene.cameras.main;
+    const margin = 100; // px buffer before player goes off-screen
+    const vw = cam.width / currentZoom;
+    const vh = cam.height / currentZoom;
+    cam.scrollX = Phaser.Math.Clamp(cam.scrollX, player.x - vw + margin, player.x - margin);
+    cam.scrollY = Phaser.Math.Clamp(cam.scrollY, player.y - vh + margin, player.y - margin);
   }
 
   for (const [id, other] of otherPlayers) {
@@ -2078,9 +2086,7 @@ function connectSocket() {
     ROOM_HEIGHT = height || 800;
     if (scene) {
       scene.physics.world.setBounds(0, 0, ROOM_WIDTH, ROOM_HEIGHT);
-      // Do NOT set camera bounds — they prevent panning when zoomed out
-      // (viewport width in world coords can exceed room size at zoom < 1)
-      scene.cameras.main.setBounds(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
+      // No camera bounds — camera follows player freely, panning unrestricted
       if (scene.drawRoomWalls) scene.drawRoomWalls(ROOM_WIDTH, ROOM_HEIGHT);
     }
 
