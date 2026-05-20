@@ -1620,7 +1620,8 @@ body::before {
 .ambient-track-btn.active {
   opacity: 1;
   border-color: var(--accent-primary);
-  background: rgba(0, 240, 255, 0.08);
+  background: rgba(0, 240, 255, 0.15);
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.25);
 }
 
 .ambient-track-btn.disabled {

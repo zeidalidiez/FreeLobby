@@ -186,7 +186,9 @@ function setAmbientTrack(track) {
   // Update UI
   ambientTrackBtns.forEach(btn => {
     const t = Number(btn.dataset.track);
-    btn.classList.toggle('active', t === track);
+    const isActive = t === track;
+    btn.classList.toggle('active', isActive);
+    btn.setAttribute('aria-checked', String(isActive));
   });
 }
 
@@ -197,6 +199,7 @@ function setAmbientMuted(muted) {
   }
   ambientMuteBtn.classList.toggle('muted', muted);
   ambientMuteBtn.textContent = muted ? '🔇' : '🔊';
+  ambientMuteBtn.setAttribute('aria-pressed', String(muted));
 }
 
 // ── Music Maker ──
@@ -889,6 +892,14 @@ function setZoom(z) {
 
 ambientMuteBtn.addEventListener('click', () => {
   setAmbientMuted(!ambientMuted);
+});
+
+ambientTrackBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    const track = Number(btn.dataset.track);
+    setAmbientTrack(track);
+    if (socket && socket.connected) socket.emit('setAmbientTrack', { track });
+  });
 });
 
 musicBtn.addEventListener('click', () => {
@@ -2067,7 +2078,9 @@ function connectSocket() {
     ROOM_HEIGHT = height || 800;
     if (scene) {
       scene.physics.world.setBounds(0, 0, ROOM_WIDTH, ROOM_HEIGHT);
-      scene.cameras.main.setBounds(0, 0, ROOM_WIDTH, ROOM_HEIGHT);
+      // Do NOT set camera bounds — they prevent panning when zoomed out
+      // (viewport width in world coords can exceed room size at zoom < 1)
+      scene.cameras.main.setBounds(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
       if (scene.drawRoomWalls) scene.drawRoomWalls(ROOM_WIDTH, ROOM_HEIGHT);
     }
 
