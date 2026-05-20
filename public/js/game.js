@@ -1272,9 +1272,9 @@ function preload() {
 function create() {
   scene = this;
 
-  // Draw floor at max possible world size
-  for (let x = 0; x < WORLD_WIDTH; x += 128) {
-    for (let y = 0; y < WORLD_HEIGHT; y += 128) {
+  // Draw floor grid extending in all directions (3x the world size for generous padding)
+  for (let x = -WORLD_WIDTH; x < WORLD_WIDTH * 2; x += 128) {
+    for (let y = -WORLD_HEIGHT; y < WORLD_HEIGHT * 2; y += 128) {
       this.add.image(x + 64, y + 64, 'floor-tile');
     }
   }
