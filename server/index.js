@@ -233,6 +233,7 @@ function removePlayerFromRoom(socket) {
   }
 
   socket.to(roomId).emit('playerLeft', { id: socket.id });
+  socket.leave(roomId);
   console.log(`   ↳ Removed from room ${roomId} (${room.players.size} left)`);
 
   // Common rooms never die

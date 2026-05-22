@@ -1491,14 +1491,6 @@ function update(_time, _delta) {
         sitDown(player, playerAccessory);
       }
     }
-
-    // ── Camera soft clamp — keep player in view ──
-    const cam = scene.cameras.main;
-    const margin = 100; // px buffer before player goes off-screen
-    const vw = cam.width / currentZoom;
-    const vh = cam.height / currentZoom;
-    cam.scrollX = Phaser.Math.Clamp(cam.scrollX, player.x - vw + margin, player.x - margin);
-    cam.scrollY = Phaser.Math.Clamp(cam.scrollY, player.y - vh + margin, player.y - margin);
   }
 
   for (const [id, other] of otherPlayers) {
