@@ -3,8 +3,13 @@ const http = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
 const {
+  clearRevealedPairsForPlayer,
   createPendingVibeChecks,
   findJoinableRoom,
+  isAllowedEmote,
+  normalizePlayerMove,
+  sanitizeSignText,
+  shouldLeaveRoomBeforeJoin,
 } = require('./room-state');
 
 const app = express();
@@ -219,14 +224,13 @@ function removePlayerFromRoom(socket) {
   const room = rooms.get(roomId);
   room.players.delete(socket.id);
 
-  // Clean up revealed pairs involving this player
-  for (const key of room.revealedPairs) {
-    if (key.includes(socket.id)) room.revealedPairs.delete(key);
-  }
+  clearRevealedPairsForPlayer(room.revealedPairs, socket.id);
   if (room.pendingVibeChecks) room.pendingVibeChecks.clearForPlayer(socket.id);
 
   socket.to(roomId).emit('playerLeft', { id: socket.id });
   socket.leave(roomId);
+  socket.roomId = null;
+  socket.playerData = null;
   console.log(`   ↳ Removed from room ${roomId} (${room.players.size} left)`);
 
   // Common rooms never die
@@ -294,6 +298,8 @@ function sanitizeName(raw) {
 }
 
 function joinPlayerToRoom(socket, roomId, name, customization) {
+  if (shouldLeaveRoomBeforeJoin(socket.roomId, roomId)) removePlayerFromRoom(socket);
+
   const room = rooms.get(roomId);
   const color = getNextColor(room);
   const safeName = sanitizeName(name);
@@ -719,16 +725,19 @@ io.on('connection', (socket) => {
     const room = rooms.get(roomId);
     const pd = room.players.get(socket.id);
     if (!pd) return;
-    pd.x = data.x;
-    pd.y = data.y;
+    const position = normalizePlayerMove(data, room, { gridSize: GRID_SIZE });
+    if (!position) return;
+    pd.x = position.x;
+    pd.y = position.y;
     pd.lastActive = Date.now();
-    socket.to(roomId).emit('playerMoved', { id: socket.id, x: data.x, y: data.y });
+    socket.to(roomId).emit('playerMoved', { id: socket.id, x: position.x, y: position.y });
   });
 
   // ── Emote ──
   socket.on('sendEmote', ({ emote }) => {
     const roomId = socket.roomId;
     if (!roomId || !rooms.has(roomId)) return;
+    if (!isAllowedEmote(emote)) return;
     const room = rooms.get(roomId);
     const now = Date.now();
     // Per-user rate limit (500ms)
@@ -750,12 +759,12 @@ io.on('connection', (socket) => {
     const roomId = socket.roomId;
     if (!roomId || !rooms.has(roomId)) return;
     const room = rooms.get(roomId);
+    const clean = sanitizeSignText(text);
+    if (!clean) return;
     const now = Date.now();
     if (socket._lastSign && now - socket._lastSign < 500) return;
     socket._lastSign = now;
     if (socket.playerData) socket.playerData.lastActive = now;
-    const clean = String(text || '').slice(0, 10);
-    if (!clean) return;
 
     // Send back to the sender
     io.to(socket.id).emit('playerSign', { id: socket.id, text: clean });

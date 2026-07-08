@@ -62,8 +62,8 @@ The screenshot-backed audit that kicked this off lives here:
 - **Music Maker (private rooms):** A personal 4×4 step sequencer with kick, snare, hi-hat, and synth tracks. BPM control, play/stop, purely local Web Audio synthesis.
 
 ### Communication
-- **Emotes:** A full grid of emoji reactions that float above your head.
-- **Signs:** 10-character text bubbles (only visible between Vibe-Checked pairs).
+- **Emotes:** A full approved grid of emoji reactions that float above your head.
+- **Signs:** 10-character text bubbles (only visible between Vibe-Checked pairs). The server strips weird control characters before anything gets shown.
 - **Mute Stranger:** Right-click any avatar to mute their emotes — session-only, silent, reversible.
 - **No global chat. No room chat.** Text is always gated behind mutual consent.
 

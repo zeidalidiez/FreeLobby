@@ -12,6 +12,7 @@ FreeLobby is a no-login browser hangout for low-pressure anonymous presence. The
 - `server/room-state.js` contains testable room-state helpers:
   - `findJoinableRoom(rooms, options)` chooses only random/public non-common rooms for matchmaking.
   - `createPendingVibeChecks()` tracks request/response state so a response cannot reveal names unless the target received a pending prompt.
+  - Movement, emote, sign, reveal-cleanup, and room-switch hardening helpers used by `server/index.js`.
 - `public/index.html` is the DOM shell and HUD.
 - `public/css/style.css` owns landing, HUD, panel, mobile, accessibility, and visual styling.
 - `public/js/game.js` owns Phaser rendering, movement, room UI, Socket.IO client handling, furniture rendering, cards, emotes, signs, audio, and sequencer.
@@ -48,6 +49,12 @@ Important: common rooms are public in the broad sense, but they are not random-m
 - Added `public/js/idle-state.js` to `public/index.html` before `game.js`.
 - Added `npm test` as `node --test tests/*.test.js`.
 - Fixed landing layout clipping by allowing the fixed landing screen to scroll vertically when the card is taller than the viewport.
+- Hardened server-side room events with tested helpers in `server/room-state.js`:
+  - `normalizePlayerMove()` rejects non-finite coordinates, clamps player positions to room bounds, and rejects target positions inside blocked furniture cells.
+  - `isAllowedEmote()` restricts custom clients to the approved emote palette from the UI.
+  - `sanitizeSignText()` strips control/zero-width characters, trims whitespace, and limits signs to 10 Unicode code points.
+  - `clearRevealedPairsForPlayer()` removes Vibe Check reveal state by exact socket id instead of substring matching.
+  - `shouldLeaveRoomBeforeJoin()` keeps successful room transitions from leaving a socket joined to an old room.
 
 ## Latest Visual Refresh Changes
 
@@ -74,6 +81,12 @@ Current rules:
 - `sitDown()` and `standUp()` apply only visual `scaleY` tweens.
 - Never tween a physics-controlled player's `x` or `y` for idle animation.
 - If a future visual needs a vertical offset, apply it to a non-physics child/overlay, not the physics body.
+
+Server movement rules:
+
+- The server is not a full pathfinding authority, but it now rejects malformed movement and target positions inside blocked furniture cells.
+- Client movement should still use Phaser Arcade collision for feel, but do not remove server-side `normalizePlayerMove()` checks unless replacing them with stronger authoritative movement.
+- Room changes should go through `joinPlayerToRoom()` so sockets leave their previous room before joining a different one.
 
 ## Verification
 
@@ -122,3 +135,9 @@ When continuing the visual refresh:
 ## Good Next Step
 
 Do a focused polish pass on spacing, type scale, and individual panel states after more playtesting. The big visual system is now in place, so the next improvements should be small, screenshot-driven adjustments rather than another broad rewrite.
+
+## Remaining System Improvement Targets
+
+- `public/js/game.js` is still the largest risk surface at roughly 2.4k lines. The next system refactor should extract client modules around socket room events, UI overlays, audio, and furniture/cards.
+- Socket.IO integration tests would catch multi-client behavior better than helper tests alone. Good first cases: room switching, sign visibility after Vibe Check, Quiet Mode auto-decline, furniture placement collision, and disconnect cleanup.
+- Server-side furniture validation still lives inside `server/index.js`. If build tools expand, move furniture footprints and validation into a testable helper module.

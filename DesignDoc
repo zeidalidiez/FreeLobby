@@ -23,6 +23,8 @@ FreeLobby separates non-verbal presence from verbal communication.
 
 The server tracks pending Vibe Check requests. A response without a pending request is ignored, which prevents custom clients from forcing name reveals.
 
+The server also validates the highest-risk custom-client inputs before broadcasting them. Movement coordinates must be finite, are clamped to room bounds, and cannot land inside blocked furniture cells. Emotes must come from the approved palette. Signs are stripped of control/zero-width characters, trimmed, and limited to 10 Unicode code points.
+
 4. Room Model
 
 Common Rooms:
@@ -37,13 +39,13 @@ Created by a user, owned by the creator, and joined by room code or local bookma
 5. Current Mechanics
 
 Movement:
-Top-down Phaser movement with keyboard and click-to-move. The player physics body collides with walls and solid furniture. Idle/sit animation is visual only and does not move the physics body.
+Top-down Phaser movement with keyboard and click-to-move. The player physics body collides with walls and solid furniture. Idle/sit animation is visual only and does not move the physics body. The server performs lightweight authority checks on reported movement before rebroadcasting positions.
 
 Presence:
 Avatars are procedural neon shapes with color, shape, accessory, and pulse customization. Idle players sit after 5 seconds. Quiet Mode lowers opacity and auto-declines Vibe Checks.
 
 Communication:
-Emotes are room-visible and rate-limited. Signs are 10-character text bubbles visible only between accepted Vibe Check pairs. Muting a stranger hides that stranger's emotes locally for the current session.
+Emotes are room-visible, palette-limited, and rate-limited. Signs are 10-character text bubbles visible only between accepted Vibe Check pairs. Muting a stranger hides that stranger's emotes locally for the current session.
 
 Rooms and Furniture:
 Private room owners can place up to 100 items from the 20-item furniture/pet set. Walkable furniture does not block movement; solid furniture does. Lamps and TVs are interactive and synced across the room.
@@ -66,7 +68,7 @@ State:
 All core state is in-memory. There is no account system, no user-uploaded media, and no database.
 
 Tests:
-Node's built-in test runner covers room-state and idle-state helpers. Run `npm test`.
+Node's built-in test runner covers room-state and idle-state helpers, including matchmaking, pending Vibe Checks, exact reveal cleanup, movement normalization, emote validation, sign cleanup, and idle/sit animation state. Run `npm test`.
 
 7. Current Product Direction
 
@@ -77,3 +79,4 @@ The next major pass should update look and feel without weakening the consent mo
 - Mobile comfort.
 - Accessibility pass for keyboard and reduced-motion users.
 - Better visual differentiation between common, random, and private spaces.
+- Socket.IO integration tests for multi-client room transitions, consent-gated signs, Quiet Mode, furniture placement, and disconnect cleanup.
