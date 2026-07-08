@@ -2,6 +2,10 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
+const {
+  createPendingVibeChecks,
+  findJoinableRoom,
+} = require('./room-state');
 
 const app = express();
 const server = http.createServer(app);
@@ -174,19 +178,6 @@ function getNextColor(room) {
   return PLAYER_COLORS[room.players.size % PLAYER_COLORS.length];
 }
 
-function findJoinableRoom() {
-  const available = [];
-  for (const [roomId, room] of rooms) {
-    const max = room.maxPlayers || MAX_PLAYERS_PER_ROOM;
-    if (room.isPublic !== false && room.players.size < max) available.push(roomId);
-  }
-
-  if (available.length === 0) return null;
-
-  // Distribute the player randomly across any of the available active public rooms
-  return available[Math.floor(Math.random() * available.length)];
-}
-
 function getCommonRoomsList() {
   return COMMON_ROOMS_DEF.map(def => {
     const room = rooms.get(def.id);
@@ -231,6 +222,7 @@ function removePlayerFromRoom(socket) {
   for (const key of room.revealedPairs) {
     if (key.includes(socket.id)) room.revealedPairs.delete(key);
   }
+  if (room.pendingVibeChecks) room.pendingVibeChecks.clearForPlayer(socket.id);
 
   socket.to(roomId).emit('playerLeft', { id: socket.id });
   socket.leave(roomId);
@@ -246,7 +238,7 @@ function removePlayerFromRoom(socket) {
 }
 
 function createRoom() {
-  return { players: new Map(), revealedPairs: new Set(), occupiedCells: new Set(), blockedCells: new Set(), theme: 0, emoteWindow: { startMs: 0, count: 0 }, width: 1200, height: 800 };
+  return { players: new Map(), revealedPairs: new Set(), pendingVibeChecks: createPendingVibeChecks(), occupiedCells: new Set(), blockedCells: new Set(), theme: 0, emoteWindow: { startMs: 0, count: 0 }, width: 1200, height: 800 };
 }
 
 function initCommonRooms() {
@@ -254,6 +246,7 @@ function initCommonRooms() {
     const room = {
       players: new Map(),
       revealedPairs: new Set(),
+      pendingVibeChecks: createPendingVibeChecks(),
       ownerId: null,
       isPublic: true,
       isCommon: true,
@@ -352,7 +345,7 @@ io.on('connection', (socket) => {
     }
     const roomId = generateRoomId();
     // Create Room always creates a PRIVATE room with the creator as owner
-    rooms.set(roomId, { players: new Map(), revealedPairs: new Set(), ownerId: socket.id, isPublic: false, furniture: [], occupiedCells: new Set(), blockedCells: new Set(), theme: 0, emoteWindow: { startMs: 0, count: 0 }, nextFurnitureId: 1, interactiveStates: new Map(), ambientTrack: 0 });
+    rooms.set(roomId, { players: new Map(), revealedPairs: new Set(), pendingVibeChecks: createPendingVibeChecks(), ownerId: socket.id, isPublic: false, furniture: [], occupiedCells: new Set(), blockedCells: new Set(), theme: 0, emoteWindow: { startMs: 0, count: 0 }, nextFurnitureId: 1, interactiveStates: new Map(), ambientTrack: 0 });
     const playerData = joinPlayerToRoom(socket, roomId, name, customization);
 
     const room = rooms.get(roomId);
@@ -417,12 +410,12 @@ io.on('connection', (socket) => {
 
   // ── Join Random Room ──
   socket.on('joinRandomRoom', ({ name, customization }) => {
-    let roomId = findJoinableRoom();
+    let roomId = findJoinableRoom(rooms, { maxPlayersPerRoom: MAX_PLAYERS_PER_ROOM });
     if (!roomId) {
       if (rooms.size >= MAX_ROOMS) { socket.emit('error', { message: 'Server is full. Try again later.' }); return; }
       roomId = generateRoomId();
       // Auto-created random rooms have NO owner and are PUBLIC
-      rooms.set(roomId, { players: new Map(), revealedPairs: new Set(), ownerId: null, isPublic: true, furniture: [], occupiedCells: new Set(), blockedCells: new Set(), theme: 0, emoteWindow: { startMs: 0, count: 0 }, nextFurnitureId: 1, interactiveStates: new Map(), ambientTrack: 0 });
+      rooms.set(roomId, { players: new Map(), revealedPairs: new Set(), pendingVibeChecks: createPendingVibeChecks(), ownerId: null, isPublic: true, furniture: [], occupiedCells: new Set(), blockedCells: new Set(), theme: 0, emoteWindow: { startMs: 0, count: 0 }, nextFurnitureId: 1, interactiveStates: new Map(), ambientTrack: 0 });
       console.log(`   ↳ No open rooms, auto-created random ${roomId}`);
     }
 
@@ -465,7 +458,7 @@ io.on('connection', (socket) => {
     removePlayerFromRoom(socket);
     const roomId = generateRoomId();
     // Flee always creates a PRIVATE room owned by the fleer
-    rooms.set(roomId, { players: new Map(), revealedPairs: new Set(), ownerId: socket.id, isPublic: false, furniture: [], occupiedCells: new Set(), blockedCells: new Set(), theme: 0, emoteWindow: { startMs: 0, count: 0 }, nextFurnitureId: 1, interactiveStates: new Map(), ambientTrack: 0 });
+    rooms.set(roomId, { players: new Map(), revealedPairs: new Set(), pendingVibeChecks: createPendingVibeChecks(), ownerId: socket.id, isPublic: false, furniture: [], occupiedCells: new Set(), blockedCells: new Set(), theme: 0, emoteWindow: { startMs: 0, count: 0 }, nextFurnitureId: 1, interactiveStates: new Map(), ambientTrack: 0 });
     const room = rooms.get(roomId);
     const playerData = joinPlayerToRoom(socket, roomId, name, customization);
 
@@ -812,6 +805,8 @@ io.on('connection', (socket) => {
       return;
     }
 
+    room.pendingVibeChecks.add(socket.id, targetId);
+
     // Send prompt to target
     io.to(targetId).emit('vibeCheckPrompt', {
       fromId: socket.id,
@@ -827,6 +822,8 @@ io.on('connection', (socket) => {
     if (!roomId || !rooms.has(roomId)) return;
     const room = rooms.get(roomId);
     if (socket.playerData) socket.playerData.lastActive = Date.now();
+
+    if (!room.pendingVibeChecks.consume(fromId, socket.id)) return;
 
     if (!accepted) {
       // Silent rejection — nothing happens

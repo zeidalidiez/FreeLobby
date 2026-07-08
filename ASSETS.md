@@ -46,7 +46,7 @@
 
 **Rules:** Accessories are rendered *on top* of the player sprite at the same scale. Keep line art consistent with the avatar glow style (2px white outline). Phaser tints them to match the player's color.
 
-### C. Furniture (8 types)
+### C. Furniture (20 types)
 **Base size:** 64×64 per grid cell. Multi-cell items (e.g., 2×2 rug) are still delivered as 64×64 and scaled up in-engine.
 
 | ID | Name | File | Size | Walkable? | Style notes |
@@ -59,6 +59,18 @@
 | 5 | Plant | `assets/furn-plant.png` | 64×64 | No | Spiky neon succulent or wireframe fractal leaf |
 | 6 | Lamp | `assets/furn-lamp.png` | 64×64 | No | Tall thin stand with glowing bulb top |
 | 7 | Rug | `assets/furn-rug.png` | 64×64 | Yes | Flat grid-pattern mat. Scaled 2×2 in engine. |
+| 8 | Bed | `assets/furn-bed.png` | 64×64 | Yes | Low platform bed, scaled 2×2 in engine |
+| 9 | Bathtub | `assets/furn-bathtub.png` | 64×64 | No | Wireframe tub silhouette, scaled 2×1 in engine |
+| 10 | Couch | `assets/furn-couch.png` | 64×64 | Yes | Low neon couch, scaled 2×1 in engine |
+| 11 | Console | `assets/furn-console.png` | 64×64 | No | Small game console or control deck |
+| 12 | Computer | `assets/furn-computer.png` | 64×64 | No | Monitor and keyboard, readable at small size |
+| 13 | TV | `assets/furn-tv.png` | 64×64 | No | Wide screen, scaled 2×1 in engine, interactive toggle |
+| 14 | Toilet | `assets/furn-toilet.png` | 64×64 | No | Simple iconic outline |
+| 15 | Cat | `assets/pet-cat.png` | 64×64 | Yes | Small pet silhouette, readable as a cat |
+| 16 | Dog | `assets/pet-dog.png` | 64×64 | Yes | Small pet silhouette, readable as a dog |
+| 17 | Rabbit | `assets/pet-rabbit.png` | 64×64 | Yes | Small pet silhouette with clear ears |
+| 18 | Fishbowl | `assets/pet-fishbowl.png` | 64×64 | No | Small bowl, solid collision |
+| 19 | Bird | `assets/pet-bird.png` | 64×64 | Yes | Small perched bird silhouette |
 
 **Furniture rules:**
 - Transparent background (`.png` with alpha).

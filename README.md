@@ -30,12 +30,14 @@ I built this because I wanted a space where quiet people can just *be* around ot
 
 ### Rooms & Furniture
 - **Common Rooms** — server-curated persistent spaces (The Lobby, Zen Garden, Library) that never die when empty. Larger dimensions (1600×1000), higher player caps (20–25), pre-placed furniture. This is where you land by default.
-- **Public or Private rooms** — create an open space or a hidden retreat.
+- **Random Rooms** — empty no-owner public rooms for the matchmaker. They are separate from Common Rooms, so clicking "Go to a Random Room" will not drop you into The Lobby.
+- **Private Rooms** — create a hidden retreat with a room code. Private rooms are the only user-owned spaces.
 - **Build Mode (owner-only, private rooms only):** Place up to 100 furniture items per room. Grid-snapped, Sims/Habbo-style.
 - **20 furniture types:** Cube, Sphere, Cylinder, Pyramid, Chair, Plant, Lamp, Rug, Bed, Bathtub, Couch, Console, Computer, TV, Toilet, plus pets (Cat, Dog, Rabbit, Fishbowl, Bird).
 - **Walkable vs. Solid:** Chairs, rugs, beds, couches, and pets let you walk through them. Tables, plants, and appliances block movement. No overlapping placement.
 - **Interactive objects:** Lamps and TVs can be clicked by anyone to toggle on/off — glow and tint effects sync across the room.
 - **Room Memory Cards:** Download a cyberpunk PNG card of your room layout. Upload it later to reconstruct everything — including room theme and interactive states.
+- **Bookmarks:** Save room codes locally in your browser session so you can find private rooms again without retyping.
 
 ### Presence & Comfort
 - **Sit / Idle Animations:** Stand still for 5 seconds and your avatar smoothly sits down. Move or click and you stand back up.
@@ -61,7 +63,7 @@ I built this because I wanted a space where quiet people can just *be* around ot
 | Process Manager | PM2 |
 | Assets | Procedural graphics + curated PNG sprites. No user uploads. No database for core state. |
 
-All room state lives in-memory. Rooms die when empty. No persistent database required.
+All room state lives in-memory. Common Rooms persist while the server is running; random and private rooms disappear when empty. No persistent database required.
 
 ---
 
@@ -77,6 +79,12 @@ node server/index.js
 ```
 
 Then open `http://localhost:3000`.
+
+Run the regression tests with:
+
+```bash
+npm test
+```
 
 ### Deploying Updates to the Live Server
 

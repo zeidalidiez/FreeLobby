@@ -74,6 +74,7 @@ let joinMode = null;
 let joinRoomCode = '';
 let isRoomOwner = false;
 let quietMode = false;
+const idleState = window.FreeLobbyIdle;
 
 // Ambient Audio state
 let ambientAudioCtx = null;
@@ -729,8 +730,7 @@ let roomTheme = 0;
 let pendingRoomJoined = null;
 
 // Idle animation state
-let localIdleSince = null;
-let isLocalSitting = false;
+const localIdleState = idleState.createIdleState();
 const IDLE_SIT_MS = 5000; // 5 seconds of stillness before sitting
 
 // ─── Enter / Exit Game ─────────────────────────────────
@@ -822,6 +822,7 @@ function exitGame() {
   roomIdDisplay.textContent = '----';
   otherPlayers.clear();
   mutedPlayers.clear();
+  idleState.resetIdleState(localIdleState);
   player = null;
   playerAccessory = null;
   targetPosition = null;
@@ -1462,7 +1463,7 @@ function update(_time, _delta) {
     if (playerAccessory) playerAccessory.setPosition(player.x, player.y);
 
     // Pulse animation (skip if sitting)
-    if (!isLocalSitting) {
+    if (!localIdleState.sitting) {
       const pulseSpeeds = [0.02, 0.04, 0.08];
       const pulseT = scene.time.now / 1000;
       const pulseSpeed = pulseSpeeds[CUSTOMIZATION.pulse] || 0.04;
@@ -1482,15 +1483,9 @@ function update(_time, _delta) {
 
     // ── Idle / Sit animation for local player ──
     const isMoving = (Math.abs(vx) > 0.1 || Math.abs(vy) > 0.1 || targetPosition !== null);
-    if (isMoving) {
-      if (isLocalSitting) standUp(player, playerAccessory);
-      localIdleSince = null;
-    } else {
-      if (localIdleSince === null) localIdleSince = now;
-      if (!isLocalSitting && now - localIdleSince > IDLE_SIT_MS) {
-        sitDown(player, playerAccessory);
-      }
-    }
+    const localIdleAction = idleState.updateIdleState(localIdleState, { isMoving, now, idleMs: IDLE_SIT_MS });
+    if (localIdleAction === 'sit') sitDown(player, playerAccessory);
+    else if (localIdleAction === 'stand') standUp(player, playerAccessory);
   }
 
   for (const [id, other] of otherPlayers) {
@@ -1503,19 +1498,12 @@ function update(_time, _delta) {
       // ── Idle / Sit animation for other players ──
       const now = Date.now();
       const isMovingOther = (Math.abs(other.targetX - other.sprite.x) > 1 || Math.abs(other.targetY - other.sprite.y) > 1);
-      if (isMovingOther) {
-        if (other.isSitting) standUp(other.sprite, other.accessory);
-        other.idleSince = null;
-      } else {
-        if (other.idleSince === undefined || other.idleSince === null) other.idleSince = now;
-        if (!other.isSitting && now - other.idleSince > IDLE_SIT_MS) {
-          sitDown(other.sprite, other.accessory);
-          other.isSitting = true;
-        }
-      }
+      const otherIdleAction = idleState.updateIdleState(other.idleState, { isMoving: isMovingOther, now, idleMs: IDLE_SIT_MS });
+      if (otherIdleAction === 'sit') sitDown(other.sprite, other.accessory);
+      else if (otherIdleAction === 'stand') standUp(other.sprite, other.accessory);
 
       // Pulse animation (skip if sitting — sit tween handles scale)
-      if (!isLocalSitting && !other.isSitting) {
+      if (!other.idleState.sitting) {
         const pulseSpeeds = [0.02, 0.04, 0.08];
         const pulseT = scene.time.now / 1000;
         const pulseSpeed = pulseSpeeds[other.customization.pulse] || 0.04;
@@ -1529,16 +1517,16 @@ function update(_time, _delta) {
 
 function sitDown(sprite, accessory) {
   if (!sprite) return;
-  isLocalSitting = true;
-  scene.tweens.add({ targets: sprite, scaleY: 0.7, y: sprite.y + 10, duration: 400, ease: 'Power2' });
-  if (accessory) scene.tweens.add({ targets: accessory, scaleY: 0.7, y: accessory.y + 10, duration: 400, ease: 'Power2' });
+  const targets = accessory ? [sprite, accessory] : [sprite];
+  scene.tweens.killTweensOf(targets);
+  scene.tweens.add({ targets, ...idleState.sittingTweenProps(), duration: 400, ease: 'Power2' });
 }
 
 function standUp(sprite, accessory) {
   if (!sprite) return;
-  isLocalSitting = false;
-  scene.tweens.add({ targets: sprite, scaleY: 1, y: sprite.y - 10, duration: 300, ease: 'Back.easeOut' });
-  if (accessory) scene.tweens.add({ targets: accessory, scaleY: 1, y: accessory.y - 10, duration: 300, ease: 'Back.easeOut' });
+  const targets = accessory ? [sprite, accessory] : [sprite];
+  scene.tweens.killTweensOf(targets);
+  scene.tweens.add({ targets, ...idleState.standingTweenProps(), duration: 300, ease: 'Back.easeOut' });
 }
 
 function createClickPulse(x, y) {
@@ -1671,8 +1659,7 @@ function spawnOtherPlayer(data) {
     strangerName: data.strangerName || 'Stranger',
     quietMode: isQuiet,
     customization: cust,
-    isSitting: false,
-    idleSince: null,
+    idleState: idleState.createIdleState(),
   });
 
   updatePlayerCount();
@@ -2067,6 +2054,7 @@ function connectSocket() {
     roomIdDisplay.textContent = roomId;
     isRoomOwner = !!isOwner;
     roomTheme = theme || 0;
+    idleState.resetIdleState(localIdleState);
     // Build mode only available in private rooms where you are the owner
     const canBuild = isRoomOwner && !isPublic;
     if (canBuild) { ownerBadge.classList.add('visible'); buildBtn.classList.add('visible'); }
@@ -2154,6 +2142,7 @@ function connectSocket() {
       myColor = you.color;
       if (nameLabel) nameLabel.setPosition(you.x, you.y - 30);
       if (playerAccessory) playerAccessory.setPosition(you.x, you.y);
+      standUp(player, playerAccessory);
     } else {
       spawnLocalPlayer(you);
     }

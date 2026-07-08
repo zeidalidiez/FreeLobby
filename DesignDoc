@@ -1,105 +1,79 @@
-Game Design Document: "FreeLobby" (Working Title)
-1. Vision & Core Loop
-Pitch: A minimalist, browser-based multiplayer room where introverts can get a quick, safe hit of social interaction with strangers at any hour.
+FreeLobby Game Design Document
 
-Core Loop: Enter name -> Join/Create Room -> Move around -> Express via emotes/10-char signs -> Mutually agree to reveal names (Vibe Check) -> Leave feeling a bit more connected.
+1. Vision
 
-Tone: Calming, safe, low-pressure, ephemeral.
+FreeLobby is a quiet browser-based multiplayer hangout. It is built for people who want a small dose of human presence without accounts, feeds, public chat, or pressure to perform.
 
-2. Tech Stack & Architecture
-Frontend: Phaser (HTML5 Canvas/WebGL). Handles rendering placeholder.png, character movement interpolation, and displaying the UI overlay.
+The emotional target is simple: show up, be near other people, maybe exchange a small non-verbal signal, and leave feeling a little less alone.
 
-Backend: Node.js with Socket.IO. Handles room management, broadcasting player coordinates, routing chat/emotes, and enforcing server limits.
+2. Core Loop
 
-Hosting: Requires a server capable of running a Node.js daemon (not just static file hosting).
+Enter a name -> choose a common room, random room, private room, or room code -> move around -> emote or sit quietly -> optionally accept a mutual Vibe Check -> use short signs only with accepted Vibe Check pairs -> leave or flee to an empty private room.
 
-3. Core Mechanics (v1.0)
-Rooms: Instanced lobbies. If the active room list hits a server-defined cap, room creation is temporarily disabled to prevent crashes.
+3. Safety Architecture
 
-Movement: 2D top-down or isometric movement. No collision detection needed for v1.0 beyond the walls of the room to keep the AI-generated code simple.
+FreeLobby separates non-verbal presence from verbal communication.
 
-Emotes: A UI panel with up to 30 simple emotes (smile, wave, coffee cup, sleep, etc.) that spawn as a temporary bubble over the player's head.
+- Emotes, movement, sitting, lights, and ambient room behavior are open presence signals.
+- Names and typed signs are gated by mutual Vibe Check.
+- Declines are silent.
+- Quiet Mode makes the player semi-transparent and silently auto-declines incoming Vibe Checks.
+- There is no global chat and no room chat.
+- A Vibe Check only grants mutual name/text reveal. It does not grant invites, forced room movement, broadcasts, or other trust.
 
-Signs: A text input field capped at 10 characters. When submitted, the text hovers over the player for a few seconds.
+The server tracks pending Vibe Check requests. A response without a pending request is ignored, which prevents custom clients from forcing name reveals.
 
-The Vibe Check (Name Reveal): * Players appear as "Stranger" to each other initially.
+4. Room Model
 
-Player A clicks Player B and selects "Vibe Check."
+Common Rooms:
+Server-curated persistent spaces such as The Lobby, Zen Garden, and The Library. They have pre-placed furniture, higher player caps, and never delete while the server is running. They are joined through the common-room list or the default Enter The Lobby action. They are not matchmaker targets.
 
-Player B receives a gentle, unobtrusive prompt: "A Stranger wants to share names. Comfortable?"
+Random Rooms:
+No-owner public rooms used only by the random matchmaker. They are intentionally empty and non-decoratable. They disappear when empty.
 
-If Yes: Both players see each other's entered names. If No: The prompt fades away silently.
+Private Rooms:
+Created by a user, owned by the creator, and joined by room code or local bookmark. Private room owners can build, set ambience, use Memory Cards, and flee into a safe private retreat. Private rooms disappear when empty.
 
-4. UI & UX Elements
-Landing Screen: Minimalist. A single text input for "Name" and buttons for "Join Random Room" or "Create Room." No passwords, no logins.
+5. Current Mechanics
 
-In-Game HUD: * Emote Menu (Grid layout).
+Movement:
+Top-down Phaser movement with keyboard and click-to-move. The player physics body collides with walls and solid furniture. Idle/sit animation is visual only and does not move the physics body.
 
-Sign Input Box (10-char limit).
+Presence:
+Avatars are procedural neon shapes with color, shape, accessory, and pulse customization. Idle players sit after 5 seconds. Quiet Mode lowers opacity and auto-declines Vibe Checks.
 
-Room ID display (for sharing).
+Communication:
+Emotes are room-visible and rate-limited. Signs are 10-character text bubbles visible only between accepted Vibe Check pairs. Muting a stranger hides that stranger's emotes locally for the current session.
 
-"Made with Love" Button: Persistent UI button in the corner. Clicking opens a simple HTML/CSS modal over the canvas with your donation link and a brief thank-you message.
+Rooms and Furniture:
+Private room owners can place up to 100 items from the 20-item furniture/pet set. Walkable furniture does not block movement; solid furniture does. Lamps and TVs are interactive and synced across the room.
 
-5. Asset List (Minimalist Approach)
-To keep your workload light, everything relies on placeholder.png tinted via Phaser's built-in color manipulation, or very simple custom pixel art when you're ready.
+Room Memory Cards:
+Private room layouts can be exported as PNG cards with encoded layout data and later imported into another private room.
 
-Player Sprite: placeholder.png (Tinted different colors for different users).
+Audio:
+Private rooms support shared owner-controlled ambience: Silence, Rain, or Drone. The music maker is a local 4x4 sequencer with synthesized kick, snare, hi-hat, and synth tracks.
 
-Room Background: A simple solid color or a tiled placeholder.png.
+6. Tech Stack
 
-Emotes: 30 small transparent PNGs (or even just unicode emojis rendered as text over the player to save immense amounts of graphic design time).
+Frontend:
+Phaser 3, vanilla JavaScript, HTML/CSS overlays, Web Audio API.
 
-UI Elements: Standard HTML/CSS DOM elements overlaid on top of the Phaser canvas (this is much easier for an AI to code than building UI entirely within Phaser).
+Backend:
+Node.js, Express, Socket.IO.
 
-6. Future Scope (Post v1.0)
-Room Customization: Players can place basic furniture (placeholder.png variants).
+State:
+All core state is in-memory. There is no account system, no user-uploaded media, and no database.
 
-String Saving: The server serializes the X/Y coordinates of placed furniture into a JSON string, encoded as Base64. The user copies this text string and can paste it later to instantly rebuild their room.
+Tests:
+Node's built-in test runner covers room-state and idle-state helpers. Run `npm test`.
 
-Development Timeline (Estimated: 4–6 Weeks)
-Working solo with an AI, the biggest hurdle will be keeping the AI focused on one file at a time. Do not ask the AI to build the whole game at once.
+7. Current Product Direction
 
-Phase 1: Foundation (Week 1)
+The next major pass should update look and feel without weakening the consent model. Good targets:
 
-Goal: Get a local server running and a character moving on a screen.
-
-Set up the Node.js/Socket.IO server boilerplate.
-
-Set up the Phaser frontend boilerplate.
-
-Achieve basic client-server connection (console logging when a user connects).
-
-Implement basic WASD/Arrow key movement for a single placeholder.png sprite.
-
-Phase 2: Multiplayer & Rooms (Week 2)
-
-Goal: See other people moving.
-
-Implement room creation and joining logic in Node.js.
-
-Broadcast player coordinates to other clients in the same room.
-
-Crucial AI prompt tip: Ask the AI specifically for "client-side interpolation" so the movement doesn't look completely stuttery when data is sent over the network.
-
-Phase 3: Communication (Week 3)
-
-Goal: Emotes and Signs.
-
-Build the HTML/CSS overlay for the Emote grid and Sign input.
-
-Wire the UI to emit Socket.IO events (sendEmote, sendSign).
-
-Listen for those events in Phaser to draw text/icons above the appropriate placeholder.png.
-
-Phase 4: The Vibe Check & Polish (Week 4)
-
-Goal: Name reveals and UI finalization.
-
-Implement the handshake logic for the "Vibe Check."
-
-Build the "Made with Love" donation modal.
-
-Implement server limits (e.g., max 50 rooms, max 10 players per room) to ensure stability.
-
-Test with a few friends.
+- Landing screen visual hierarchy and density.
+- In-game HUD polish and clearer controls.
+- Mobile comfort.
+- Accessibility pass for keyboard and reduced-motion users.
+- Better visual differentiation between common, random, and private spaces.
