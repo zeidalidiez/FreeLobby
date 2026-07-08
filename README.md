@@ -10,13 +10,19 @@ I built this because I wanted a space where quiet people can just *be* around ot
 
 ---
 
-## Visual Refresh Planning
+## Visual Refresh
 
-The current neon grid look is staying, but the interface is ready for a calmer, more deliberate pass. I captured a local screenshot audit and overhaul plan here:
+The neon grid soul is still here, but the interface now has a calmer, more deliberate console pass.
+
+- The landing screen is less cramped, with entry, common rooms, private rooms, bookmarks, and avatar tweaks separated into clearer zones.
+- The room HUD is quieter and easier to scan, with Back, Flee, Quiet, Build, room status, player count, and connection state treated like one system instead of scattered buttons.
+- Common rooms now have distinct moods: The Lobby stays cyan, Zen Garden leans green, and The Library gets a softer purple low-light feel.
+- Private room tools, ambience, music, signs, emotes, and support controls share the same glassy neon panel language.
+- Controls now use Lucide icons where that reads cleaner than raw text glyphs, while emotes and avatar accessories stay expressive.
+
+The screenshot-backed audit that kicked this off lives here:
 
 `docs/visual-audit/2026-07-08-visual-overhaul/visual-overhaul-audit.md`
-
-The short version: keep the quiet Tron-ish soul, make the landing screen less cramped, consolidate the room HUD, standardize tool panels, and give the rooms more actual place-ness.
 
 ---
 

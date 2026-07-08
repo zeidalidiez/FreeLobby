@@ -178,6 +178,13 @@
 
   <!-- ═══ FURNITURE PANEL ═══ -->
   <div id="furniture-panel" role="dialog" aria-label="Furniture build panel" aria-hidden="true">
+    <div class="tool-panel-header">
+      <div>
+        <span class="panel-kicker">Owner Tools</span>
+        <h2>Build</h2>
+      </div>
+      <span class="panel-status">Grid 64</span>
+    </div>
     <div class="furniture-palette" id="furniture-palette" role="radiogroup" aria-label="Furniture selection"></div>
     <div class="furniture-tools" role="group" aria-label="Build tools">
       <button class="tool-btn active" id="tool-place" title="Place furniture" aria-label="Place tool" aria-pressed="true">＋</button>
@@ -236,7 +243,7 @@
 
   <!-- ═══ SIGN INPUT ═══ -->
   <div id="sign-bar" role="region" aria-label="Sign message input">
-    <input type="text" id="sign-input" placeholder="Pass a Vibe Check to type…" maxlength="10" autocomplete="off" spellcheck="false" disabled aria-label="Type a sign message">
+    <input type="text" id="sign-input" placeholder="Vibe Check required" maxlength="10" autocomplete="off" spellcheck="false" disabled aria-label="Type a sign message">
     <button class="sign-send-btn" id="sign-send" disabled aria-label="Send sign message">↑</button>
   </div>
 
@@ -305,6 +312,7 @@
   <div id="error-toast" class="error-toast" role="alert" aria-live="assertive"></div>
 
   <!-- ═══ SCRIPTS ═══ -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.min.js"></script>
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
   <script src="js/idle-state.js"></script>

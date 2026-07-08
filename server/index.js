@@ -20,6 +20,7 @@ const MAX_PLAYERS_PER_COMMON_ROOM = 25;
 const MAX_FURNITURE        = 100;
 const GRID_SIZE            = 64;
 const ROOM_EMOTE_CAP_PER_SEC = 30;
+const DEFAULT_PRIVATE_ROOM_THEME = 3;
 
 // ─── Common Room Definitions ────────────────────────────
 // Common rooms are server-curated, persistent, and never die when empty.
@@ -58,7 +59,7 @@ const COMMON_ROOMS_DEF = [
     id: 'GARDEN',
     name: 'Zen Garden',
     description: 'A quiet corner with soft light',
-    theme: 0,
+    theme: 1,
     width: 1600,
     height: 1000,
     maxPlayers: 20,
@@ -84,7 +85,7 @@ const COMMON_ROOMS_DEF = [
     id: 'LIBRARY',
     name: 'The Library',
     description: 'Low light, soft chairs, good for lurking',
-    theme: 0,
+    theme: 2,
     width: 1600,
     height: 1000,
     maxPlayers: 20,
@@ -345,7 +346,7 @@ io.on('connection', (socket) => {
     }
     const roomId = generateRoomId();
     // Create Room always creates a PRIVATE room with the creator as owner
-    rooms.set(roomId, { players: new Map(), revealedPairs: new Set(), pendingVibeChecks: createPendingVibeChecks(), ownerId: socket.id, isPublic: false, furniture: [], occupiedCells: new Set(), blockedCells: new Set(), theme: 0, emoteWindow: { startMs: 0, count: 0 }, nextFurnitureId: 1, interactiveStates: new Map(), ambientTrack: 0 });
+    rooms.set(roomId, { players: new Map(), revealedPairs: new Set(), pendingVibeChecks: createPendingVibeChecks(), ownerId: socket.id, isPublic: false, furniture: [], occupiedCells: new Set(), blockedCells: new Set(), theme: DEFAULT_PRIVATE_ROOM_THEME, emoteWindow: { startMs: 0, count: 0 }, nextFurnitureId: 1, interactiveStates: new Map(), ambientTrack: 0 });
     const playerData = joinPlayerToRoom(socket, roomId, name, customization);
 
     const room = rooms.get(roomId);
@@ -458,7 +459,7 @@ io.on('connection', (socket) => {
     removePlayerFromRoom(socket);
     const roomId = generateRoomId();
     // Flee always creates a PRIVATE room owned by the fleer
-    rooms.set(roomId, { players: new Map(), revealedPairs: new Set(), pendingVibeChecks: createPendingVibeChecks(), ownerId: socket.id, isPublic: false, furniture: [], occupiedCells: new Set(), blockedCells: new Set(), theme: 0, emoteWindow: { startMs: 0, count: 0 }, nextFurnitureId: 1, interactiveStates: new Map(), ambientTrack: 0 });
+    rooms.set(roomId, { players: new Map(), revealedPairs: new Set(), pendingVibeChecks: createPendingVibeChecks(), ownerId: socket.id, isPublic: false, furniture: [], occupiedCells: new Set(), blockedCells: new Set(), theme: DEFAULT_PRIVATE_ROOM_THEME, emoteWindow: { startMs: 0, count: 0 }, nextFurnitureId: 1, interactiveStates: new Map(), ambientTrack: 0 });
     const room = rooms.get(roomId);
     const playerData = joinPlayerToRoom(socket, roomId, name, customization);
 

@@ -2,7 +2,7 @@
 
 > Updated: 2026-07-08
 > Stack: Node.js + Express + Socket.IO + Phaser 3
-> Current focus: visual refresh planning and first implementation pass
+> Current focus: visual refresh implementation pass complete; next step is deeper polish/QA
 
 FreeLobby is a no-login browser hangout for low-pressure anonymous presence. The core promise is consent-first: users can share space non-verbally, but names and text are gated by mutual Vibe Check.
 
@@ -49,6 +49,20 @@ Important: common rooms are public in the broad sense, but they are not random-m
 - Added `npm test` as `node --test tests/*.test.js`.
 - Fixed landing layout clipping by allowing the fixed landing screen to scroll vertically when the card is taller than the viewport.
 
+## Latest Visual Refresh Changes
+
+- Added a CSS-first visual refresh block at the end of `public/css/style.css`. It intentionally overrides older landing, HUD, panel, and mobile rules without ripping out the existing DOM wiring.
+- The landing screen now presents as a two-zone console: identity/entry first, then common rooms, private room actions, bookmarks, and avatar customization as calmer grouped surfaces.
+- The in-room HUD is visually consolidated around top status/actions and bottom social/tool controls. Existing `.visible` class toggles still drive whether controls render; do not replace those toggles without checking every caller in `public/js/game.js`.
+- Added Lucide icons through `public/index.html`. `installInterfaceIcons()`, `setIconButtonContent()`, and `setBookmarkButtonState()` in `public/js/game.js` rewrite icon button contents and refresh Lucide after state changes.
+- For icon-managed buttons, avoid direct `textContent` updates. Use `setIconButtonContent(button, icon, label, fallback)` so the SVG icon, fallback glyph, and accessible text stay in sync.
+- Added room visual theme metadata in `ROOM_THEME_VISUALS`. Theme `0` is lobby/cyan, `1` is garden/green, `2` is library/purple, and `3` is private/blue.
+- `server/index.js` now assigns distinct theme ids to the common rooms: `LOBBY` -> `0`, `GARDEN` -> `1`, `LIBRARY` -> `2`.
+- `applyRoomVisualTheme()` tints Phaser camera background, grid floor tiles, room walls, and furniture when entering a room, resetting furniture, or changing room theme.
+- `scene.floorTiles` is populated during `create()` so the visual theme can retint the existing generated floor instead of redrawing it.
+- The mobile refresh keeps the private-room Music button reachable above the emote control. Do not hide `.music-btn` globally on mobile; private rooms depend on it.
+- Disabled sign input copy is intentionally short (`Vibe Check required`) so it fits inside the mobile bottom dock.
+
 ## Movement / Idle Details
 
 The old idle animation used one global `isLocalSitting` flag inside shared `sitDown()` / `standUp()` helpers. Those helpers were also called for remote players, so remote movement could reset local sitting state. Because `sitDown()` tweened `sprite.y + 10`, the local player could repeatedly drift downward while idle and bypass Arcade physics collision.
@@ -72,6 +86,8 @@ node --check public/js/game.js
 node --test tests/*.test.js
 ```
 
+On Windows PowerShell, `npm test` may be blocked by the `npm.ps1` execution policy. Use `npm.cmd test` when that happens.
+
 For browser smoke:
 
 - Landing at 1280x720 should show the title and allow scrolling to all controls.
@@ -86,13 +102,13 @@ A local screenshot-backed audit for the next look-and-feel pass lives at:
 
 `docs/visual-audit/2026-07-08-visual-overhaul/visual-overhaul-audit.md`
 
-Captured states cover desktop/mobile landing, common rooms, private rooms, emotes, build mode, music, and mobile HUD density. The recommended direction is a quiet neon social console: keep the black/cyan grid identity, but consolidate HUD controls, standardize panels, reduce the long landing-card flow, add room-specific visual mood, and treat mobile as its own layout.
+Captured states cover desktop/mobile landing, common rooms, private rooms, emotes, build mode, music, and mobile HUD density. The first pass implements the recommended quiet neon social console direction: keep the black/cyan grid identity, consolidate HUD controls, standardize panels, reduce landing clutter, add room-specific visual mood, and treat mobile as its own layout.
 
-When implementing the visual refresh:
+When continuing the visual refresh:
 
 - Preserve the consent rules and room taxonomy above.
-- Start with shared design tokens and reusable HUD/panel/button classes in `public/css/style.css`.
-- Rework landing first, then the room HUD and tool panels.
+- Extend the shared design tokens and reusable HUD/panel/button classes in `public/css/style.css` instead of adding one-off styles earlier in the file.
+- Keep the landing, room HUD, and tool panels aligned with the current CSS-first console treatment.
 - Keep Flee, Quiet Mode, and Vibe Check visually obvious.
 - Do not introduce user-uploaded gameplay assets.
 
@@ -105,4 +121,4 @@ When implementing the visual refresh:
 
 ## Good Next Step
 
-The code is now in a better state for a look-and-feel pass. Start with the landing/HUD visual system and keep the consent and room taxonomy intact.
+Do a focused polish pass on spacing, type scale, and individual panel states after more playtesting. The big visual system is now in place, so the next improvements should be small, screenshot-driven adjustments rather than another broad rewrite.

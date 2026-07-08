@@ -118,6 +118,99 @@ const COLOR_HEX_STR = [
   '#ff8800', '#bd00ff', '#0088ff', '#ff3333', '#00ffcc',
 ];
 
+const ROOM_THEME_VISUALS = [
+  {
+    name: 'lobby',
+    background: '#040508',
+    floorTint: 0x68f6ff,
+    floorAlpha: 0.86,
+    wallTint: 0x5df2ff,
+    furnitureTint: 0xffffff,
+  },
+  {
+    name: 'garden',
+    background: '#030805',
+    floorTint: 0x6ff2b1,
+    floorAlpha: 0.8,
+    wallTint: 0x74f6b8,
+    furnitureTint: 0xeafff6,
+  },
+  {
+    name: 'library',
+    background: '#07040b',
+    floorTint: 0xc79cff,
+    floorAlpha: 0.78,
+    wallTint: 0xd6a3ff,
+    furnitureTint: 0xfff3dc,
+  },
+  {
+    name: 'private',
+    background: '#050508',
+    floorTint: 0x7aa7ff,
+    floorAlpha: 0.82,
+    wallTint: 0x84dcff,
+    furnitureTint: 0xffffff,
+  },
+];
+
+function getRoomVisualTheme(theme) {
+  return ROOM_THEME_VISUALS[theme % ROOM_THEME_VISUALS.length] || ROOM_THEME_VISUALS[0];
+}
+
+function refreshInterfaceIcons() {
+  if (!window.lucide || typeof window.lucide.createIcons !== 'function') return;
+  window.lucide.createIcons({ attrs: { 'aria-hidden': 'true' } });
+  document.body.classList.add('lucide-ready');
+}
+
+function setIconButtonContent(button, icon, label = '', fallback = '') {
+  if (!button) return;
+  const iconFallback = fallback ? `<span class="icon-fallback" aria-hidden="true">${escapeHtml(fallback)}</span>` : '';
+  const textLabel = label ? `<span>${escapeHtml(label)}</span>` : '';
+  button.innerHTML = `${iconFallback}<i data-lucide="${icon}" aria-hidden="true"></i>${textLabel}`;
+  refreshInterfaceIcons();
+}
+
+function setBookmarkButtonState(isBookmarked) {
+  bookmarkBtn.classList.toggle('active', isBookmarked);
+  bookmarkBtn.title = isBookmarked ? 'Remove bookmark' : 'Bookmark this room';
+  bookmarkBtn.setAttribute('aria-pressed', String(isBookmarked));
+  setIconButtonContent(bookmarkBtn, 'star', '', isBookmarked ? '★' : '☆');
+}
+
+function installInterfaceIcons() {
+  const iconButtons = [
+    ['btn-enter', 'sparkles', 'Enter The Lobby', '✦'],
+    ['btn-create', 'plus', 'Create Private Room', '+'],
+    ['btn-join', 'shuffle', 'Go to a Random Room', '↝'],
+    ['btn-toggle-specific', 'key-round', 'Have a Room Code?', ''],
+    ['btn-toggle-customize', 'palette', 'Customize Avatar', ''],
+    ['back-btn', 'arrow-left', 'Lobby', '←'],
+    ['flee-btn', 'door-open', 'Empty room', ''],
+    ['quiet-btn', 'moon', 'Quiet', ''],
+    ['build-btn', 'hammer', 'Build', ''],
+    ['emote-toggle', 'smile', '', '☺'],
+    ['music-btn', 'music-2', '', '♪'],
+    ['love-btn', 'heart', '', '♥'],
+    ['zoom-in', 'plus', '', '+'],
+    ['zoom-out', 'minus', '', '-'],
+    ['sign-send', 'arrow-up', '', '↑'],
+    ['tool-place', 'plus', '', '+'],
+    ['tool-remove', 'eraser', '', '-'],
+    ['music-close', 'x', '', '×'],
+  ];
+  for (const [id, icon, label, fallback] of iconButtons) {
+    setIconButtonContent(document.getElementById(id), icon, label, fallback);
+  }
+  setBookmarkButtonState(false);
+  setIconButtonContent(copyRoomBtn, 'copy', '', '⧉');
+  setIconButtonContent(ambientMuteBtn, ambientMuted ? 'volume-x' : 'volume-2', '', ambientMuted ? '×' : '◉');
+  setIconButtonContent(musicPlayBtn, 'play', '', '▶');
+  refreshInterfaceIcons();
+}
+
+installInterfaceIcons();
+
 // ── Ambient Audio Engine ──
 function ensureAudioContext() {
   if (!ambientAudioCtx) {
@@ -199,7 +292,7 @@ function setAmbientMuted(muted) {
     ambientMasterGain.gain.setTargetAtTime(muted ? 0 : 0.15, ambientAudioCtx.currentTime, 0.3);
   }
   ambientMuteBtn.classList.toggle('muted', muted);
-  ambientMuteBtn.textContent = muted ? '🔇' : '🔊';
+  setIconButtonContent(ambientMuteBtn, muted ? 'volume-x' : 'volume-2', '', muted ? '×' : '◉');
   ambientMuteBtn.setAttribute('aria-pressed', String(muted));
 }
 
@@ -274,7 +367,7 @@ function seqTick() {
 function seqStart() {
   ensureSeqAudio();
   seqPlaying = true;
-  musicPlayBtn.textContent = '⏸';
+  setIconButtonContent(musicPlayBtn, 'pause', '', '⏸');
   musicPlayBtn.classList.add('playing');
   const ms = (60 / seqBpm) * 1000 / 2; // 8th notes feel for 4-step
   seqInterval = setInterval(seqTick, ms);
@@ -282,7 +375,7 @@ function seqStart() {
 
 function seqStop() {
   seqPlaying = false;
-  musicPlayBtn.textContent = '▶';
+  setIconButtonContent(musicPlayBtn, 'play', '', '▶');
   musicPlayBtn.classList.remove('playing');
   if (seqInterval) { clearInterval(seqInterval); seqInterval = null; }
   const cells = musicGrid.querySelectorAll('.music-cell');
@@ -570,6 +663,7 @@ function renderCommonRooms(rooms) {
   for (const room of rooms) {
     const item = document.createElement('div');
     item.className = 'common-room-item';
+    item.dataset.room = String(room.id || '').toLowerCase();
     item.innerHTML = `
       <div class="common-room-info">
         <span class="common-room-name">${escapeHtml(room.name)}</span>
@@ -624,9 +718,7 @@ function renderBookmarks() {
         bookmarkedRooms.delete(code);
         renderBookmarks();
         if (currentRoomId === code) {
-          bookmarkBtn.classList.remove('active');
-          bookmarkBtn.textContent = '☆';
-          bookmarkBtn.title = 'Bookmark this room';
+          setBookmarkButtonState(false);
         }
       } else {
         enterGame('code', code);
@@ -758,7 +850,7 @@ function enterGame(mode, roomCode) {
   // Reset sign input to blocked until vibe check
   signInput.disabled = true;
   signSendBtn.disabled = true;
-  signInput.placeholder = 'Pass a Vibe Check to type…';
+  signInput.placeholder = 'Vibe Check required';
 
   stopPublicRoomsPolling();
 
@@ -848,7 +940,7 @@ fleeBtn.addEventListener('click', () => {
     // Reset local typing lock when fleeing
     signInput.disabled = true;
     signSendBtn.disabled = true;
-    signInput.placeholder = 'Pass a Vibe Check to type…';
+    signInput.placeholder = 'Vibe Check required';
   }
 });
 
@@ -869,14 +961,10 @@ bookmarkBtn.addEventListener('click', () => {
   if (!currentRoomId || currentRoomId.length !== 6) return;
   if (bookmarkedRooms.has(currentRoomId)) {
     bookmarkedRooms.delete(currentRoomId);
-    bookmarkBtn.classList.remove('active');
-    bookmarkBtn.textContent = '☆';
-    bookmarkBtn.title = 'Bookmark this room';
+    setBookmarkButtonState(false);
   } else {
     bookmarkedRooms.add(currentRoomId);
-    bookmarkBtn.classList.add('active');
-    bookmarkBtn.textContent = '★';
-    bookmarkBtn.title = 'Remove bookmark';
+    setBookmarkButtonState(true);
   }
   renderBookmarks();
 });
@@ -930,8 +1018,8 @@ roomCodeInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') btnJoi
 copyRoomBtn.addEventListener('click', () => {
   if (currentRoomId) {
     navigator.clipboard.writeText(currentRoomId).then(() => {
-      copyRoomBtn.textContent = '✓';
-      setTimeout(() => { copyRoomBtn.textContent = '📋'; }, 1500);
+      setIconButtonContent(copyRoomBtn, 'check', '', '✓');
+      setTimeout(() => { setIconButtonContent(copyRoomBtn, 'copy', '', '⧉'); }, 1500);
     });
   }
 });
@@ -1272,11 +1360,14 @@ function preload() {
 
 function create() {
   scene = this;
+  this.floorTiles = [];
 
   // Draw floor grid extending in all directions (3x the world size for generous padding)
   for (let x = -WORLD_WIDTH; x < WORLD_WIDTH * 2; x += 128) {
     for (let y = -WORLD_HEIGHT; y < WORLD_HEIGHT * 2; y += 128) {
-      this.add.image(x + 64, y + 64, 'floor-tile');
+      const tile = this.add.image(x + 64, y + 64, 'floor-tile');
+      tile.setDepth(-10);
+      this.floorTiles.push(tile);
     }
   }
 
@@ -1289,13 +1380,14 @@ function create() {
   this.drawRoomWalls = (w, h) => {
     wallGroup.clear(true, true);
     for (let x = 0; x < w; x += 64) {
-      wallGroup.add(this.add.image(x + 32, 0, 'wall-tile'));
-      wallGroup.add(this.add.image(x + 32, h, 'wall-tile'));
+      wallGroup.add(this.add.image(x + 32, 0, 'wall-tile').setDepth(-5));
+      wallGroup.add(this.add.image(x + 32, h, 'wall-tile').setDepth(-5));
     }
     for (let y = 0; y < h; y += 64) {
-      wallGroup.add(this.add.image(0, y + 32, 'wall-tile'));
-      wallGroup.add(this.add.image(w, y + 32, 'wall-tile'));
+      wallGroup.add(this.add.image(0, y + 32, 'wall-tile').setDepth(-5));
+      wallGroup.add(this.add.image(w, y + 32, 'wall-tile').setDepth(-5));
     }
+    applyRoomVisualTheme(roomTheme);
   };
   this.drawRoomWalls(ROOM_WIDTH, ROOM_HEIGHT);
 
@@ -1691,6 +1783,32 @@ function updatePlayerCount() {
   playerCountText.textContent = total === 1 ? '1 player' : `${total} players`;
 }
 
+function applyRoomVisualTheme(theme) {
+  if (!scene) return;
+  const visual = getRoomVisualTheme(theme || 0);
+  document.body.dataset.roomTheme = visual.name;
+  scene.cameras.main.setBackgroundColor(visual.background);
+
+  if (scene.floorTiles) {
+    scene.floorTiles.forEach(tile => {
+      tile.setTint(visual.floorTint);
+      tile.setAlpha(visual.floorAlpha);
+    });
+  }
+
+  if (scene.wallGroup) {
+    scene.wallGroup.getChildren().forEach(wall => {
+      wall.setTint(visual.wallTint);
+      wall.setAlpha(0.88);
+    });
+  }
+
+  roomFurniture.forEach(f => {
+    if (!f.sprite) return;
+    f.sprite.setTint(visual.furnitureTint);
+  });
+}
+
 const INTERACTIVE_FURNITURE_TYPES = new Set([6, 13]); // Lamp, TV
 
 function renderFurnitureItem(item) {
@@ -1701,6 +1819,7 @@ function renderFurnitureItem(item) {
   const sprite = scene.add.sprite(x, y, `furn-${item.t}`);
   sprite.setDepth(1);
   sprite.setAlpha(0.8);
+  sprite.setTint(getRoomVisualTheme(roomTheme).furnitureTint);
   // Force high-res assets to fit their grid footprint
   sprite.setDisplaySize(fp.w * 64, fp.h * 64);
   if (item.r) sprite.setAngle(item.r * 90);
@@ -2077,13 +2196,9 @@ function connectSocket() {
 
     // Update bookmark button state
     if (bookmarkedRooms.has(roomId)) {
-      bookmarkBtn.classList.add('active');
-      bookmarkBtn.textContent = '★';
-      bookmarkBtn.title = 'Remove bookmark';
+      setBookmarkButtonState(true);
     } else {
-      bookmarkBtn.classList.remove('active');
-      bookmarkBtn.textContent = '☆';
-      bookmarkBtn.title = 'Bookmark this room';
+      setBookmarkButtonState(false);
     }
 
     // Clean up previous room state if fleeing
@@ -2271,7 +2386,7 @@ function connectSocket() {
       }
     } else {
       scene.tweens.add({ targets: [f.glow], alpha: 0, duration: 300, ease: 'Power2' });
-      scene.tweens.add({ targets: [f.sprite], tint: 0xffffff, duration: 300 });
+      scene.tweens.add({ targets: [f.sprite], tint: getRoomVisualTheme(roomTheme).furnitureTint, duration: 300 });
     }
   });
 
@@ -2295,11 +2410,13 @@ function connectSocket() {
     roomFurniture = [];
     if (furniture) furniture.forEach(item => renderFurnitureItem(item));
     if (typeof theme === 'number') roomTheme = theme;
+    applyRoomVisualTheme(roomTheme);
   });
 
   socket.on('roomThemeChanged', ({ theme }) => {
     if (!scene) return;
     if (typeof theme === 'number') roomTheme = theme;
+    applyRoomVisualTheme(roomTheme);
   });
 
   socket.on('ambientTrackChanged', ({ track }) => {
