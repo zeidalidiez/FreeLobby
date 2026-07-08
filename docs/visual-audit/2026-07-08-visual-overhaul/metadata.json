@@ -1,0 +1,4496 @@
+{
+  "capturedAt": "2026-07-08T07:48:51.865Z",
+  "meta": [
+    {
+      "ambientPanel": {
+        "classes": "ambient-panel",
+        "display": "none",
+        "opacity": "1",
+        "rect": {
+          "bottom": 0,
+          "height": 0,
+          "top": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        "text": "Ambience\n    \n      🚫\n      🌧️\n      🎵\n    \n    🔊"
+      },
+      "buildPanel": {
+        "classes": "",
+        "display": "none",
+        "opacity": "1",
+        "rect": {
+          "bottom": 0,
+          "height": 0,
+          "top": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        "text": "🧊🔮🛢️🔺🪑🪴🛋️🟪🛏️🛁🛋️🎮💻📺🚽🐱🐶🐰🐠🐦\n    \n      ＋\n      −\n    \n    \n      Memory Card\n      \n        Download Room Card\n        \n          \n            \n            Upload Room Card"
+      },
+      "emoteGrid": {
+        "classes": "emote-grid",
+        "display": "none",
+        "opacity": "1",
+        "rect": {
+          "bottom": 0,
+          "height": 0,
+          "top": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        "text": "😊\n      👋\n      ☕\n      😴\n      ❤️\n      😂\n      🎵\n      ✨\n      🤔\n      👍\n      🌙\n      🔥\n      🎮\n      📖\n      🐱\n      🌿\n      🎧\n      💤\n      🫂\n      🍵\n      🌸\n      😌\n      🎨\n      🧸\n      🍃\n      💫\n      🎶\n      🌈\n      🕯️\n      🤗"
+      },
+      "game": {
+        "classes": "",
+        "display": "none",
+        "opacity": "1",
+        "rect": {
+          "bottom": 0,
+          "height": 0,
+          "top": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        "text": ""
+      },
+      "label": "01 landing desktop top",
+      "landingCard": {
+        "classes": "landing-card",
+        "display": "block",
+        "opacity": "1",
+        "rect": {
+          "bottom": 904.796875,
+          "height": 876,
+          "top": 28.796875,
+          "width": 720,
+          "x": 272.5,
+          "y": 28.796875
+        },
+        "text": "FreeLobby\n\na calm corner of the internet\n\nYOUR NAME\n✦\nEnter The Lobby\nCOMMON ROOMS\nThe Lobby\nA welcoming space for new arrivals\n0/25\nZen Garden\nA quiet corner with soft light\n0/20\nThe Library\nLow light, soft chairs, good for lurking\n0/20\nYOUR SPACE\n＋\nCreate Private Room\n🎲\nGo to a Random Room\nHave a"
+      },
+      "landingScroll": {
+        "clientHeight": 720,
+        "height": 934,
+        "top": 0
+      },
+      "musicPanel": {
+        "classes": "music-panel",
+        "display": "none",
+        "opacity": "1",
+        "rect": {
+          "bottom": 0,
+          "height": 0,
+          "top": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        "text": "Sequencer\n      ✕\n    \n    \n    \n      ▶\n      \n      120"
+      },
+      "playerCount": {
+        "classes": "",
+        "display": "none",
+        "opacity": "1",
+        "rect": {
+          "bottom": 0,
+          "height": 0,
+          "top": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        "text": "1 player"
+      },
+      "roomInfo": {
+        "classes": "",
+        "display": "none",
+        "opacity": "1",
+        "rect": {
+          "bottom": 0,
+          "height": 0,
+          "top": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        "text": "Room\n    ----\n    Owner\n    ☆\n    📋"
+      },
+      "signBar": {
+        "classes": "",
+        "display": "none",
+        "opacity": "1",
+        "rect": {
+          "bottom": 0,
+          "height": 0,
+          "top": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        "text": "↑"
+      },
+      "url": "http://localhost:3000/",
+      "viewport": {
+        "height": 720,
+        "width": 1280
+      },
+      "visibleButtons": [
+        {
+          "id": "btn-enter",
+          "rect": {
+            "height": 57,
+            "width": 638,
+            "x": 313.5,
+            "y": 279.796875
+          },
+          "text": "✦\nEnter The Lobby"
+        },
+        {
+          "id": "btn-create",
+          "rect": {
+            "height": 50,
+            "width": 343.046875,
+            "x": 608.453125,
+            "y": 388.796875
+          },
+          "text": "＋\nCreate Private Room"
+        },
+        {
+          "id": "btn-join",
+          "rect": {
+            "height": 49,
+            "width": 343.046875,
+            "x": 608.453125,
+            "y": 448.796875
+          },
+          "text": "🎲\nGo to a Random Room"
+        },
+        {
+          "id": "btn-toggle-specific",
+          "rect": {
+            "height": 24,
+            "width": 125.453125,
+            "x": 717.25,
+            "y": 511.796875
+          },
+          "text": "Have a Room Code?"
+        },
+        {
+          "id": "btn-join-code",
+          "rect": {
+            "height": 45,
+            "width": 70.046875,
+            "x": 881.453125,
+            "y": 535.796875
+          },
+          "text": "Join"
+        },
+        {
+          "id": "btn-toggle-customize",
+          "rect": {
+            "height": 24,
+            "width": 108.875,
+            "x": 578.0625,
+            "y": 800.796875
+          },
+          "text": "Customize Avatar"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 35,
+            "width": 208.65625,
+            "x": 313.5,
+            "y": 906.796875
+          },
+          "text": "●"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 35,
+            "width": 208.671875,
+            "x": 528.15625,
+            "y": 906.796875
+          },
+          "text": "■"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 35,
+            "width": 208.671875,
+            "x": 742.828125,
+            "y": 906.796875
+          },
+          "text": "◆"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 36,
+            "width": 155,
+            "x": 313.5,
+            "y": 975.796875
+          },
+          "text": "None"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 36,
+            "width": 155,
+            "x": 474.5,
+            "y": 975.796875
+          },
+          "text": "🎧"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 36,
+            "width": 155,
+            "x": 635.5,
+            "y": 975.796875
+          },
+          "text": "😇"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 36,
+            "width": 155,
+            "x": 796.5,
+            "y": 975.796875
+          },
+          "text": "🧢"
+        },
+        {
+          "id": "btn-copy-hash",
+          "rect": {
+            "height": 42,
+            "width": 76.546875,
+            "x": 874.953125,
+            "y": 1097.796875
+          },
+          "text": "Copy"
+        },
+        {
+          "id": "btn-import-hash",
+          "rect": {
+            "height": 42,
+            "width": 85.234375,
+            "x": 866.265625,
+            "y": 1149.796875
+          },
+          "text": "Import"
+        }
+      ]
+    },
+    {
+      "ambientPanel": {
+        "classes": "ambient-panel",
+        "display": "none",
+        "opacity": "1",
+        "rect": {
+          "bottom": 0,
+          "height": 0,
+          "top": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        "text": "Ambience\n    \n      🚫\n      🌧️\n      🎵\n    \n    🔊"
+      },
+      "buildPanel": {
+        "classes": "",
+        "display": "none",
+        "opacity": "1",
+        "rect": {
+          "bottom": 0,
+          "height": 0,
+          "top": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        "text": "🧊🔮🛢️🔺🪑🪴🛋️🟪🛏️🛁🛋️🎮💻📺🚽🐱🐶🐰🐠🐦\n    \n      ＋\n      −\n    \n    \n      Memory Card\n      \n        Download Room Card\n        \n          \n            \n            Upload Room Card"
+      },
+      "emoteGrid": {
+        "classes": "emote-grid",
+        "display": "none",
+        "opacity": "1",
+        "rect": {
+          "bottom": 0,
+          "height": 0,
+          "top": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        "text": "😊\n      👋\n      ☕\n      😴\n      ❤️\n      😂\n      🎵\n      ✨\n      🤔\n      👍\n      🌙\n      🔥\n      🎮\n      📖\n      🐱\n      🌿\n      🎧\n      💤\n      🫂\n      🍵\n      🌸\n      😌\n      🎨\n      🧸\n      🍃\n      💫\n      🎶\n      🌈\n      🕯️\n      🤗"
+      },
+      "game": {
+        "classes": "",
+        "display": "none",
+        "opacity": "1",
+        "rect": {
+          "bottom": 0,
+          "height": 0,
+          "top": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        "text": ""
+      },
+      "label": "02 landing desktop lower",
+      "landingCard": {
+        "classes": "landing-card",
+        "display": "block",
+        "opacity": "1",
+        "rect": {
+          "bottom": 690.796875,
+          "height": 876,
+          "top": -185.203125,
+          "width": 720,
+          "x": 272.5,
+          "y": -185.203125
+        },
+        "text": "FreeLobby\n\na calm corner of the internet\n\nYOUR NAME\n✦\nEnter The Lobby\nCOMMON ROOMS\nThe Lobby\nA welcoming space for new arrivals\n0/25\nZen Garden\nA quiet corner with soft light\n0/20\nThe Library\nLow light, soft chairs, good for lurking\n0/20\nYOUR SPACE\n＋\nCreate Private Room\n🎲\nGo to a Random Room\nHave a"
+      },
+      "landingScroll": {
+        "clientHeight": 720,
+        "height": 934,
+        "top": 214
+      },
+      "musicPanel": {
+        "classes": "music-panel",
+        "display": "none",
+        "opacity": "1",
+        "rect": {
+          "bottom": 0,
+          "height": 0,
+          "top": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        "text": "Sequencer\n      ✕\n    \n    \n    \n      ▶\n      \n      120"
+      },
+      "playerCount": {
+        "classes": "",
+        "display": "none",
+        "opacity": "1",
+        "rect": {
+          "bottom": 0,
+          "height": 0,
+          "top": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        "text": "1 player"
+      },
+      "roomInfo": {
+        "classes": "",
+        "display": "none",
+        "opacity": "1",
+        "rect": {
+          "bottom": 0,
+          "height": 0,
+          "top": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        "text": "Room\n    ----\n    Owner\n    ☆\n    📋"
+      },
+      "signBar": {
+        "classes": "",
+        "display": "none",
+        "opacity": "1",
+        "rect": {
+          "bottom": 0,
+          "height": 0,
+          "top": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        "text": "↑"
+      },
+      "url": "http://localhost:3000/",
+      "viewport": {
+        "height": 720,
+        "width": 1280
+      },
+      "visibleButtons": [
+        {
+          "id": "btn-enter",
+          "rect": {
+            "height": 57,
+            "width": 638,
+            "x": 313.5,
+            "y": 65.796875
+          },
+          "text": "✦\nEnter The Lobby"
+        },
+        {
+          "id": "btn-create",
+          "rect": {
+            "height": 50,
+            "width": 343.046875,
+            "x": 608.453125,
+            "y": 174.796875
+          },
+          "text": "＋\nCreate Private Room"
+        },
+        {
+          "id": "btn-join",
+          "rect": {
+            "height": 49,
+            "width": 343.046875,
+            "x": 608.453125,
+            "y": 234.796875
+          },
+          "text": "🎲\nGo to a Random Room"
+        },
+        {
+          "id": "btn-toggle-specific",
+          "rect": {
+            "height": 24,
+            "width": 125.453125,
+            "x": 717.25,
+            "y": 297.796875
+          },
+          "text": "Have a Room Code?"
+        },
+        {
+          "id": "btn-join-code",
+          "rect": {
+            "height": 45,
+            "width": 70.046875,
+            "x": 881.453125,
+            "y": 321.796875
+          },
+          "text": "Join"
+        },
+        {
+          "id": "btn-toggle-customize",
+          "rect": {
+            "height": 24,
+            "width": 108.875,
+            "x": 578.0625,
+            "y": 586.796875
+          },
+          "text": "Customize Avatar"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 35,
+            "width": 208.65625,
+            "x": 313.5,
+            "y": 692.796875
+          },
+          "text": "●"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 35,
+            "width": 208.671875,
+            "x": 528.15625,
+            "y": 692.796875
+          },
+          "text": "■"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 35,
+            "width": 208.671875,
+            "x": 742.828125,
+            "y": 692.796875
+          },
+          "text": "◆"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 36,
+            "width": 155,
+            "x": 313.5,
+            "y": 761.796875
+          },
+          "text": "None"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 36,
+            "width": 155,
+            "x": 474.5,
+            "y": 761.796875
+          },
+          "text": "🎧"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 36,
+            "width": 155,
+            "x": 635.5,
+            "y": 761.796875
+          },
+          "text": "😇"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 36,
+            "width": 155,
+            "x": 796.5,
+            "y": 761.796875
+          },
+          "text": "🧢"
+        },
+        {
+          "id": "btn-copy-hash",
+          "rect": {
+            "height": 42,
+            "width": 76.546875,
+            "x": 874.953125,
+            "y": 883.796875
+          },
+          "text": "Copy"
+        },
+        {
+          "id": "btn-import-hash",
+          "rect": {
+            "height": 42,
+            "width": 85.234375,
+            "x": 866.265625,
+            "y": 935.796875
+          },
+          "text": "Import"
+        }
+      ]
+    },
+    {
+      "ambientPanel": {
+        "classes": "ambient-panel",
+        "display": "none",
+        "opacity": "1",
+        "rect": {
+          "bottom": 0,
+          "height": 0,
+          "top": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        "text": "Ambience\n    \n      🚫\n      🌧️\n      🎵\n    \n    🔊"
+      },
+      "buildPanel": {
+        "classes": "",
+        "display": "none",
+        "opacity": "1",
+        "rect": {
+          "bottom": 0,
+          "height": 0,
+          "top": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        "text": "🧊🔮🛢️🔺🪑🪴🛋️🟪🛏️🛁🛋️🎮💻📺🚽🐱🐶🐰🐠🐦\n    \n      ＋\n      −\n    \n    \n      Memory Card\n      \n        Download Room Card\n        \n          \n            \n            Upload Room Card"
+      },
+      "emoteGrid": {
+        "classes": "emote-grid",
+        "display": "none",
+        "opacity": "1",
+        "rect": {
+          "bottom": 0,
+          "height": 0,
+          "top": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        "text": "😊\n      👋\n      ☕\n      😴\n      ❤️\n      😂\n      🎵\n      ✨\n      🤔\n      👍\n      🌙\n      🔥\n      🎮\n      📖\n      🐱\n      🌿\n      🎧\n      💤\n      🫂\n      🍵\n      🌸\n      😌\n      🎨\n      🧸\n      🍃\n      💫\n      🎶\n      🌈\n      🕯️\n      🤗"
+      },
+      "game": {
+        "classes": "active",
+        "display": "block",
+        "opacity": "1",
+        "rect": {
+          "bottom": 720,
+          "height": 720,
+          "top": 0,
+          "width": 1280,
+          "x": 0,
+          "y": 0
+        },
+        "text": ""
+      },
+      "label": "03 common room desktop",
+      "landingCard": {
+        "classes": "landing-card",
+        "display": "block",
+        "opacity": "1",
+        "rect": {
+          "bottom": 883.005012512207,
+          "height": 840.9600219726562,
+          "top": 42.04499053955078,
+          "width": 691.199951171875,
+          "x": 287.2000427246094,
+          "y": 42.04499053955078
+        },
+        "text": "FreeLobby\n\na calm corner of the internet\n\nYOUR NAME\n✦\nEnter The Lobby\nCOMMON ROOMS\nThe Lobby\nA welcoming space for new arrivals\n0/25\nZen Garden\nA quiet corner with soft light\n0/20\nThe Library\nLow light, soft chairs, good for lurking\n0/20\nYOUR SPACE\n＋\nCreate Private Room\n🎲\nGo to a Random Room\nHave a"
+      },
+      "landingScroll": {
+        "clientHeight": 720,
+        "height": 934,
+        "top": 0
+      },
+      "musicPanel": {
+        "classes": "music-panel",
+        "display": "none",
+        "opacity": "1",
+        "rect": {
+          "bottom": 0,
+          "height": 0,
+          "top": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        "text": "Sequencer\n      ✕\n    \n    \n    \n      ▶\n      \n      120"
+      },
+      "playerCount": {
+        "classes": "visible",
+        "display": "flex",
+        "opacity": "1",
+        "rect": {
+          "bottom": 125,
+          "height": 29,
+          "top": 96,
+          "width": 73.109375,
+          "x": 1190.890625,
+          "y": 96
+        },
+        "text": "1 player"
+      },
+      "roomInfo": {
+        "classes": "visible",
+        "display": "flex",
+        "opacity": "1",
+        "rect": {
+          "bottom": 98,
+          "height": 42,
+          "top": 56,
+          "width": 219.1875,
+          "x": 1044.8125,
+          "y": 56
+        },
+        "text": "Room\nThe Lobby\n☆\n📋"
+      },
+      "signBar": {
+        "classes": "visible",
+        "display": "flex",
+        "opacity": "1",
+        "rect": {
+          "bottom": 704,
+          "height": 47,
+          "top": 657,
+          "width": 204,
+          "x": 538,
+          "y": 657
+        },
+        "text": "↑"
+      },
+      "url": "http://localhost:3000/",
+      "viewport": {
+        "height": 720,
+        "width": 1280
+      },
+      "visibleButtons": [
+        {
+          "id": "btn-enter",
+          "rect": {
+            "height": 54.720001220703125,
+            "width": 612.47998046875,
+            "x": 326.5600280761719,
+            "y": 283.0049743652344
+          },
+          "text": "✦\nEnter The Lobby"
+        },
+        {
+          "id": "btn-create",
+          "rect": {
+            "height": 48,
+            "width": 329.32501220703125,
+            "x": 609.7150268554688,
+            "y": 387.6449890136719
+          },
+          "text": "＋\nCreate Private Room"
+        },
+        {
+          "id": "btn-join",
+          "rect": {
+            "height": 47.03997802734375,
+            "width": 329.32501220703125,
+            "x": 609.7150268554688,
+            "y": 445.2449951171875
+          },
+          "text": "🎲\nGo to a Random Room"
+        },
+        {
+          "id": "btn-toggle-specific",
+          "rect": {
+            "height": 23.0400390625,
+            "width": 120.43499755859375,
+            "x": 714.1600341796875,
+            "y": 505.7249755859375
+          },
+          "text": "Have a Room Code?"
+        },
+        {
+          "id": "btn-join-code",
+          "rect": {
+            "height": 43.199951171875,
+            "width": 67.2449951171875,
+            "x": 871.7950439453125,
+            "y": 528.7650146484375
+          },
+          "text": "Join"
+        },
+        {
+          "id": "btn-toggle-customize",
+          "rect": {
+            "height": 23.0400390625,
+            "width": 104.51995849609375,
+            "x": 580.5400390625,
+            "y": 783.1649169921875
+          },
+          "text": "Customize Avatar"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 33.60009765625,
+            "width": 200.30996704101562,
+            "x": 326.5600280761719,
+            "y": 884.9249267578125
+          },
+          "text": "●"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 33.60009765625,
+            "width": 200.32501220703125,
+            "x": 532.6300048828125,
+            "y": 884.9249267578125
+          },
+          "text": "■"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 33.60009765625,
+            "width": 200.32501220703125,
+            "x": 738.7150268554688,
+            "y": 884.9249267578125
+          },
+          "text": "◆"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 34.56005859375,
+            "width": 148.79998779296875,
+            "x": 326.5600280761719,
+            "y": 951.1649169921875
+          },
+          "text": "None"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 34.56005859375,
+            "width": 148.80001831054688,
+            "x": 481.1200256347656,
+            "y": 951.1649169921875
+          },
+          "text": "🎧"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 34.56005859375,
+            "width": 148.800048828125,
+            "x": 635.6799926757812,
+            "y": 951.1649169921875
+          },
+          "text": "😇"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 34.56005859375,
+            "width": 148.800048828125,
+            "x": 790.239990234375,
+            "y": 951.1649169921875
+          },
+          "text": "🧢"
+        },
+        {
+          "id": "btn-copy-hash",
+          "rect": {
+            "height": 40.3199462890625,
+            "width": 73.48504638671875,
+            "x": 865.5549926757812,
+            "y": 1068.2850341796875
+          },
+          "text": "Copy"
+        },
+        {
+          "id": "btn-import-hash",
+          "rect": {
+            "height": 40.320068359375,
+            "width": 81.82501220703125,
+            "x": 857.2150268554688,
+            "y": 1118.2049560546875
+          },
+          "text": "Import"
+        },
+        {
+          "id": "zoom-in",
+          "rect": {
+            "height": 44,
+            "width": 44,
+            "x": 1220,
+            "y": 484
+          },
+          "text": "＋"
+        },
+        {
+          "id": "zoom-out",
+          "rect": {
+            "height": 44,
+            "width": 44,
+            "x": 1220,
+            "y": 536
+          },
+          "text": "−"
+        },
+        {
+          "id": "bookmark-btn",
+          "rect": {
+            "height": 24,
+            "width": 14.671875,
+            "x": 1199.640625,
+            "y": 65
+          },
+          "text": "☆"
+        },
+        {
+          "id": "copy-room-btn",
+          "rect": {
+            "height": 17.59375,
+            "width": 26.6875,
+            "x": 1222.3125,
+            "y": 68.203125
+          },
+          "text": "📋"
+        },
+        {
+          "id": "flee-btn",
+          "rect": {
+            "height": 33,
+            "width": 140.359375,
+            "x": 1123.640625,
+            "y": 136
+          },
+          "text": "Go to empty room"
+        },
+        {
+          "id": "quiet-btn",
+          "rect": {
+            "height": 33,
+            "width": 65.3125,
+            "x": 1198.6875,
+            "y": 224
+          },
+          "text": "Quiet"
+        },
+        {
+          "id": "back-btn",
+          "rect": {
+            "height": 33,
+            "width": 86.59375,
+            "x": 16,
+            "y": 16
+          },
+          "text": "← Lobby"
+        },
+        {
+          "id": "emote-toggle",
+          "rect": {
+            "height": 48,
+            "width": 48,
+            "x": 16,
+            "y": 600
+          },
+          "text": "😊"
+        },
+        {
+          "id": "sign-send",
+          "rect": {
+            "height": 32,
+            "width": 32,
+            "x": 703,
+            "y": 664.5
+          },
+          "text": "↑"
+        },
+        {
+          "id": "love-btn",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 1224,
+            "y": 664
+          },
+          "text": "♥"
+        }
+      ]
+    },
+    {
+      "ambientPanel": {
+        "classes": "ambient-panel",
+        "display": "none",
+        "opacity": "1",
+        "rect": {
+          "bottom": 0,
+          "height": 0,
+          "top": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        "text": "Ambience\n    \n      🚫\n      🌧️\n      🎵\n    \n    🔊"
+      },
+      "buildPanel": {
+        "classes": "",
+        "display": "none",
+        "opacity": "1",
+        "rect": {
+          "bottom": 0,
+          "height": 0,
+          "top": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        "text": "🧊🔮🛢️🔺🪑🪴🛋️🟪🛏️🛁🛋️🎮💻📺🚽🐱🐶🐰🐠🐦\n    \n      ＋\n      −\n    \n    \n      Memory Card\n      \n        Download Room Card\n        \n          \n            \n            Upload Room Card"
+      },
+      "emoteGrid": {
+        "classes": "emote-grid open",
+        "display": "grid",
+        "opacity": "1",
+        "rect": {
+          "bottom": 592,
+          "height": 242,
+          "top": 350,
+          "width": 264,
+          "x": 16,
+          "y": 350
+        },
+        "text": "😊\n👋\n☕\n😴\n❤️\n😂\n🎵\n✨\n🤔\n👍\n🌙\n🔥\n🎮\n📖\n🐱\n🌿\n🎧\n💤\n🫂\n🍵\n🌸\n😌\n🎨\n🧸\n🍃\n💫\n🎶\n🌈\n🕯️\n🤗"
+      },
+      "game": {
+        "classes": "active",
+        "display": "block",
+        "opacity": "1",
+        "rect": {
+          "bottom": 720,
+          "height": 720,
+          "top": 0,
+          "width": 1280,
+          "x": 0,
+          "y": 0
+        },
+        "text": ""
+      },
+      "label": "04 common room emotes open",
+      "landingCard": {
+        "classes": "landing-card",
+        "display": "block",
+        "opacity": "1",
+        "rect": {
+          "bottom": 883.005012512207,
+          "height": 840.9600219726562,
+          "top": 42.04499053955078,
+          "width": 691.199951171875,
+          "x": 287.2000427246094,
+          "y": 42.04499053955078
+        },
+        "text": "FreeLobby\n\na calm corner of the internet\n\nYOUR NAME\n✦\nEnter The Lobby\nCOMMON ROOMS\nThe Lobby\nA welcoming space for new arrivals\n0/25\nZen Garden\nA quiet corner with soft light\n0/20\nThe Library\nLow light, soft chairs, good for lurking\n0/20\nYOUR SPACE\n＋\nCreate Private Room\n🎲\nGo to a Random Room\nHave a"
+      },
+      "landingScroll": {
+        "clientHeight": 720,
+        "height": 934,
+        "top": 0
+      },
+      "musicPanel": {
+        "classes": "music-panel",
+        "display": "none",
+        "opacity": "1",
+        "rect": {
+          "bottom": 0,
+          "height": 0,
+          "top": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        "text": "Sequencer\n      ✕\n    \n    \n    \n      ▶\n      \n      120"
+      },
+      "playerCount": {
+        "classes": "visible",
+        "display": "flex",
+        "opacity": "1",
+        "rect": {
+          "bottom": 125,
+          "height": 29,
+          "top": 96,
+          "width": 73.109375,
+          "x": 1190.890625,
+          "y": 96
+        },
+        "text": "1 player"
+      },
+      "roomInfo": {
+        "classes": "visible",
+        "display": "flex",
+        "opacity": "1",
+        "rect": {
+          "bottom": 98,
+          "height": 42,
+          "top": 56,
+          "width": 219.1875,
+          "x": 1044.8125,
+          "y": 56
+        },
+        "text": "Room\nThe Lobby\n☆\n📋"
+      },
+      "signBar": {
+        "classes": "visible",
+        "display": "flex",
+        "opacity": "1",
+        "rect": {
+          "bottom": 704,
+          "height": 47,
+          "top": 657,
+          "width": 204,
+          "x": 538,
+          "y": 657
+        },
+        "text": "↑"
+      },
+      "url": "http://localhost:3000/",
+      "viewport": {
+        "height": 720,
+        "width": 1280
+      },
+      "visibleButtons": [
+        {
+          "id": "btn-enter",
+          "rect": {
+            "height": 54.720001220703125,
+            "width": 612.47998046875,
+            "x": 326.5600280761719,
+            "y": 283.0049743652344
+          },
+          "text": "✦\nEnter The Lobby"
+        },
+        {
+          "id": "btn-create",
+          "rect": {
+            "height": 48,
+            "width": 329.32501220703125,
+            "x": 609.7150268554688,
+            "y": 387.6449890136719
+          },
+          "text": "＋\nCreate Private Room"
+        },
+        {
+          "id": "btn-join",
+          "rect": {
+            "height": 47.03997802734375,
+            "width": 329.32501220703125,
+            "x": 609.7150268554688,
+            "y": 445.2449951171875
+          },
+          "text": "🎲\nGo to a Random Room"
+        },
+        {
+          "id": "btn-toggle-specific",
+          "rect": {
+            "height": 23.0400390625,
+            "width": 120.43499755859375,
+            "x": 714.1600341796875,
+            "y": 505.7249755859375
+          },
+          "text": "Have a Room Code?"
+        },
+        {
+          "id": "btn-join-code",
+          "rect": {
+            "height": 43.199951171875,
+            "width": 67.2449951171875,
+            "x": 871.7950439453125,
+            "y": 528.7650146484375
+          },
+          "text": "Join"
+        },
+        {
+          "id": "btn-toggle-customize",
+          "rect": {
+            "height": 23.0400390625,
+            "width": 104.51995849609375,
+            "x": 580.5400390625,
+            "y": 783.1649169921875
+          },
+          "text": "Customize Avatar"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 33.60009765625,
+            "width": 200.30996704101562,
+            "x": 326.5600280761719,
+            "y": 884.9249267578125
+          },
+          "text": "●"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 33.60009765625,
+            "width": 200.32501220703125,
+            "x": 532.6300048828125,
+            "y": 884.9249267578125
+          },
+          "text": "■"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 33.60009765625,
+            "width": 200.32501220703125,
+            "x": 738.7150268554688,
+            "y": 884.9249267578125
+          },
+          "text": "◆"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 34.56005859375,
+            "width": 148.79998779296875,
+            "x": 326.5600280761719,
+            "y": 951.1649169921875
+          },
+          "text": "None"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 34.56005859375,
+            "width": 148.80001831054688,
+            "x": 481.1200256347656,
+            "y": 951.1649169921875
+          },
+          "text": "🎧"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 34.56005859375,
+            "width": 148.800048828125,
+            "x": 635.6799926757812,
+            "y": 951.1649169921875
+          },
+          "text": "😇"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 34.56005859375,
+            "width": 148.800048828125,
+            "x": 790.239990234375,
+            "y": 951.1649169921875
+          },
+          "text": "🧢"
+        },
+        {
+          "id": "btn-copy-hash",
+          "rect": {
+            "height": 40.3199462890625,
+            "width": 73.48504638671875,
+            "x": 865.5549926757812,
+            "y": 1068.2850341796875
+          },
+          "text": "Copy"
+        },
+        {
+          "id": "btn-import-hash",
+          "rect": {
+            "height": 40.320068359375,
+            "width": 81.82501220703125,
+            "x": 857.2150268554688,
+            "y": 1118.2049560546875
+          },
+          "text": "Import"
+        },
+        {
+          "id": "zoom-in",
+          "rect": {
+            "height": 44,
+            "width": 44,
+            "x": 1220,
+            "y": 484
+          },
+          "text": "＋"
+        },
+        {
+          "id": "zoom-out",
+          "rect": {
+            "height": 44,
+            "width": 44,
+            "x": 1220,
+            "y": 536
+          },
+          "text": "−"
+        },
+        {
+          "id": "bookmark-btn",
+          "rect": {
+            "height": 24,
+            "width": 14.671875,
+            "x": 1199.640625,
+            "y": 65
+          },
+          "text": "☆"
+        },
+        {
+          "id": "copy-room-btn",
+          "rect": {
+            "height": 17.59375,
+            "width": 26.6875,
+            "x": 1222.3125,
+            "y": 68.203125
+          },
+          "text": "📋"
+        },
+        {
+          "id": "flee-btn",
+          "rect": {
+            "height": 33,
+            "width": 140.359375,
+            "x": 1123.640625,
+            "y": 136
+          },
+          "text": "Go to empty room"
+        },
+        {
+          "id": "quiet-btn",
+          "rect": {
+            "height": 33,
+            "width": 65.3125,
+            "x": 1198.6875,
+            "y": 224
+          },
+          "text": "Quiet"
+        },
+        {
+          "id": "back-btn",
+          "rect": {
+            "height": 33,
+            "width": 86.59375,
+            "x": 16,
+            "y": 16
+          },
+          "text": "← Lobby"
+        },
+        {
+          "id": "emote-toggle",
+          "rect": {
+            "height": 48,
+            "width": 48,
+            "x": 16,
+            "y": 600
+          },
+          "text": "😊"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 29,
+            "y": 363
+          },
+          "text": "😊"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 73,
+            "y": 363
+          },
+          "text": "👋"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 117,
+            "y": 363
+          },
+          "text": "☕"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 161,
+            "y": 363
+          },
+          "text": "😴"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 205,
+            "y": 363
+          },
+          "text": "❤️"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 249,
+            "y": 363
+          },
+          "text": "😂"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 29,
+            "y": 407
+          },
+          "text": "🎵"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 73,
+            "y": 407
+          },
+          "text": "✨"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 117,
+            "y": 407
+          },
+          "text": "🤔"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 161,
+            "y": 407
+          },
+          "text": "👍"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 205,
+            "y": 407
+          },
+          "text": "🌙"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 249,
+            "y": 407
+          },
+          "text": "🔥"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 29,
+            "y": 451
+          },
+          "text": "🎮"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 73,
+            "y": 451
+          },
+          "text": "📖"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 117,
+            "y": 451
+          },
+          "text": "🐱"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 161,
+            "y": 451
+          },
+          "text": "🌿"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 205,
+            "y": 451
+          },
+          "text": "🎧"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 249,
+            "y": 451
+          },
+          "text": "💤"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 29,
+            "y": 495
+          },
+          "text": "🫂"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 73,
+            "y": 495
+          },
+          "text": "🍵"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 117,
+            "y": 495
+          },
+          "text": "🌸"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 161,
+            "y": 495
+          },
+          "text": "😌"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 205,
+            "y": 495
+          },
+          "text": "🎨"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 249,
+            "y": 495
+          },
+          "text": "🧸"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 29,
+            "y": 539
+          },
+          "text": "🍃"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 73,
+            "y": 539
+          },
+          "text": "💫"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 117,
+            "y": 539
+          },
+          "text": "🎶"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 161,
+            "y": 539
+          },
+          "text": "🌈"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 205,
+            "y": 539
+          },
+          "text": "🕯️"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 249,
+            "y": 539
+          },
+          "text": "🤗"
+        },
+        {
+          "id": "sign-send",
+          "rect": {
+            "height": 32,
+            "width": 32,
+            "x": 703,
+            "y": 664.5
+          },
+          "text": "↑"
+        },
+        {
+          "id": "love-btn",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 1224,
+            "y": 664
+          },
+          "text": "♥"
+        }
+      ]
+    },
+    {
+      "ambientPanel": {
+        "classes": "ambient-panel visible",
+        "display": "flex",
+        "opacity": "1",
+        "rect": {
+          "bottom": 648,
+          "height": 42,
+          "top": 606,
+          "width": 227.859375,
+          "x": 526.0703125,
+          "y": 606
+        },
+        "text": "Ambience\n🚫\n🌧️\n🎵\n🔊"
+      },
+      "buildPanel": {
+        "classes": "",
+        "display": "none",
+        "opacity": "1",
+        "rect": {
+          "bottom": 0,
+          "height": 0,
+          "top": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        "text": "🧊🔮🛢️🔺🪑🪴🛋️🟪🛏️🛁🛋️🎮💻📺🚽🐱🐶🐰🐠🐦\n    \n      ＋\n      −\n    \n    \n      Memory Card\n      \n        Download Room Card\n        \n          \n            \n            Upload Room Card"
+      },
+      "emoteGrid": {
+        "classes": "emote-grid",
+        "display": "none",
+        "opacity": "1",
+        "rect": {
+          "bottom": 0,
+          "height": 0,
+          "top": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        "text": "😊\n      👋\n      ☕\n      😴\n      ❤️\n      😂\n      🎵\n      ✨\n      🤔\n      👍\n      🌙\n      🔥\n      🎮\n      📖\n      🐱\n      🌿\n      🎧\n      💤\n      🫂\n      🍵\n      🌸\n      😌\n      🎨\n      🧸\n      🍃\n      💫\n      🎶\n      🌈\n      🕯️\n      🤗"
+      },
+      "game": {
+        "classes": "active",
+        "display": "block",
+        "opacity": "1",
+        "rect": {
+          "bottom": 720,
+          "height": 720,
+          "top": 0,
+          "width": 1280,
+          "x": 0,
+          "y": 0
+        },
+        "text": ""
+      },
+      "label": "05 private room desktop",
+      "landingCard": {
+        "classes": "landing-card",
+        "display": "block",
+        "opacity": "1",
+        "rect": {
+          "bottom": 831.1648941040039,
+          "height": 840.9598999023438,
+          "top": -9.795005798339844,
+          "width": 691.199951171875,
+          "x": 287.2000427246094,
+          "y": -9.795005798339844
+        },
+        "text": "FreeLobby\n\na calm corner of the internet\n\nYOUR NAME\n✦\nEnter The Lobby\nCOMMON ROOMS\nThe Lobby\nA welcoming space for new arrivals\n0/25\nZen Garden\nA quiet corner with soft light\n0/20\nThe Library\nLow light, soft chairs, good for lurking\n0/20\nYOUR SPACE\n＋\nCreate Private Room\n🎲\nGo to a Random Room\nHave a"
+      },
+      "landingScroll": {
+        "clientHeight": 720,
+        "height": 934,
+        "top": 54
+      },
+      "musicPanel": {
+        "classes": "music-panel",
+        "display": "none",
+        "opacity": "1",
+        "rect": {
+          "bottom": 0,
+          "height": 0,
+          "top": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        "text": "Sequencer\n      ✕\n    \n    \n    \n      ▶\n      \n      120"
+      },
+      "playerCount": {
+        "classes": "visible",
+        "display": "flex",
+        "opacity": "1",
+        "rect": {
+          "bottom": 125,
+          "height": 29,
+          "top": 96,
+          "width": 73.109375,
+          "x": 1190.890625,
+          "y": 96
+        },
+        "text": "1 player"
+      },
+      "roomInfo": {
+        "classes": "visible",
+        "display": "flex",
+        "opacity": "1",
+        "rect": {
+          "bottom": 98,
+          "height": 42,
+          "top": 56,
+          "width": 271.078125,
+          "x": 992.921875,
+          "y": 56
+        },
+        "text": "Room\nXNCU3Y\nOWNER\n☆\n📋"
+      },
+      "signBar": {
+        "classes": "visible",
+        "display": "flex",
+        "opacity": "1",
+        "rect": {
+          "bottom": 704,
+          "height": 47,
+          "top": 657,
+          "width": 204,
+          "x": 538,
+          "y": 657
+        },
+        "text": "↑"
+      },
+      "url": "http://localhost:3000/",
+      "viewport": {
+        "height": 720,
+        "width": 1280
+      },
+      "visibleButtons": [
+        {
+          "id": "btn-enter",
+          "rect": {
+            "height": 54.71998596191406,
+            "width": 612.47998046875,
+            "x": 326.5600280761719,
+            "y": 231.1649932861328
+          },
+          "text": "✦\nEnter The Lobby"
+        },
+        {
+          "id": "btn-create",
+          "rect": {
+            "height": 48,
+            "width": 329.32501220703125,
+            "x": 609.7150268554688,
+            "y": 335.80499267578125
+          },
+          "text": "＋\nCreate Private Room"
+        },
+        {
+          "id": "btn-join",
+          "rect": {
+            "height": 47.03997802734375,
+            "width": 329.32501220703125,
+            "x": 609.7150268554688,
+            "y": 393.4049987792969
+          },
+          "text": "🎲\nGo to a Random Room"
+        },
+        {
+          "id": "btn-toggle-specific",
+          "rect": {
+            "height": 23.040008544921875,
+            "width": 120.43499755859375,
+            "x": 714.1600341796875,
+            "y": 453.8849792480469
+          },
+          "text": "Have a Room Code?"
+        },
+        {
+          "id": "btn-join-code",
+          "rect": {
+            "height": 43.20001220703125,
+            "width": 67.2449951171875,
+            "x": 871.7950439453125,
+            "y": 476.92498779296875
+          },
+          "text": "Join"
+        },
+        {
+          "id": "btn-toggle-customize",
+          "rect": {
+            "height": 23.0400390625,
+            "width": 104.51995849609375,
+            "x": 580.5400390625,
+            "y": 731.324951171875
+          },
+          "text": "Customize Avatar"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 33.5999755859375,
+            "width": 200.30996704101562,
+            "x": 326.5600280761719,
+            "y": 833.0849609375
+          },
+          "text": "●"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 33.5999755859375,
+            "width": 200.32501220703125,
+            "x": 532.6300048828125,
+            "y": 833.0849609375
+          },
+          "text": "■"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 33.5999755859375,
+            "width": 200.32501220703125,
+            "x": 738.7150268554688,
+            "y": 833.0849609375
+          },
+          "text": "◆"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 34.56005859375,
+            "width": 148.79998779296875,
+            "x": 326.5600280761719,
+            "y": 899.324951171875
+          },
+          "text": "None"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 34.56005859375,
+            "width": 148.80001831054688,
+            "x": 481.1200256347656,
+            "y": 899.324951171875
+          },
+          "text": "🎧"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 34.56005859375,
+            "width": 148.800048828125,
+            "x": 635.6799926757812,
+            "y": 899.324951171875
+          },
+          "text": "😇"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 34.56005859375,
+            "width": 148.800048828125,
+            "x": 790.239990234375,
+            "y": 899.324951171875
+          },
+          "text": "🧢"
+        },
+        {
+          "id": "btn-copy-hash",
+          "rect": {
+            "height": 40.320068359375,
+            "width": 73.48504638671875,
+            "x": 865.5549926757812,
+            "y": 1016.4449462890625
+          },
+          "text": "Copy"
+        },
+        {
+          "id": "btn-import-hash",
+          "rect": {
+            "height": 40.320068359375,
+            "width": 81.82501220703125,
+            "x": 857.2150268554688,
+            "y": 1066.364990234375
+          },
+          "text": "Import"
+        },
+        {
+          "id": "zoom-in",
+          "rect": {
+            "height": 44,
+            "width": 44,
+            "x": 1220,
+            "y": 484
+          },
+          "text": "＋"
+        },
+        {
+          "id": "zoom-out",
+          "rect": {
+            "height": 44,
+            "width": 44,
+            "x": 1220,
+            "y": 536
+          },
+          "text": "−"
+        },
+        {
+          "id": "bookmark-btn",
+          "rect": {
+            "height": 24,
+            "width": 14.671875,
+            "x": 1199.640625,
+            "y": 65
+          },
+          "text": "☆"
+        },
+        {
+          "id": "copy-room-btn",
+          "rect": {
+            "height": 17.59375,
+            "width": 26.6875,
+            "x": 1222.3125,
+            "y": 68.203125
+          },
+          "text": "📋"
+        },
+        {
+          "id": "flee-btn",
+          "rect": {
+            "height": 33,
+            "width": 140.359375,
+            "x": 1123.640625,
+            "y": 136
+          },
+          "text": "Go to empty room"
+        },
+        {
+          "id": "quiet-btn",
+          "rect": {
+            "height": 33,
+            "width": 65.3125,
+            "x": 1198.6875,
+            "y": 224
+          },
+          "text": "Quiet"
+        },
+        {
+          "id": "build-btn",
+          "rect": {
+            "height": 33,
+            "width": 63.234375,
+            "x": 1200.765625,
+            "y": 180
+          },
+          "text": "Build"
+        },
+        {
+          "id": "back-btn",
+          "rect": {
+            "height": 33,
+            "width": 86.59375,
+            "x": 16,
+            "y": 16
+          },
+          "text": "← Lobby"
+        },
+        {
+          "id": "emote-toggle",
+          "rect": {
+            "height": 48,
+            "width": 48,
+            "x": 16,
+            "y": 600
+          },
+          "text": "😊"
+        },
+        {
+          "id": "sign-send",
+          "rect": {
+            "height": 32,
+            "width": 32,
+            "x": 703,
+            "y": 664.5
+          },
+          "text": "↑"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 28,
+            "width": 28,
+            "x": 608.9296875,
+            "y": 613
+          },
+          "text": "🚫"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 28,
+            "width": 28,
+            "x": 640.9296875,
+            "y": 613
+          },
+          "text": "🌧️"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 28,
+            "width": 28,
+            "x": 672.9296875,
+            "y": 613
+          },
+          "text": "🎵"
+        },
+        {
+          "id": "ambient-mute",
+          "rect": {
+            "height": 28,
+            "width": 28,
+            "x": 712.9296875,
+            "y": 613
+          },
+          "text": "🔊"
+        },
+        {
+          "id": "music-btn",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 16,
+            "y": 664
+          },
+          "text": "🎹"
+        },
+        {
+          "id": "love-btn",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 1224,
+            "y": 664
+          },
+          "text": "♥"
+        }
+      ]
+    },
+    {
+      "ambientPanel": {
+        "classes": "ambient-panel visible",
+        "display": "flex",
+        "opacity": "1",
+        "rect": {
+          "bottom": 648,
+          "height": 42,
+          "top": 606,
+          "width": 227.859375,
+          "x": 526.0703125,
+          "y": 606
+        },
+        "text": "Ambience\n🚫\n🌧️\n🎵\n🔊"
+      },
+      "buildPanel": {
+        "classes": "visible",
+        "display": "flex",
+        "opacity": "1",
+        "rect": {
+          "bottom": 648,
+          "height": 242,
+          "top": 406,
+          "width": 384,
+          "x": 448,
+          "y": 406
+        },
+        "text": "🧊\n🔮\n🛢️\n🔺\n🪑\n🪴\n🛋️\n🟪\n🛏️\n🛁\n🛋️\n🎮\n💻\n📺\n🚽\n🐱\n🐶\n🐰\n🐠\n🐦\n＋\n−\nMemory Card\nDownload Room Card\nUpload Room Card"
+      },
+      "emoteGrid": {
+        "classes": "emote-grid",
+        "display": "none",
+        "opacity": "1",
+        "rect": {
+          "bottom": 0,
+          "height": 0,
+          "top": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        "text": "😊\n      👋\n      ☕\n      😴\n      ❤️\n      😂\n      🎵\n      ✨\n      🤔\n      👍\n      🌙\n      🔥\n      🎮\n      📖\n      🐱\n      🌿\n      🎧\n      💤\n      🫂\n      🍵\n      🌸\n      😌\n      🎨\n      🧸\n      🍃\n      💫\n      🎶\n      🌈\n      🕯️\n      🤗"
+      },
+      "game": {
+        "classes": "active",
+        "display": "block",
+        "opacity": "1",
+        "rect": {
+          "bottom": 720,
+          "height": 720,
+          "top": 0,
+          "width": 1280,
+          "x": 0,
+          "y": 0
+        },
+        "text": ""
+      },
+      "label": "06 private build panel desktop",
+      "landingCard": {
+        "classes": "landing-card",
+        "display": "block",
+        "opacity": "1",
+        "rect": {
+          "bottom": 831.1648941040039,
+          "height": 840.9598999023438,
+          "top": -9.795005798339844,
+          "width": 691.199951171875,
+          "x": 287.2000427246094,
+          "y": -9.795005798339844
+        },
+        "text": "FreeLobby\n\na calm corner of the internet\n\nYOUR NAME\n✦\nEnter The Lobby\nCOMMON ROOMS\nThe Lobby\nA welcoming space for new arrivals\n0/25\nZen Garden\nA quiet corner with soft light\n0/20\nThe Library\nLow light, soft chairs, good for lurking\n0/20\nYOUR SPACE\n＋\nCreate Private Room\n🎲\nGo to a Random Room\nHave a"
+      },
+      "landingScroll": {
+        "clientHeight": 720,
+        "height": 934,
+        "top": 54
+      },
+      "musicPanel": {
+        "classes": "music-panel",
+        "display": "none",
+        "opacity": "1",
+        "rect": {
+          "bottom": 0,
+          "height": 0,
+          "top": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        "text": "Sequencer\n      ✕\n    \n    \n    \n      ▶\n      \n      120"
+      },
+      "playerCount": {
+        "classes": "visible",
+        "display": "flex",
+        "opacity": "1",
+        "rect": {
+          "bottom": 125,
+          "height": 29,
+          "top": 96,
+          "width": 73.109375,
+          "x": 1190.890625,
+          "y": 96
+        },
+        "text": "1 player"
+      },
+      "roomInfo": {
+        "classes": "visible",
+        "display": "flex",
+        "opacity": "1",
+        "rect": {
+          "bottom": 98,
+          "height": 42,
+          "top": 56,
+          "width": 271.078125,
+          "x": 992.921875,
+          "y": 56
+        },
+        "text": "Room\nXNCU3Y\nOWNER\n☆\n📋"
+      },
+      "signBar": {
+        "classes": "visible",
+        "display": "flex",
+        "opacity": "1",
+        "rect": {
+          "bottom": 704,
+          "height": 47,
+          "top": 657,
+          "width": 204,
+          "x": 538,
+          "y": 657
+        },
+        "text": "↑"
+      },
+      "url": "http://localhost:3000/",
+      "viewport": {
+        "height": 720,
+        "width": 1280
+      },
+      "visibleButtons": [
+        {
+          "id": "btn-enter",
+          "rect": {
+            "height": 54.71998596191406,
+            "width": 612.47998046875,
+            "x": 326.5600280761719,
+            "y": 231.1649932861328
+          },
+          "text": "✦\nEnter The Lobby"
+        },
+        {
+          "id": "btn-create",
+          "rect": {
+            "height": 48,
+            "width": 329.32501220703125,
+            "x": 609.7150268554688,
+            "y": 335.80499267578125
+          },
+          "text": "＋\nCreate Private Room"
+        },
+        {
+          "id": "btn-join",
+          "rect": {
+            "height": 47.03997802734375,
+            "width": 329.32501220703125,
+            "x": 609.7150268554688,
+            "y": 393.4049987792969
+          },
+          "text": "🎲\nGo to a Random Room"
+        },
+        {
+          "id": "btn-toggle-specific",
+          "rect": {
+            "height": 23.040008544921875,
+            "width": 120.43499755859375,
+            "x": 714.1600341796875,
+            "y": 453.8849792480469
+          },
+          "text": "Have a Room Code?"
+        },
+        {
+          "id": "btn-join-code",
+          "rect": {
+            "height": 43.20001220703125,
+            "width": 67.2449951171875,
+            "x": 871.7950439453125,
+            "y": 476.92498779296875
+          },
+          "text": "Join"
+        },
+        {
+          "id": "btn-toggle-customize",
+          "rect": {
+            "height": 23.0400390625,
+            "width": 104.51995849609375,
+            "x": 580.5400390625,
+            "y": 731.324951171875
+          },
+          "text": "Customize Avatar"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 33.5999755859375,
+            "width": 200.30996704101562,
+            "x": 326.5600280761719,
+            "y": 833.0849609375
+          },
+          "text": "●"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 33.5999755859375,
+            "width": 200.32501220703125,
+            "x": 532.6300048828125,
+            "y": 833.0849609375
+          },
+          "text": "■"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 33.5999755859375,
+            "width": 200.32501220703125,
+            "x": 738.7150268554688,
+            "y": 833.0849609375
+          },
+          "text": "◆"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 34.56005859375,
+            "width": 148.79998779296875,
+            "x": 326.5600280761719,
+            "y": 899.324951171875
+          },
+          "text": "None"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 34.56005859375,
+            "width": 148.80001831054688,
+            "x": 481.1200256347656,
+            "y": 899.324951171875
+          },
+          "text": "🎧"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 34.56005859375,
+            "width": 148.800048828125,
+            "x": 635.6799926757812,
+            "y": 899.324951171875
+          },
+          "text": "😇"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 34.56005859375,
+            "width": 148.800048828125,
+            "x": 790.239990234375,
+            "y": 899.324951171875
+          },
+          "text": "🧢"
+        },
+        {
+          "id": "btn-copy-hash",
+          "rect": {
+            "height": 40.320068359375,
+            "width": 73.48504638671875,
+            "x": 865.5549926757812,
+            "y": 1016.4449462890625
+          },
+          "text": "Copy"
+        },
+        {
+          "id": "btn-import-hash",
+          "rect": {
+            "height": 40.320068359375,
+            "width": 81.82501220703125,
+            "x": 857.2150268554688,
+            "y": 1066.364990234375
+          },
+          "text": "Import"
+        },
+        {
+          "id": "zoom-in",
+          "rect": {
+            "height": 44,
+            "width": 44,
+            "x": 1220,
+            "y": 484
+          },
+          "text": "＋"
+        },
+        {
+          "id": "zoom-out",
+          "rect": {
+            "height": 44,
+            "width": 44,
+            "x": 1220,
+            "y": 536
+          },
+          "text": "−"
+        },
+        {
+          "id": "bookmark-btn",
+          "rect": {
+            "height": 24,
+            "width": 14.671875,
+            "x": 1199.640625,
+            "y": 65
+          },
+          "text": "☆"
+        },
+        {
+          "id": "copy-room-btn",
+          "rect": {
+            "height": 17.59375,
+            "width": 26.6875,
+            "x": 1222.3125,
+            "y": 68.203125
+          },
+          "text": "📋"
+        },
+        {
+          "id": "flee-btn",
+          "rect": {
+            "height": 33,
+            "width": 140.359375,
+            "x": 1123.640625,
+            "y": 136
+          },
+          "text": "Go to empty room"
+        },
+        {
+          "id": "quiet-btn",
+          "rect": {
+            "height": 33,
+            "width": 65.3125,
+            "x": 1198.6875,
+            "y": 224
+          },
+          "text": "Quiet"
+        },
+        {
+          "id": "build-btn",
+          "rect": {
+            "height": 33,
+            "width": 63.234375,
+            "x": 1200.765625,
+            "y": 180
+          },
+          "text": "Build"
+        },
+        {
+          "id": "back-btn",
+          "rect": {
+            "height": 33,
+            "width": 86.59375,
+            "x": 16,
+            "y": 16
+          },
+          "text": "← Lobby"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 459,
+            "y": 417
+          },
+          "text": "🧊"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 505,
+            "y": 417
+          },
+          "text": "🔮"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 551,
+            "y": 417
+          },
+          "text": "🛢️"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 597,
+            "y": 417
+          },
+          "text": "🔺"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 643,
+            "y": 417
+          },
+          "text": "🪑"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 689,
+            "y": 417
+          },
+          "text": "🪴"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 735,
+            "y": 417
+          },
+          "text": "🛋️"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 781,
+            "y": 417
+          },
+          "text": "🟪"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 459,
+            "y": 463
+          },
+          "text": "🛏️"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 505,
+            "y": 463
+          },
+          "text": "🛁"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 551,
+            "y": 463
+          },
+          "text": "🛋️"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 597,
+            "y": 463
+          },
+          "text": "🎮"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 643,
+            "y": 463
+          },
+          "text": "💻"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 689,
+            "y": 463
+          },
+          "text": "📺"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 735,
+            "y": 463
+          },
+          "text": "🚽"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 781,
+            "y": 463
+          },
+          "text": "🐱"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 459,
+            "y": 509
+          },
+          "text": "🐶"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 505,
+            "y": 509
+          },
+          "text": "🐰"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 551,
+            "y": 509
+          },
+          "text": "🐠"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 597,
+            "y": 509
+          },
+          "text": "🐦"
+        },
+        {
+          "id": "tool-place",
+          "rect": {
+            "height": 32,
+            "width": 32,
+            "x": 605,
+            "y": 557
+          },
+          "text": "＋"
+        },
+        {
+          "id": "tool-remove",
+          "rect": {
+            "height": 32,
+            "width": 32,
+            "x": 643,
+            "y": 557
+          },
+          "text": "−"
+        },
+        {
+          "id": "btn-toggle-hash",
+          "rect": {
+            "height": 23,
+            "width": 77.546875,
+            "x": 601.21875,
+            "y": 614
+          },
+          "text": "Memory Card"
+        },
+        {
+          "id": "btn-download-card",
+          "rect": {
+            "height": 38,
+            "width": 183.6875,
+            "x": 548.15625,
+            "y": 637
+          },
+          "text": "Download Room Card"
+        },
+        {
+          "id": "emote-toggle",
+          "rect": {
+            "height": 48,
+            "width": 48,
+            "x": 16,
+            "y": 600
+          },
+          "text": "😊"
+        },
+        {
+          "id": "sign-send",
+          "rect": {
+            "height": 32,
+            "width": 32,
+            "x": 703,
+            "y": 664.5
+          },
+          "text": "↑"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 28,
+            "width": 28,
+            "x": 608.9296875,
+            "y": 613
+          },
+          "text": "🚫"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 28,
+            "width": 28,
+            "x": 640.9296875,
+            "y": 613
+          },
+          "text": "🌧️"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 28,
+            "width": 28,
+            "x": 672.9296875,
+            "y": 613
+          },
+          "text": "🎵"
+        },
+        {
+          "id": "ambient-mute",
+          "rect": {
+            "height": 28,
+            "width": 28,
+            "x": 712.9296875,
+            "y": 613
+          },
+          "text": "🔊"
+        },
+        {
+          "id": "music-btn",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 16,
+            "y": 664
+          },
+          "text": "🎹"
+        },
+        {
+          "id": "love-btn",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 1224,
+            "y": 664
+          },
+          "text": "♥"
+        }
+      ]
+    },
+    {
+      "ambientPanel": {
+        "classes": "ambient-panel visible",
+        "display": "flex",
+        "opacity": "1",
+        "rect": {
+          "bottom": 648,
+          "height": 42,
+          "top": 606,
+          "width": 227.859375,
+          "x": 526.0703125,
+          "y": 606
+        },
+        "text": "Ambience\n🚫\n🌧️\n🎵\n🔊"
+      },
+      "buildPanel": {
+        "classes": "visible",
+        "display": "flex",
+        "opacity": "1",
+        "rect": {
+          "bottom": 648,
+          "height": 242,
+          "top": 406,
+          "width": 384,
+          "x": 448,
+          "y": 406
+        },
+        "text": "🧊\n🔮\n🛢️\n🔺\n🪑\n🪴\n🛋️\n🟪\n🛏️\n🛁\n🛋️\n🎮\n💻\n📺\n🚽\n🐱\n🐶\n🐰\n🐠\n🐦\n＋\n−\nMemory Card\nDownload Room Card\nUpload Room Card"
+      },
+      "emoteGrid": {
+        "classes": "emote-grid",
+        "display": "none",
+        "opacity": "1",
+        "rect": {
+          "bottom": 0,
+          "height": 0,
+          "top": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        "text": "😊\n      👋\n      ☕\n      😴\n      ❤️\n      😂\n      🎵\n      ✨\n      🤔\n      👍\n      🌙\n      🔥\n      🎮\n      📖\n      🐱\n      🌿\n      🎧\n      💤\n      🫂\n      🍵\n      🌸\n      😌\n      🎨\n      🧸\n      🍃\n      💫\n      🎶\n      🌈\n      🕯️\n      🤗"
+      },
+      "game": {
+        "classes": "active",
+        "display": "block",
+        "opacity": "1",
+        "rect": {
+          "bottom": 720,
+          "height": 720,
+          "top": 0,
+          "width": 1280,
+          "x": 0,
+          "y": 0
+        },
+        "text": ""
+      },
+      "label": "07 private music and build desktop",
+      "landingCard": {
+        "classes": "landing-card",
+        "display": "block",
+        "opacity": "1",
+        "rect": {
+          "bottom": 831.1648941040039,
+          "height": 840.9598999023438,
+          "top": -9.795005798339844,
+          "width": 691.199951171875,
+          "x": 287.2000427246094,
+          "y": -9.795005798339844
+        },
+        "text": "FreeLobby\n\na calm corner of the internet\n\nYOUR NAME\n✦\nEnter The Lobby\nCOMMON ROOMS\nThe Lobby\nA welcoming space for new arrivals\n0/25\nZen Garden\nA quiet corner with soft light\n0/20\nThe Library\nLow light, soft chairs, good for lurking\n0/20\nYOUR SPACE\n＋\nCreate Private Room\n🎲\nGo to a Random Room\nHave a"
+      },
+      "landingScroll": {
+        "clientHeight": 720,
+        "height": 934,
+        "top": 54
+      },
+      "musicPanel": {
+        "classes": "music-panel visible",
+        "display": "flex",
+        "opacity": "1",
+        "rect": {
+          "bottom": 656,
+          "height": 297,
+          "top": 359,
+          "width": 220,
+          "x": 16,
+          "y": 359
+        },
+        "text": "Sequencer\n✕\n▶\n120"
+      },
+      "playerCount": {
+        "classes": "visible",
+        "display": "flex",
+        "opacity": "1",
+        "rect": {
+          "bottom": 125,
+          "height": 29,
+          "top": 96,
+          "width": 73.109375,
+          "x": 1190.890625,
+          "y": 96
+        },
+        "text": "1 player"
+      },
+      "roomInfo": {
+        "classes": "visible",
+        "display": "flex",
+        "opacity": "1",
+        "rect": {
+          "bottom": 98,
+          "height": 42,
+          "top": 56,
+          "width": 271.078125,
+          "x": 992.921875,
+          "y": 56
+        },
+        "text": "Room\nXNCU3Y\nOWNER\n☆\n📋"
+      },
+      "signBar": {
+        "classes": "visible",
+        "display": "flex",
+        "opacity": "1",
+        "rect": {
+          "bottom": 704,
+          "height": 47,
+          "top": 657,
+          "width": 204,
+          "x": 538,
+          "y": 657
+        },
+        "text": "↑"
+      },
+      "url": "http://localhost:3000/",
+      "viewport": {
+        "height": 720,
+        "width": 1280
+      },
+      "visibleButtons": [
+        {
+          "id": "btn-enter",
+          "rect": {
+            "height": 54.71998596191406,
+            "width": 612.47998046875,
+            "x": 326.5600280761719,
+            "y": 231.1649932861328
+          },
+          "text": "✦\nEnter The Lobby"
+        },
+        {
+          "id": "btn-create",
+          "rect": {
+            "height": 48,
+            "width": 329.32501220703125,
+            "x": 609.7150268554688,
+            "y": 335.80499267578125
+          },
+          "text": "＋\nCreate Private Room"
+        },
+        {
+          "id": "btn-join",
+          "rect": {
+            "height": 47.03997802734375,
+            "width": 329.32501220703125,
+            "x": 609.7150268554688,
+            "y": 393.4049987792969
+          },
+          "text": "🎲\nGo to a Random Room"
+        },
+        {
+          "id": "btn-toggle-specific",
+          "rect": {
+            "height": 23.040008544921875,
+            "width": 120.43499755859375,
+            "x": 714.1600341796875,
+            "y": 453.8849792480469
+          },
+          "text": "Have a Room Code?"
+        },
+        {
+          "id": "btn-join-code",
+          "rect": {
+            "height": 43.20001220703125,
+            "width": 67.2449951171875,
+            "x": 871.7950439453125,
+            "y": 476.92498779296875
+          },
+          "text": "Join"
+        },
+        {
+          "id": "btn-toggle-customize",
+          "rect": {
+            "height": 23.0400390625,
+            "width": 104.51995849609375,
+            "x": 580.5400390625,
+            "y": 731.324951171875
+          },
+          "text": "Customize Avatar"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 33.5999755859375,
+            "width": 200.30996704101562,
+            "x": 326.5600280761719,
+            "y": 833.0849609375
+          },
+          "text": "●"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 33.5999755859375,
+            "width": 200.32501220703125,
+            "x": 532.6300048828125,
+            "y": 833.0849609375
+          },
+          "text": "■"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 33.5999755859375,
+            "width": 200.32501220703125,
+            "x": 738.7150268554688,
+            "y": 833.0849609375
+          },
+          "text": "◆"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 34.56005859375,
+            "width": 148.79998779296875,
+            "x": 326.5600280761719,
+            "y": 899.324951171875
+          },
+          "text": "None"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 34.56005859375,
+            "width": 148.80001831054688,
+            "x": 481.1200256347656,
+            "y": 899.324951171875
+          },
+          "text": "🎧"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 34.56005859375,
+            "width": 148.800048828125,
+            "x": 635.6799926757812,
+            "y": 899.324951171875
+          },
+          "text": "😇"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 34.56005859375,
+            "width": 148.800048828125,
+            "x": 790.239990234375,
+            "y": 899.324951171875
+          },
+          "text": "🧢"
+        },
+        {
+          "id": "btn-copy-hash",
+          "rect": {
+            "height": 40.320068359375,
+            "width": 73.48504638671875,
+            "x": 865.5549926757812,
+            "y": 1016.4449462890625
+          },
+          "text": "Copy"
+        },
+        {
+          "id": "btn-import-hash",
+          "rect": {
+            "height": 40.320068359375,
+            "width": 81.82501220703125,
+            "x": 857.2150268554688,
+            "y": 1066.364990234375
+          },
+          "text": "Import"
+        },
+        {
+          "id": "zoom-in",
+          "rect": {
+            "height": 44,
+            "width": 44,
+            "x": 1220,
+            "y": 484
+          },
+          "text": "＋"
+        },
+        {
+          "id": "zoom-out",
+          "rect": {
+            "height": 44,
+            "width": 44,
+            "x": 1220,
+            "y": 536
+          },
+          "text": "−"
+        },
+        {
+          "id": "bookmark-btn",
+          "rect": {
+            "height": 24,
+            "width": 14.671875,
+            "x": 1199.640625,
+            "y": 65
+          },
+          "text": "☆"
+        },
+        {
+          "id": "copy-room-btn",
+          "rect": {
+            "height": 17.59375,
+            "width": 26.6875,
+            "x": 1222.3125,
+            "y": 68.203125
+          },
+          "text": "📋"
+        },
+        {
+          "id": "flee-btn",
+          "rect": {
+            "height": 33,
+            "width": 140.359375,
+            "x": 1123.640625,
+            "y": 136
+          },
+          "text": "Go to empty room"
+        },
+        {
+          "id": "quiet-btn",
+          "rect": {
+            "height": 33,
+            "width": 65.3125,
+            "x": 1198.6875,
+            "y": 224
+          },
+          "text": "Quiet"
+        },
+        {
+          "id": "build-btn",
+          "rect": {
+            "height": 33,
+            "width": 63.234375,
+            "x": 1200.765625,
+            "y": 180
+          },
+          "text": "Build"
+        },
+        {
+          "id": "back-btn",
+          "rect": {
+            "height": 33,
+            "width": 86.59375,
+            "x": 16,
+            "y": 16
+          },
+          "text": "← Lobby"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 459,
+            "y": 417
+          },
+          "text": "🧊"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 505,
+            "y": 417
+          },
+          "text": "🔮"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 551,
+            "y": 417
+          },
+          "text": "🛢️"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 597,
+            "y": 417
+          },
+          "text": "🔺"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 643,
+            "y": 417
+          },
+          "text": "🪑"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 689,
+            "y": 417
+          },
+          "text": "🪴"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 735,
+            "y": 417
+          },
+          "text": "🛋️"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 781,
+            "y": 417
+          },
+          "text": "🟪"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 459,
+            "y": 463
+          },
+          "text": "🛏️"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 505,
+            "y": 463
+          },
+          "text": "🛁"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 551,
+            "y": 463
+          },
+          "text": "🛋️"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 597,
+            "y": 463
+          },
+          "text": "🎮"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 643,
+            "y": 463
+          },
+          "text": "💻"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 689,
+            "y": 463
+          },
+          "text": "📺"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 735,
+            "y": 463
+          },
+          "text": "🚽"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 781,
+            "y": 463
+          },
+          "text": "🐱"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 459,
+            "y": 509
+          },
+          "text": "🐶"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 505,
+            "y": 509
+          },
+          "text": "🐰"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 551,
+            "y": 509
+          },
+          "text": "🐠"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 597,
+            "y": 509
+          },
+          "text": "🐦"
+        },
+        {
+          "id": "tool-place",
+          "rect": {
+            "height": 32,
+            "width": 32,
+            "x": 605,
+            "y": 557
+          },
+          "text": "＋"
+        },
+        {
+          "id": "tool-remove",
+          "rect": {
+            "height": 32,
+            "width": 32,
+            "x": 643,
+            "y": 557
+          },
+          "text": "−"
+        },
+        {
+          "id": "btn-toggle-hash",
+          "rect": {
+            "height": 23,
+            "width": 77.546875,
+            "x": 601.21875,
+            "y": 614
+          },
+          "text": "Memory Card"
+        },
+        {
+          "id": "btn-download-card",
+          "rect": {
+            "height": 38,
+            "width": 183.6875,
+            "x": 548.15625,
+            "y": 637
+          },
+          "text": "Download Room Card"
+        },
+        {
+          "id": "emote-toggle",
+          "rect": {
+            "height": 48,
+            "width": 48,
+            "x": 16,
+            "y": 600
+          },
+          "text": "😊"
+        },
+        {
+          "id": "sign-send",
+          "rect": {
+            "height": 32,
+            "width": 32,
+            "x": 703,
+            "y": 664.5
+          },
+          "text": "↑"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 28,
+            "width": 28,
+            "x": 608.9296875,
+            "y": 613
+          },
+          "text": "🚫"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 28,
+            "width": 28,
+            "x": 640.9296875,
+            "y": 613
+          },
+          "text": "🌧️"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 28,
+            "width": 28,
+            "x": 672.9296875,
+            "y": 613
+          },
+          "text": "🎵"
+        },
+        {
+          "id": "ambient-mute",
+          "rect": {
+            "height": 28,
+            "width": 28,
+            "x": 712.9296875,
+            "y": 613
+          },
+          "text": "🔊"
+        },
+        {
+          "id": "music-btn",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 16,
+            "y": 664
+          },
+          "text": "🎹"
+        },
+        {
+          "id": "music-close",
+          "rect": {
+            "height": 21,
+            "width": 13.078125,
+            "x": 205.921875,
+            "y": 376
+          },
+          "text": "✕"
+        },
+        {
+          "id": "music-play",
+          "rect": {
+            "height": 36,
+            "width": 14.40625,
+            "x": 33,
+            "y": 603
+          },
+          "text": "▶"
+        },
+        {
+          "id": "love-btn",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 1224,
+            "y": 664
+          },
+          "text": "♥"
+        }
+      ]
+    },
+    {
+      "ambientPanel": {
+        "classes": "ambient-panel",
+        "display": "none",
+        "opacity": "1",
+        "rect": {
+          "bottom": 0,
+          "height": 0,
+          "top": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        "text": "Ambience\n    \n      🚫\n      🌧️\n      🎵\n    \n    🔊"
+      },
+      "buildPanel": {
+        "classes": "",
+        "display": "none",
+        "opacity": "1",
+        "rect": {
+          "bottom": 0,
+          "height": 0,
+          "top": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        "text": "🧊🔮🛢️🔺🪑🪴🛋️🟪🛏️🛁🛋️🎮💻📺🚽🐱🐶🐰🐠🐦\n    \n      ＋\n      −\n    \n    \n      Memory Card\n      \n        Download Room Card\n        \n          \n            \n            Upload Room Card"
+      },
+      "emoteGrid": {
+        "classes": "emote-grid",
+        "display": "none",
+        "opacity": "1",
+        "rect": {
+          "bottom": 0,
+          "height": 0,
+          "top": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        "text": "😊\n      👋\n      ☕\n      😴\n      ❤️\n      😂\n      🎵\n      ✨\n      🤔\n      👍\n      🌙\n      🔥\n      🎮\n      📖\n      🐱\n      🌿\n      🎧\n      💤\n      🫂\n      🍵\n      🌸\n      😌\n      🎨\n      🧸\n      🍃\n      💫\n      🎶\n      🌈\n      🕯️\n      🤗"
+      },
+      "game": {
+        "classes": "",
+        "display": "none",
+        "opacity": "1",
+        "rect": {
+          "bottom": 0,
+          "height": 0,
+          "top": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        "text": ""
+      },
+      "label": "08 landing mobile top",
+      "landingCard": {
+        "classes": "landing-card",
+        "display": "block",
+        "opacity": "1",
+        "rect": {
+          "bottom": 1018.75,
+          "height": 985,
+          "top": 33.75,
+          "width": 343,
+          "x": 16,
+          "y": 33.75
+        },
+        "text": "FreeLobby\n\na calm corner of the internet\n\nYOUR NAME\n✦\nEnter The Lobby\nCOMMON ROOMS\nThe Lobby\nA welcoming space for new arrivals\n0/25\nZen Garden\nA quiet corner with soft light\n0/20\nThe Library\nLow light, soft chairs, good for lurking\n0/20\nYOUR SPACE\n＋\nCreate Private Room\n🎲\nGo to a Random Room\nHave a"
+      },
+      "landingScroll": {
+        "clientHeight": 829,
+        "height": 1053,
+        "top": 0
+      },
+      "musicPanel": {
+        "classes": "music-panel",
+        "display": "none",
+        "opacity": "1",
+        "rect": {
+          "bottom": 0,
+          "height": 0,
+          "top": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        "text": "Sequencer\n      ✕\n    \n    \n    \n      ▶\n      \n      120"
+      },
+      "playerCount": {
+        "classes": "",
+        "display": "none",
+        "opacity": "1",
+        "rect": {
+          "bottom": 0,
+          "height": 0,
+          "top": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        "text": "1 player"
+      },
+      "roomInfo": {
+        "classes": "",
+        "display": "none",
+        "opacity": "1",
+        "rect": {
+          "bottom": 0,
+          "height": 0,
+          "top": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        "text": "Room\n    ----\n    Owner\n    ☆\n    📋"
+      },
+      "signBar": {
+        "classes": "",
+        "display": "none",
+        "opacity": "1",
+        "rect": {
+          "bottom": 0,
+          "height": 0,
+          "top": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        "text": "↑"
+      },
+      "url": "http://localhost:3000/",
+      "viewport": {
+        "height": 844,
+        "width": 390
+      },
+      "visibleButtons": [
+        {
+          "id": "btn-enter",
+          "rect": {
+            "height": 57,
+            "width": 301,
+            "x": 37,
+            "y": 252.75
+          },
+          "text": "✦\nEnter The Lobby"
+        },
+        {
+          "id": "btn-create",
+          "rect": {
+            "height": 50,
+            "width": 343.046875,
+            "x": 37,
+            "y": 597.75
+          },
+          "text": "＋\nCreate Private Room"
+        },
+        {
+          "id": "btn-join",
+          "rect": {
+            "height": 49,
+            "width": 343.046875,
+            "x": 37,
+            "y": 657.75
+          },
+          "text": "🎲\nGo to a Random Room"
+        },
+        {
+          "id": "btn-toggle-specific",
+          "rect": {
+            "height": 24,
+            "width": 125.453125,
+            "x": 145.796875,
+            "y": 720.75
+          },
+          "text": "Have a Room Code?"
+        },
+        {
+          "id": "btn-join-code",
+          "rect": {
+            "height": 45,
+            "width": 70.046875,
+            "x": 310,
+            "y": 744.75
+          },
+          "text": "Join"
+        },
+        {
+          "id": "btn-toggle-customize",
+          "rect": {
+            "height": 24,
+            "width": 108.875,
+            "x": 133.0625,
+            "y": 930.75
+          },
+          "text": "Customize Avatar"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 35,
+            "width": 96.328125,
+            "x": 37,
+            "y": 1072.75
+          },
+          "text": "●"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 35,
+            "width": 96.34375,
+            "x": 139.328125,
+            "y": 1072.75
+          },
+          "text": "■"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 35,
+            "width": 96.328125,
+            "x": 241.671875,
+            "y": 1072.75
+          },
+          "text": "◆"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 36,
+            "width": 70.75,
+            "x": 37,
+            "y": 1141.75
+          },
+          "text": "None"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 36,
+            "width": 70.75,
+            "x": 113.75,
+            "y": 1141.75
+          },
+          "text": "🎧"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 36,
+            "width": 70.75,
+            "x": 190.5,
+            "y": 1141.75
+          },
+          "text": "😇"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 36,
+            "width": 70.75,
+            "x": 267.25,
+            "y": 1141.75
+          },
+          "text": "🧢"
+        },
+        {
+          "id": "btn-copy-hash",
+          "rect": {
+            "height": 42,
+            "width": 51,
+            "x": 287,
+            "y": 1263.75
+          },
+          "text": "Copy"
+        },
+        {
+          "id": "btn-import-hash",
+          "rect": {
+            "height": 42,
+            "width": 51,
+            "x": 287,
+            "y": 1315.75
+          },
+          "text": "Import"
+        }
+      ]
+    },
+    {
+      "ambientPanel": {
+        "classes": "ambient-panel",
+        "display": "none",
+        "opacity": "1",
+        "rect": {
+          "bottom": 0,
+          "height": 0,
+          "top": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        "text": "Ambience\n    \n      🚫\n      🌧️\n      🎵\n    \n    🔊"
+      },
+      "buildPanel": {
+        "classes": "",
+        "display": "none",
+        "opacity": "1",
+        "rect": {
+          "bottom": 0,
+          "height": 0,
+          "top": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        "text": "🧊🔮🛢️🔺🪑🪴🛋️🟪🛏️🛁🛋️🎮💻📺🚽🐱🐶🐰🐠🐦\n    \n      ＋\n      −\n    \n    \n      Memory Card\n      \n        Download Room Card\n        \n          \n            \n            Upload Room Card"
+      },
+      "emoteGrid": {
+        "classes": "emote-grid",
+        "display": "none",
+        "opacity": "1",
+        "rect": {
+          "bottom": 0,
+          "height": 0,
+          "top": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        "text": "😊\n      👋\n      ☕\n      😴\n      ❤️\n      😂\n      🎵\n      ✨\n      🤔\n      👍\n      🌙\n      🔥\n      🎮\n      📖\n      🐱\n      🌿\n      🎧\n      💤\n      🫂\n      🍵\n      🌸\n      😌\n      🎨\n      🧸\n      🍃\n      💫\n      🎶\n      🌈\n      🕯️\n      🤗"
+      },
+      "game": {
+        "classes": "",
+        "display": "none",
+        "opacity": "1",
+        "rect": {
+          "bottom": 0,
+          "height": 0,
+          "top": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        "text": ""
+      },
+      "label": "09 landing mobile lower",
+      "landingCard": {
+        "classes": "landing-card",
+        "display": "block",
+        "opacity": "1",
+        "rect": {
+          "bottom": 794.75,
+          "height": 985,
+          "top": -190.25,
+          "width": 343,
+          "x": 16,
+          "y": -190.25
+        },
+        "text": "FreeLobby\n\na calm corner of the internet\n\nYOUR NAME\n✦\nEnter The Lobby\nCOMMON ROOMS\nThe Lobby\nA welcoming space for new arrivals\n0/25\nZen Garden\nA quiet corner with soft light\n0/20\nThe Library\nLow light, soft chairs, good for lurking\n0/20\nYOUR SPACE\n＋\nCreate Private Room\n🎲\nGo to a Random Room\nHave a"
+      },
+      "landingScroll": {
+        "clientHeight": 829,
+        "height": 1053,
+        "top": 224
+      },
+      "musicPanel": {
+        "classes": "music-panel",
+        "display": "none",
+        "opacity": "1",
+        "rect": {
+          "bottom": 0,
+          "height": 0,
+          "top": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        "text": "Sequencer\n      ✕\n    \n    \n    \n      ▶\n      \n      120"
+      },
+      "playerCount": {
+        "classes": "",
+        "display": "none",
+        "opacity": "1",
+        "rect": {
+          "bottom": 0,
+          "height": 0,
+          "top": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        "text": "1 player"
+      },
+      "roomInfo": {
+        "classes": "",
+        "display": "none",
+        "opacity": "1",
+        "rect": {
+          "bottom": 0,
+          "height": 0,
+          "top": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        "text": "Room\n    ----\n    Owner\n    ☆\n    📋"
+      },
+      "signBar": {
+        "classes": "",
+        "display": "none",
+        "opacity": "1",
+        "rect": {
+          "bottom": 0,
+          "height": 0,
+          "top": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        "text": "↑"
+      },
+      "url": "http://localhost:3000/",
+      "viewport": {
+        "height": 844,
+        "width": 390
+      },
+      "visibleButtons": [
+        {
+          "id": "btn-enter",
+          "rect": {
+            "height": 57,
+            "width": 301,
+            "x": 37,
+            "y": 28.75
+          },
+          "text": "✦\nEnter The Lobby"
+        },
+        {
+          "id": "btn-create",
+          "rect": {
+            "height": 50,
+            "width": 343.046875,
+            "x": 37,
+            "y": 373.75
+          },
+          "text": "＋\nCreate Private Room"
+        },
+        {
+          "id": "btn-join",
+          "rect": {
+            "height": 49,
+            "width": 343.046875,
+            "x": 37,
+            "y": 433.75
+          },
+          "text": "🎲\nGo to a Random Room"
+        },
+        {
+          "id": "btn-toggle-specific",
+          "rect": {
+            "height": 24,
+            "width": 125.453125,
+            "x": 145.796875,
+            "y": 496.75
+          },
+          "text": "Have a Room Code?"
+        },
+        {
+          "id": "btn-join-code",
+          "rect": {
+            "height": 45,
+            "width": 70.046875,
+            "x": 310,
+            "y": 520.75
+          },
+          "text": "Join"
+        },
+        {
+          "id": "btn-toggle-customize",
+          "rect": {
+            "height": 24,
+            "width": 108.875,
+            "x": 133.0625,
+            "y": 706.75
+          },
+          "text": "Customize Avatar"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 35,
+            "width": 96.328125,
+            "x": 37,
+            "y": 848.75
+          },
+          "text": "●"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 35,
+            "width": 96.34375,
+            "x": 139.328125,
+            "y": 848.75
+          },
+          "text": "■"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 35,
+            "width": 96.328125,
+            "x": 241.671875,
+            "y": 848.75
+          },
+          "text": "◆"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 36,
+            "width": 70.75,
+            "x": 37,
+            "y": 917.75
+          },
+          "text": "None"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 36,
+            "width": 70.75,
+            "x": 113.75,
+            "y": 917.75
+          },
+          "text": "🎧"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 36,
+            "width": 70.75,
+            "x": 190.5,
+            "y": 917.75
+          },
+          "text": "😇"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 36,
+            "width": 70.75,
+            "x": 267.25,
+            "y": 917.75
+          },
+          "text": "🧢"
+        },
+        {
+          "id": "btn-copy-hash",
+          "rect": {
+            "height": 42,
+            "width": 51,
+            "x": 287,
+            "y": 1039.75
+          },
+          "text": "Copy"
+        },
+        {
+          "id": "btn-import-hash",
+          "rect": {
+            "height": 42,
+            "width": 51,
+            "x": 287,
+            "y": 1091.75
+          },
+          "text": "Import"
+        }
+      ]
+    },
+    {
+      "ambientPanel": {
+        "classes": "ambient-panel",
+        "display": "none",
+        "opacity": "1",
+        "rect": {
+          "bottom": 0,
+          "height": 0,
+          "top": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        "text": "Ambience\n    \n      🚫\n      🌧️\n      🎵\n    \n    🔊"
+      },
+      "buildPanel": {
+        "classes": "",
+        "display": "none",
+        "opacity": "1",
+        "rect": {
+          "bottom": 0,
+          "height": 0,
+          "top": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        "text": "🧊🔮🛢️🔺🪑🪴🛋️🟪🛏️🛁🛋️🎮💻📺🚽🐱🐶🐰🐠🐦\n    \n      ＋\n      −\n    \n    \n      Memory Card\n      \n        Download Room Card\n        \n          \n            \n            Upload Room Card"
+      },
+      "emoteGrid": {
+        "classes": "emote-grid",
+        "display": "none",
+        "opacity": "1",
+        "rect": {
+          "bottom": 0,
+          "height": 0,
+          "top": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        "text": "😊\n      👋\n      ☕\n      😴\n      ❤️\n      😂\n      🎵\n      ✨\n      🤔\n      👍\n      🌙\n      🔥\n      🎮\n      📖\n      🐱\n      🌿\n      🎧\n      💤\n      🫂\n      🍵\n      🌸\n      😌\n      🎨\n      🧸\n      🍃\n      💫\n      🎶\n      🌈\n      🕯️\n      🤗"
+      },
+      "game": {
+        "classes": "active",
+        "display": "block",
+        "opacity": "1",
+        "rect": {
+          "bottom": 844,
+          "height": 844,
+          "top": 0,
+          "width": 390,
+          "x": 0,
+          "y": 0
+        },
+        "text": ""
+      },
+      "label": "10 common room mobile",
+      "landingCard": {
+        "classes": "landing-card",
+        "display": "block",
+        "opacity": "1",
+        "rect": {
+          "bottom": 994.8799781799316,
+          "height": 945.5999755859375,
+          "top": 49.28000259399414,
+          "width": 329.2799987792969,
+          "x": 23.160003662109375,
+          "y": 49.28000259399414
+        },
+        "text": "FreeLobby\n\na calm corner of the internet\n\nYOUR NAME\n✦\nEnter The Lobby\nCOMMON ROOMS\nThe Lobby\nA welcoming space for new arrivals\n0/25\nZen Garden\nA quiet corner with soft light\n0/20\nThe Library\nLow light, soft chairs, good for lurking\n0/20\nYOUR SPACE\n＋\nCreate Private Room\n🎲\nGo to a Random Room\nHave a"
+      },
+      "landingScroll": {
+        "clientHeight": 829,
+        "height": 1053,
+        "top": 0
+      },
+      "musicPanel": {
+        "classes": "music-panel",
+        "display": "none",
+        "opacity": "1",
+        "rect": {
+          "bottom": 0,
+          "height": 0,
+          "top": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        "text": "Sequencer\n      ✕\n    \n    \n    \n      ▶\n      \n      120"
+      },
+      "playerCount": {
+        "classes": "visible",
+        "display": "flex",
+        "opacity": "1",
+        "rect": {
+          "bottom": 125,
+          "height": 29,
+          "top": 96,
+          "width": 73.109375,
+          "x": 300.890625,
+          "y": 96
+        },
+        "text": "1 player"
+      },
+      "roomInfo": {
+        "classes": "visible",
+        "display": "flex",
+        "opacity": "1",
+        "rect": {
+          "bottom": 98,
+          "height": 42,
+          "top": 56,
+          "width": 219.1875,
+          "x": 154.8125,
+          "y": 56
+        },
+        "text": "Room\nThe Lobby\n☆\n📋"
+      },
+      "signBar": {
+        "classes": "visible",
+        "display": "flex",
+        "opacity": "1",
+        "rect": {
+          "bottom": 828,
+          "height": 66,
+          "top": 762,
+          "width": 358,
+          "x": 16,
+          "y": 762
+        },
+        "text": "↑"
+      },
+      "url": "http://localhost:3000/",
+      "viewport": {
+        "height": 844,
+        "width": 390
+      },
+      "visibleButtons": [
+        {
+          "id": "btn-enter",
+          "rect": {
+            "height": 54.719970703125,
+            "width": 288.9599609375,
+            "x": 43.320003509521484,
+            "y": 259.52001953125
+          },
+          "text": "✦\nEnter The Lobby"
+        },
+        {
+          "id": "btn-create",
+          "rect": {
+            "height": 48,
+            "width": 329.32501220703125,
+            "x": 43.320003509521484,
+            "y": 590.719970703125
+          },
+          "text": "＋\nCreate Private Room"
+        },
+        {
+          "id": "btn-join",
+          "rect": {
+            "height": 47.03997802734375,
+            "width": 329.32501220703125,
+            "x": 43.320003509521484,
+            "y": 648.3200073242188
+          },
+          "text": "🎲\nGo to a Random Room"
+        },
+        {
+          "id": "btn-toggle-specific",
+          "rect": {
+            "height": 23.03997802734375,
+            "width": 120.43501281738281,
+            "x": 147.76499938964844,
+            "y": 708.7999877929688
+          },
+          "text": "Have a Room Code?"
+        },
+        {
+          "id": "btn-join-code",
+          "rect": {
+            "height": 43.20001220703125,
+            "width": 67.2449951171875,
+            "x": 305.4000244140625,
+            "y": 731.8399658203125
+          },
+          "text": "Join"
+        },
+        {
+          "id": "btn-toggle-customize",
+          "rect": {
+            "height": 23.0400390625,
+            "width": 104.51998901367188,
+            "x": 135.54000854492188,
+            "y": 910.3999633789062
+          },
+          "text": "Customize Avatar"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 33.5999755859375,
+            "width": 92.47499084472656,
+            "x": 43.320003509521484,
+            "y": 1046.719970703125
+          },
+          "text": "●"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 33.5999755859375,
+            "width": 92.49000549316406,
+            "x": 141.55499267578125,
+            "y": 1046.719970703125
+          },
+          "text": "■"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 33.5999755859375,
+            "width": 92.4749755859375,
+            "x": 239.80499267578125,
+            "y": 1046.719970703125
+          },
+          "text": "◆"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 34.56005859375,
+            "width": 67.91999816894531,
+            "x": 43.320003509521484,
+            "y": 1112.9599609375
+          },
+          "text": "None"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 34.56005859375,
+            "width": 67.91999816894531,
+            "x": 117,
+            "y": 1112.9599609375
+          },
+          "text": "🎧"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 34.56005859375,
+            "width": 67.91998291015625,
+            "x": 190.67999267578125,
+            "y": 1112.9599609375
+          },
+          "text": "😇"
+        },
+        {
+          "id": "",
+          "rect": {
+            "height": 34.56005859375,
+            "width": 67.91998291015625,
+            "x": 264.3599853515625,
+            "y": 1112.9599609375
+          },
+          "text": "🧢"
+        },
+        {
+          "id": "btn-copy-hash",
+          "rect": {
+            "height": 40.320068359375,
+            "width": 48.9599609375,
+            "x": 283.32000732421875,
+            "y": 1230.0799560546875
+          },
+          "text": "Copy"
+        },
+        {
+          "id": "btn-import-hash",
+          "rect": {
+            "height": 40.3199462890625,
+            "width": 48.9599609375,
+            "x": 283.32000732421875,
+            "y": 1280
+          },
+          "text": "Import"
+        },
+        {
+          "id": "zoom-in",
+          "rect": {
+            "height": 44,
+            "width": 44,
+            "x": 330,
+            "y": 608
+          },
+          "text": "＋"
+        },
+        {
+          "id": "zoom-out",
+          "rect": {
+            "height": 44,
+            "width": 44,
+            "x": 330,
+            "y": 660
+          },
+          "text": "−"
+        },
+        {
+          "id": "bookmark-btn",
+          "rect": {
+            "height": 24,
+            "width": 14.671875,
+            "x": 309.640625,
+            "y": 65
+          },
+          "text": "☆"
+        },
+        {
+          "id": "copy-room-btn",
+          "rect": {
+            "height": 17.59375,
+            "width": 26.6875,
+            "x": 332.3125,
+            "y": 68.203125
+          },
+          "text": "📋"
+        },
+        {
+          "id": "flee-btn",
+          "rect": {
+            "height": 43,
+            "width": 164.71875,
+            "x": 209.28125,
+            "y": 120
+          },
+          "text": "Go to empty room"
+        },
+        {
+          "id": "quiet-btn",
+          "rect": {
+            "height": 43,
+            "width": 78.125,
+            "x": 295.875,
+            "y": 180
+          },
+          "text": "Quiet"
+        },
+        {
+          "id": "back-btn",
+          "rect": {
+            "height": 43,
+            "width": 102.6875,
+            "x": 16,
+            "y": 16
+          },
+          "text": "← Lobby"
+        },
+        {
+          "id": "emote-toggle",
+          "rect": {
+            "height": 56,
+            "width": 56,
+            "x": 16,
+            "y": 716
+          },
+          "text": "😊"
+        },
+        {
+          "id": "sign-send",
+          "rect": {
+            "height": 44,
+            "width": 44,
+            "x": 185,
+            "y": 773
+          },
+          "text": "↑"
+        },
+        {
+          "id": "love-btn",
+          "rect": {
+            "height": 40,
+            "width": 40,
+            "x": 334,
+            "y": 788
+          },
+          "text": "♥"
+        }
+      ]
+    }
+  ],
+  "logs": []
+}

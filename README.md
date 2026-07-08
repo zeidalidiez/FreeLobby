@@ -10,6 +10,16 @@ I built this because I wanted a space where quiet people can just *be* around ot
 
 ---
 
+## Visual Refresh Planning
+
+The current neon grid look is staying, but the interface is ready for a calmer, more deliberate pass. I captured a local screenshot audit and overhaul plan here:
+
+`docs/visual-audit/2026-07-08-visual-overhaul/visual-overhaul-audit.md`
+
+The short version: keep the quiet Tron-ish soul, make the landing screen less cramped, consolidate the room HUD, standardize tool panels, and give the rooms more actual place-ness.
+
+---
+
 ## What's Here Right Now
 
 ### Core Experience

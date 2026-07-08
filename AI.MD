@@ -1,8 +1,8 @@
 # FreeLobby AI Handoff
 
-> Updated: 2026-07-07
+> Updated: 2026-07-08
 > Stack: Node.js + Express + Socket.IO + Phaser 3
-> Current focus: stabilization complete, visual refresh next
+> Current focus: visual refresh planning and first implementation pass
 
 FreeLobby is a no-login browser hangout for low-pressure anonymous presence. The core promise is consent-first: users can share space non-verbally, but names and text are gated by mutual Vibe Check.
 
@@ -79,6 +79,22 @@ For browser smoke:
 - Go to a Random Room should create/join a random room ID, not show a common room name.
 - A private room owner should see Build, Ambience, and Music controls.
 - Idle for 5 seconds should squash the avatar without changing its map position.
+
+## Visual Refresh Audit
+
+A local screenshot-backed audit for the next look-and-feel pass lives at:
+
+`docs/visual-audit/2026-07-08-visual-overhaul/visual-overhaul-audit.md`
+
+Captured states cover desktop/mobile landing, common rooms, private rooms, emotes, build mode, music, and mobile HUD density. The recommended direction is a quiet neon social console: keep the black/cyan grid identity, but consolidate HUD controls, standardize panels, reduce the long landing-card flow, add room-specific visual mood, and treat mobile as its own layout.
+
+When implementing the visual refresh:
+
+- Preserve the consent rules and room taxonomy above.
+- Start with shared design tokens and reusable HUD/panel/button classes in `public/css/style.css`.
+- Rework landing first, then the room HUD and tool panels.
+- Keep Flee, Quiet Mode, and Vibe Check visually obvious.
+- Do not introduce user-uploaded gameplay assets.
 
 ## Docs To Keep Current
 
