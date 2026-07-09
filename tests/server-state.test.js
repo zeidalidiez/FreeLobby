@@ -2,14 +2,79 @@ const assert = require('node:assert/strict');
 const test = require('node:test');
 
 const {
+  asEventObject,
+  canCreateRoomAfterLeaving,
   clearRevealedPairsForPlayer,
   createPendingVibeChecks,
+  createRateLimiter,
   findJoinableRoom,
   isAllowedEmote,
+  normalizeCustomization,
+  normalizeFurnitureItem,
   normalizePlayerMove,
   sanitizeSignText,
   shouldLeaveRoomBeforeJoin,
 } = require('../server/room-state');
+
+test('socket payload helpers reject malformed event envelopes', () => {
+  assert.deepEqual(asEventObject(null), {});
+  assert.deepEqual(asEventObject('not-an-object'), {});
+  assert.deepEqual(asEventObject([]), {});
+  assert.deepEqual(asEventObject(Buffer.from('binary')), {});
+  assert.deepEqual(asEventObject({ name: 'Quiet' }), { name: 'Quiet' });
+});
+
+test('avatar customization is normalized to the supported ranges', () => {
+  assert.deepEqual(normalizeCustomization({ colorIdx: 9, shape: 2, accessory: 3, pulse: 0 }), {
+    colorIdx: 9,
+    shape: 2,
+    accessory: 3,
+    pulse: 0,
+  });
+  assert.deepEqual(normalizeCustomization({ colorIdx: NaN, shape: 99, accessory: '1', pulse: -1 }), {
+    colorIdx: 0,
+    shape: 0,
+    accessory: 0,
+    pulse: 1,
+  });
+});
+
+test('furniture payloads require finite integer coordinates and known types', () => {
+  const options = { typeCount: 20 };
+  assert.deepEqual(normalizeFurnitureItem({ t: 6, x: 2, y: 3, r: 1, on: true }, options), {
+    t: 6,
+    x: 2,
+    y: 3,
+    r: 1,
+    on: true,
+  });
+  assert.equal(normalizeFurnitureItem({ t: NaN, x: 2, y: 3, r: 0 }, options), null);
+  assert.equal(normalizeFurnitureItem({ t: 1, x: NaN, y: 3, r: 0 }, options), null);
+  assert.equal(normalizeFurnitureItem({ t: 20, x: 2, y: 3, r: 0 }, options), null);
+  assert.equal(normalizeFurnitureItem({ t: 1, x: 2.5, y: 3, r: 0 }, options), null);
+  assert.equal(normalizeFurnitureItem({ t: 1, x: 2, y: 3, r: 0, layer: -1 }, options), null);
+  assert.equal(normalizeFurnitureItem({ t: 6, x: 2, y: 3, r: 0, on: 'yes' }, options), null);
+});
+
+test('room creation at capacity is allowed only when the current room will be deleted', () => {
+  const rooms = new Map();
+  rooms.set('LOBBY', { isCommon: true, players: new Map([['one', {}]]) });
+  rooms.set('PRIVATE', { isCommon: false, players: new Map([['owner', {}]]) });
+  assert.equal(canCreateRoomAfterLeaving(rooms, { roomId: 'PRIVATE' }, 2), true);
+  assert.equal(canCreateRoomAfterLeaving(rooms, { roomId: 'LOBBY' }, 2), false);
+  rooms.get('PRIVATE').players.set('guest', {});
+  assert.equal(canCreateRoomAfterLeaving(rooms, { roomId: 'PRIVATE' }, 2), false);
+});
+
+test('socket event rate limiter preserves allowed traffic and rejects bursts', () => {
+  let now = 1000;
+  const allow = createRateLimiter(() => now);
+  assert.equal(allow('move', 2, 1000), true);
+  assert.equal(allow('move', 2, 1000), true);
+  assert.equal(allow('move', 2, 1000), false);
+  now = 2000;
+  assert.equal(allow('move', 2, 1000), true);
+});
 
 function makeRoom({ isPublic = true, isCommon = false, players = 0, maxPlayers = 10 } = {}) {
   return {
@@ -61,6 +126,15 @@ test('pending vibe checks must exist before a response can reveal names', () => 
 
   pending.add('requester', 'target');
   assert.equal(pending.consume('requester', 'target'), true);
+  assert.equal(pending.consume('requester', 'target'), false);
+});
+
+test('pending vibe checks expire with the client prompt window', () => {
+  let now = 1000;
+  const pending = createPendingVibeChecks({ now: () => now, ttlMs: 15000 });
+  pending.add('requester', 'target');
+  assert.equal(pending.has('requester', 'target'), true);
+  now = 16000;
   assert.equal(pending.consume('requester', 'target'), false);
 });
 
