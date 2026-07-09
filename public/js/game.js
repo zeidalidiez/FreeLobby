@@ -5,6 +5,7 @@
 // ─── DOM References ────────────────────────────────────
 const landingScreen      = document.getElementById('landing-screen');
 const gameContainer      = document.getElementById('game-container');
+const shellController    = shellState.createShellController(landingScreen, gameContainer);
 const connectionStatus   = document.getElementById('connection-status');
 const statusDot          = document.querySelector('.status-dot');
 const statusText         = document.getElementById('status-text');
@@ -875,10 +876,7 @@ function enterGame(mode, roomCode) {
   joinMode = mode;
   joinRoomCode = roomCode || '';
 
-  landingScreen.classList.add('hidden');
-  landingScreen.setAttribute('aria-hidden', 'true');
-  gameContainer.classList.add('active');
-  gameContainer.setAttribute('aria-hidden', 'false');
+  shellController.enterGame();
   connectionStatus.classList.add('visible');
   backBtn.classList.add('visible');
   roomInfo.classList.add('visible');
@@ -903,10 +901,7 @@ function enterGame(mode, roomCode) {
 }
 
 function exitGame() {
-  landingScreen.classList.remove('hidden');
-  landingScreen.setAttribute('aria-hidden', 'false');
-  gameContainer.classList.remove('active');
-  gameContainer.setAttribute('aria-hidden', 'true');
+  shellController.showLanding();
   connectionStatus.classList.remove('visible');
   backBtn.classList.remove('visible');
   roomInfo.classList.remove('visible');

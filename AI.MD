@@ -19,6 +19,7 @@ FreeLobby is a no-login browser hangout for low-pressure anonymous presence. The
 - `public/js/idle-state.js` contains testable idle/sit state helpers used by `game.js`.
 - `public/js/asset-normalizer.js` removes neutral baked mattes from the current furniture sources before Phaser creates room sprites. Its pixel behavior is unit-tested.
 - `public/js/card-codec.js` owns the tested pixel-row Memory Card format, including theme, layout, rotation/layer metadata, and lamp/TV on-state.
+- `public/js/shell-state.js` owns the tested landing/game visibility transition, including `hidden`, `inert`, and `aria-hidden` state.
 - `tests/*.test.js` uses Node's built-in test runner. Run `node --test tests/*.test.js`.
 
 There is still no database. Common rooms persist in memory for the life of the server process. Random and private rooms are deleted when empty.
@@ -91,6 +92,8 @@ Important: common rooms are public in the broad sense, but they are not random-m
 - The current 256px opaque-matte furniture sources are normalized to transparent textures at runtime. New assets should use alpha directly, but the compatibility path prevents rectangular matte artifacts today.
 - `tests/socket-integration.test.js` starts the real server and uses two Socket.IO clients to prove malformed payload rejection, invalid furniture rejection, and consent-gated sign delivery.
 - `.github/workflows/ci.yml` runs syntax checks and the full suite on Node.js 20 and 22 for every pull request and push to `main`.
+- Room entry now makes the fading landing screen inert immediately and applies the semantic `hidden` state after its 600ms transition. Returning cancels pending removal, restores the landing screen, and hides the game application from assistive technology.
+- The HTTP integration test requests Lucide, Phaser, and Socket.IO vendor bundles. This guards the exact deep-package paths used at startup; Lucide 1.24.0 publishes `dist/umd/lucide.min.js` and the route returns 200.
 
 ## Movement / Idle Details
 
@@ -119,6 +122,7 @@ node --check server/index.js
 node --check public/js/idle-state.js
 node --check public/js/asset-normalizer.js
 node --check public/js/card-codec.js
+node --check public/js/shell-state.js
 node --check public/js/game.js
 node --test tests/*.test.js
 npm audit --omit=dev
@@ -136,6 +140,8 @@ For browser smoke:
 - On 390x844, Build/Music panels must not overlap the ambience or sign controls.
 - Common-room `M` must not open the sequencer; private-room Music must set `aria-hidden="false"` while open.
 - Reloading the landing page in the same tab must retain session bookmarks.
+- After a room join and the 600ms fade, `#landing-screen` must compute to `display: none`, remain inert/`aria-hidden`, and `#game-container` must compute to `display: block`.
+- Chromium may emit `GPU stall due to ReadPixels` only while the test harness captures the WebGL canvas. Treat that specific screenshot-time message as a headless capture artifact; the app has no `readPixels` call. Continue failing smoke tests on every other console warning or error.
 
 ## Visual Refresh Audit
 

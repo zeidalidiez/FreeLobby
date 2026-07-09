@@ -164,6 +164,10 @@ body::before {
   pointer-events: none;
 }
 
+#landing-screen[hidden] {
+  display: none;
+}
+
 /* ─── Card ──────────────────────────────────────────── */
 .landing-card {
   position: relative;

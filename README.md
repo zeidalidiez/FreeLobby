@@ -20,6 +20,7 @@ The neon grid soul is still here, but the interface now has a calmer, more delib
 - Private room tools, ambience, music, signs, emotes, and support controls share the same glassy neon panel language.
 - Controls now use Lucide icons where that reads cleaner than raw text glyphs, while emotes and avatar accessories stay expressive.
 - The responsive shell now keeps every landing action reachable at short desktop heights, and owner tools avoid the mobile ambience/sign dock.
+- Entering a room now fully removes the faded landing layer from layout and keyboard navigation, then restores it cleanly when you return.
 
 The screenshot-backed audit that kicked this off lives here:
 
@@ -113,8 +114,10 @@ Run the regression tests with:
 npm test
 ```
 
-The suite includes helper tests plus a real multi-client Socket.IO check for malformed payload handling and consent-gated signs.
+The suite includes helper tests plus a real multi-client Socket.IO check for malformed payload handling, consent-gated signs, shell visibility state, and every self-hosted vendor route.
 Pull requests run the same syntax and test checks on Node.js 20 and 22 through GitHub Actions.
+
+Browser smoke tests should treat Chromium's `GPU stall due to ReadPixels` message during a screenshot of the Phaser canvas as a capture artifact. The application does not call `readPixels`; keep failing on other console warnings and errors.
 
 ### Deploying Updates to the Live Server
 

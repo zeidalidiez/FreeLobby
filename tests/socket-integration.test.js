@@ -52,9 +52,11 @@ test('HTTP shell is self-hosted and sends restrictive security headers', async (
   assert.match(response.headers.get('cache-control'), /no-cache/);
   assert.doesNotMatch(html, /<script[^>]+https:\/\//);
 
-  const vendorResponse = await fetch(`${baseUrl}/vendor/socket.io.min.js`);
-  assert.equal(vendorResponse.status, 200);
-  assert.match(vendorResponse.headers.get('cache-control'), /immutable/);
+  for (const vendorFile of ['lucide.min.js', 'phaser.min.js', 'socket.io.min.js']) {
+    const vendorResponse = await fetch(`${baseUrl}/vendor/${vendorFile}`);
+    assert.equal(vendorResponse.status, 200, `${vendorFile} should be served`);
+    assert.match(vendorResponse.headers.get('cache-control'), /immutable/);
+  }
 });
 
 test('socket boundary rejects malformed payloads and preserves consent-gated signs', async () => {
