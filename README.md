@@ -19,6 +19,8 @@ The neon grid soul is still here, but the interface now has a calmer, more delib
 - Common rooms now have distinct moods: The Lobby stays cyan, Zen Garden leans green, and The Library gets a softer purple low-light feel.
 - Private room tools, ambience, music, signs, emotes, and support controls share the same glassy neon panel language.
 - Controls now use Lucide icons where that reads cleaner than raw text glyphs, while emotes and avatar accessories stay expressive.
+- The responsive shell now keeps every landing action reachable at short desktop heights, and owner tools avoid the mobile ambience/sign dock.
+- Entering a room now fully removes the faded landing layer from layout and keyboard navigation, then restores it cleanly when you return.
 
 The screenshot-backed audit that kicked this off lives here:
 
@@ -52,8 +54,8 @@ The screenshot-backed audit that kicked this off lives here:
 - **20 furniture types:** Cube, Sphere, Cylinder, Pyramid, Chair, Plant, Lamp, Rug, Bed, Bathtub, Couch, Console, Computer, TV, Toilet, plus pets (Cat, Dog, Rabbit, Fishbowl, Bird).
 - **Walkable vs. Solid:** Chairs, rugs, beds, couches, and pets let you walk through them. Tables, plants, and appliances block movement. No overlapping placement.
 - **Interactive objects:** Lamps and TVs can be clicked by anyone to toggle on/off — glow and tint effects sync across the room.
-- **Room Memory Cards:** Download a cyberpunk PNG card of your room layout. Upload it later to reconstruct everything — including room theme and interactive states.
-- **Bookmarks:** Save room codes locally in your browser session so you can find private rooms again without retyping.
+- **Room Memory Cards:** Download a cyberpunk PNG card of your room layout. Upload it later to reconstruct everything — including room theme and lamp/TV interactive states.
+- **Bookmarks:** Save room codes in browser session storage so they survive refreshes without becoming an account or permanent tracking record.
 
 ### Presence & Comfort
 - **Sit / Idle Animations:** Stand still for 5 seconds and your avatar smoothly sits down. Move or click and you stand back up.
@@ -64,7 +66,7 @@ The screenshot-backed audit that kicked this off lives here:
 ### Communication
 - **Emotes:** A full approved grid of emoji reactions that float above your head.
 - **Signs:** 10-character text bubbles (only visible between Vibe-Checked pairs). The server strips weird control characters before anything gets shown.
-- **Mute Stranger:** Right-click any avatar to mute their emotes — session-only, silent, reversible.
+- **Mute Stranger:** Click any avatar to open its action menu and mute its emotes — session-only, silent, reversible.
 - **No global chat. No room chat.** Text is always gated behind mutual consent.
 
 ---
@@ -77,9 +79,19 @@ The screenshot-backed audit that kicked this off lives here:
 | Backend | Node.js, Express, Socket.IO |
 | Hosting | Oracle Cloud Free Tier (1 vCPU, ~5GB disk, Ubuntu) |
 | Process Manager | PM2 |
-| Assets | Procedural graphics + curated PNG sprites. No user uploads. No database for core state. |
+| Assets | Procedural graphics + curated PNG sprites normalized to transparent Phaser textures at load time. No user uploads. |
 
 All room state lives in-memory. Common Rooms persist while the server is running; random and private rooms disappear when empty. No persistent database required.
+
+The browser runtime, icon library, and fonts are served locally by FreeLobby. Loading the app does not require Google Fonts, unpkg, jsDelivr, or another third-party CDN.
+
+### Safety and stability boundaries
+
+- Socket payloads are size-limited, schema-normalized, and rate-limited before they can change room state.
+- Furniture coordinates, rotations, types, themes, room codes, and avatar customization are validated server-side.
+- Malformed custom-client events are rejected without terminating the server or disconnecting legitimate players.
+- Idle players return to the landing screen while keeping the socket alive for a clean re-entry.
+- Security headers restrict scripts, connections, framing, browser permissions, and content types.
 
 ---
 
@@ -101,6 +113,11 @@ Run the regression tests with:
 ```bash
 npm test
 ```
+
+The suite includes helper tests plus a real multi-client Socket.IO check for malformed payload handling, consent-gated signs, shell visibility state, and every self-hosted vendor route.
+Pull requests run the same syntax and test checks on Node.js 20 and 22 through GitHub Actions.
+
+Browser smoke tests should treat Chromium's `GPU stall due to ReadPixels` message during a screenshot of the Phaser canvas as a capture artifact. The application does not call `readPixels`; keep failing on other console warnings and errors.
 
 ### Deploying Updates to the Live Server
 

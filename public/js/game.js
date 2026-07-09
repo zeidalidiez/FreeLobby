@@ -5,6 +5,7 @@
 // ─── DOM References ────────────────────────────────────
 const landingScreen      = document.getElementById('landing-screen');
 const gameContainer      = document.getElementById('game-container');
+const shellController    = shellState.createShellController(landingScreen, gameContainer);
 const connectionStatus   = document.getElementById('connection-status');
 const statusDot          = document.querySelector('.status-dot');
 const statusText         = document.getElementById('status-text');
@@ -73,8 +74,11 @@ let currentRoomId = null;
 let joinMode = null;
 let joinRoomCode = '';
 let isRoomOwner = false;
+let currentRoomIsPublic = true;
 let quietMode = false;
 const idleState = window.FreeLobbyIdle;
+const assetNormalizer = window.FreeLobbyAssets;
+const cardCodec = window.FreeLobbyCards;
 
 // Ambient Audio state
 let ambientAudioCtx = null;
@@ -154,7 +158,19 @@ const ROOM_THEME_VISUALS = [
 ];
 
 function getRoomVisualTheme(theme) {
+  if (!Number.isInteger(theme) || theme < 0) return ROOM_THEME_VISUALS[0];
   return ROOM_THEME_VISUALS[theme % ROOM_THEME_VISUALS.length] || ROOM_THEME_VISUALS[0];
+}
+
+function setExpandedPanel(trigger, panel, visible) {
+  if (!panel) return;
+  panel.classList.toggle('visible', visible);
+  panel.setAttribute('aria-hidden', String(!visible));
+  if (trigger) {
+    trigger.classList.toggle('active', visible);
+    trigger.setAttribute('aria-expanded', String(visible));
+    trigger.setAttribute('aria-pressed', String(visible));
+  }
 }
 
 function refreshInterfaceIcons() {
@@ -386,14 +402,19 @@ function buildMusicGrid() {
   musicGrid.innerHTML = '';
   for (let r = 0; r < SEQ_ROWS; r++) {
     for (let c = 0; c < SEQ_COLS; c++) {
-      const cell = document.createElement('div');
+      const cell = document.createElement('button');
+      cell.type = 'button';
       cell.className = 'music-cell';
+      cell.setAttribute('role', 'gridcell');
+      cell.setAttribute('aria-label', `Track ${r + 1}, step ${c + 1}`);
+      cell.setAttribute('aria-pressed', String(seqGrid[r][c]));
       if (seqGrid[r][c]) cell.classList.add('active');
       cell.dataset.row = r;
       cell.dataset.col = c;
       cell.addEventListener('click', () => {
         seqGrid[r][c] = !seqGrid[r][c];
         cell.classList.toggle('active', seqGrid[r][c]);
+        cell.setAttribute('aria-pressed', String(seqGrid[r][c]));
       });
       musicGrid.appendChild(cell);
     }
@@ -555,10 +576,12 @@ function announce(msg) {
 
 // ── Focus trap for modals ──
 function trapFocus(element) {
+  releaseFocus(element, false);
   const focusable = element.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
   if (focusable.length === 0) return;
   const first = focusable[0];
   const last = focusable[focusable.length - 1];
+  element._previousFocus = document.activeElement;
   first.focus();
 
   element._focusTrap = (e) => {
@@ -574,11 +597,15 @@ function trapFocus(element) {
   element.addEventListener('keydown', element._focusTrap);
 }
 
-function releaseFocus(element) {
+function releaseFocus(element, restore = true) {
   if (element._focusTrap) {
     element.removeEventListener('keydown', element._focusTrap);
     delete element._focusTrap;
   }
+  if (restore && element._previousFocus && typeof element._previousFocus.focus === 'function') {
+    element._previousFocus.focus();
+  }
+  delete element._previousFocus;
 }
 
 // ── Keyboard shortcuts ──
@@ -594,21 +621,25 @@ document.addEventListener('keydown', (e) => {
       return;
     }
     if (musicPanel.classList.contains('visible')) {
-      musicPanel.classList.remove('visible');
+      setExpandedPanel(musicBtn, musicPanel, false);
       return;
     }
     if (furniturePanel.classList.contains('visible')) {
-      furniturePanel.classList.remove('visible');
+      setExpandedPanel(buildBtn, furniturePanel, false);
       buildMode = false;
       return;
     }
     if (vibePrompt.classList.contains('visible')) {
       vibePrompt.classList.remove('visible');
+      vibePrompt.setAttribute('aria-hidden', 'true');
+      releaseFocus(vibePrompt);
       vibePromptFromId = null;
       return;
     }
     if (loveModal.classList.contains('visible')) {
       loveModal.classList.remove('visible');
+      loveModal.setAttribute('aria-hidden', 'true');
+      releaseFocus(loveModal);
       return;
     }
     return;
@@ -626,18 +657,21 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'b' || e.key === 'B') {
     if (!currentRoomId || !isRoomOwner) return;
     buildMode = !buildMode;
-    if (buildMode) {
-      furniturePanel.classList.add('visible');
-    } else {
-      furniturePanel.classList.remove('visible');
-    }
+    setExpandedPanel(buildBtn, furniturePanel, buildMode);
+    if (buildMode) setExpandedPanel(musicBtn, musicPanel, false);
+    updateBuildUI();
     return;
   }
 
   // M: Toggle music maker
   if (e.key === 'm' || e.key === 'M') {
-    if (!currentRoomId) return;
-    musicPanel.classList.toggle('visible');
+    if (!currentRoomId || currentRoomIsPublic) return;
+    const willOpen = !musicPanel.classList.contains('visible');
+    setExpandedPanel(musicBtn, musicPanel, willOpen);
+    if (willOpen && buildMode) {
+      buildMode = false;
+      setExpandedPanel(buildBtn, furniturePanel, false);
+    }
     return;
   }
 
@@ -661,9 +695,11 @@ function renderCommonRooms(rooms) {
   if (!commonRoomsContainer) return;
   commonRoomsContainer.innerHTML = '';
   for (const room of rooms) {
-    const item = document.createElement('div');
+    const item = document.createElement('button');
+    item.type = 'button';
     item.className = 'common-room-item';
     item.dataset.room = String(room.id || '').toLowerCase();
+    item.setAttribute('aria-label', `Join ${room.name}, ${room.playerCount} of ${room.maxPlayers} players`);
     item.innerHTML = `
       <div class="common-room-info">
         <span class="common-room-name">${escapeHtml(room.name)}</span>
@@ -686,8 +722,10 @@ function renderPublicRooms(rooms) {
     return;
   }
   for (const room of rooms) {
-    const item = document.createElement('div');
+    const item = document.createElement('button');
+    item.type = 'button';
     item.className = 'public-room-item';
+    item.setAttribute('aria-label', `Join room ${room.id}, ${room.playerCount} of ${room.maxPlayers} players`);
     item.innerHTML = `
       <span class="public-room-id">Room ${escapeHtml(room.id)}</span>
       <span class="public-room-count">${room.playerCount}/${room.maxPlayers}</span>
@@ -709,21 +747,27 @@ function renderBookmarks() {
   for (const code of bookmarkedRooms) {
     const item = document.createElement('div');
     item.className = 'bookmark-item';
-    item.innerHTML = `
-      <span class="public-room-id">Room ${escapeHtml(code)}</span>
-      <button class="bookmark-remove" data-code="${escapeHtml(code)}">✕</button>
-    `;
-    item.addEventListener('click', (e) => {
-      if (e.target.classList.contains('bookmark-remove')) {
-        bookmarkedRooms.delete(code);
-        renderBookmarks();
-        if (currentRoomId === code) {
-          setBookmarkButtonState(false);
-        }
-      } else {
-        enterGame('code', code);
+    const joinButton = document.createElement('button');
+    joinButton.type = 'button';
+    joinButton.className = 'bookmark-join';
+    joinButton.setAttribute('aria-label', `Join bookmarked room ${code}`);
+    joinButton.innerHTML = `<span class="public-room-id">Room ${escapeHtml(code)}</span>`;
+    joinButton.addEventListener('click', () => enterGame('code', code));
+
+    const removeButton = document.createElement('button');
+    removeButton.type = 'button';
+    removeButton.className = 'bookmark-remove';
+    removeButton.setAttribute('aria-label', `Remove bookmark for room ${code}`);
+    removeButton.textContent = '✕';
+    removeButton.addEventListener('click', () => {
+      bookmarkedRooms.delete(code);
+      persistBookmarks();
+      renderBookmarks();
+      if (currentRoomId === code) {
+        setBookmarkButtonState(false);
       }
     });
+    item.append(joinButton, removeButton);
     bookmarksList.appendChild(item);
   }
 }
@@ -832,10 +876,7 @@ function enterGame(mode, roomCode) {
   joinMode = mode;
   joinRoomCode = roomCode || '';
 
-  landingScreen.classList.add('hidden');
-  landingScreen.setAttribute('aria-hidden', 'true');
-  gameContainer.classList.add('active');
-  gameContainer.setAttribute('aria-hidden', 'false');
+  shellController.enterGame();
   connectionStatus.classList.add('visible');
   backBtn.classList.add('visible');
   roomInfo.classList.add('visible');
@@ -860,10 +901,7 @@ function enterGame(mode, roomCode) {
 }
 
 function exitGame() {
-  landingScreen.classList.remove('hidden');
-  landingScreen.setAttribute('aria-hidden', 'false');
-  gameContainer.classList.remove('active');
-  gameContainer.setAttribute('aria-hidden', 'true');
+  shellController.showLanding();
   connectionStatus.classList.remove('visible');
   backBtn.classList.remove('visible');
   roomInfo.classList.remove('visible');
@@ -871,26 +909,32 @@ function exitGame() {
   emotePanel.classList.remove('visible');
   signBar.classList.remove('visible');
   emoteGrid.classList.remove('open');
+  emoteToggle.setAttribute('aria-expanded', 'false');
   loveBtn.classList.remove('visible');
   vibeAction.classList.remove('visible');
   vibePrompt.classList.remove('visible');
+  vibePrompt.setAttribute('aria-hidden', 'true');
+  releaseFocus(vibePrompt);
   loveModal.classList.remove('visible');
+  loveModal.setAttribute('aria-hidden', 'true');
+  releaseFocus(loveModal);
   fleeBtn.classList.remove('visible');
   quietBtn.classList.remove('visible');
   quietBtn.classList.remove('active');
+  quietBtn.setAttribute('aria-pressed', 'false');
   quietMode = false;
   ambientPanel.classList.remove('visible');
   stopAmbient();
   musicBtn.classList.remove('visible');
-  musicPanel.classList.remove('visible');
+  setExpandedPanel(musicBtn, musicPanel, false);
   seqStop();
   if (zoomControls) zoomControls.classList.remove('visible');
   currentZoom = 1;
   buildBtn.classList.remove('visible');
-  buildBtn.classList.remove('active');
-  furniturePanel.classList.remove('visible');
+  setExpandedPanel(buildBtn, furniturePanel, false);
   ownerBadge.classList.remove('visible');
   isRoomOwner = false;
+  currentRoomIsPublic = true;
   buildMode = false;
   roomFurniture.forEach(f => {
     if (scene && scene.furnitureGroup) scene.furnitureGroup.remove(f.sprite);
@@ -947,6 +991,7 @@ fleeBtn.addEventListener('click', () => {
 quietBtn.addEventListener('click', () => {
   quietMode = !quietMode;
   quietBtn.classList.toggle('active', quietMode);
+  quietBtn.setAttribute('aria-pressed', String(quietMode));
   if (player) {
     scene.tweens.add({ targets: [player], alpha: quietMode ? 0.35 : 1, duration: 400, ease: 'Power2' });
     if (playerAccessory) scene.tweens.add({ targets: [playerAccessory], alpha: quietMode ? 0.35 : 1, duration: 400, ease: 'Power2' });
@@ -966,6 +1011,7 @@ bookmarkBtn.addEventListener('click', () => {
     bookmarkedRooms.add(currentRoomId);
     setBookmarkButtonState(true);
   }
+  persistBookmarks();
   renderBookmarks();
 });
 
@@ -992,11 +1038,16 @@ ambientTrackBtns.forEach(btn => {
 });
 
 musicBtn.addEventListener('click', () => {
-  musicPanel.classList.toggle('visible');
+  const willOpen = !musicPanel.classList.contains('visible');
+  setExpandedPanel(musicBtn, musicPanel, willOpen);
+  if (willOpen && buildMode) {
+    buildMode = false;
+    setExpandedPanel(buildBtn, furniturePanel, false);
+  }
 });
 
 musicCloseBtn.addEventListener('click', () => {
-  musicPanel.classList.remove('visible');
+  setExpandedPanel(musicBtn, musicPanel, false);
 });
 
 musicPlayBtn.addEventListener('click', () => {
@@ -1026,17 +1077,15 @@ copyRoomBtn.addEventListener('click', () => {
 
 // ─── Emote & Sign UI ──────────────────────────────────
 
-emoteToggle.addEventListener('pointerdown', (e) => {
+emoteToggle.addEventListener('click', (e) => {
   e.stopPropagation();
-  e.preventDefault();
   emoteGrid.classList.toggle('open');
   const isOpen = emoteGrid.classList.contains('open');
   emoteToggle.setAttribute('aria-expanded', String(isOpen));
 });
 
-emoteGrid.addEventListener('pointerdown', (e) => {
+emoteGrid.addEventListener('click', (e) => {
   e.stopPropagation();
-  e.preventDefault();
   const btn = e.target.closest('.emote-btn');
   if (!btn) return;
   if (socket && socket.connected) socket.emit('sendEmote', { emote: btn.dataset.emote });
@@ -1078,7 +1127,7 @@ emoteGrid.addEventListener('keydown', (e) => {
   }
 });
 
-signSendBtn.addEventListener('pointerdown', (e) => {
+signSendBtn.addEventListener('click', (e) => {
   e.stopPropagation();
   e.preventDefault();
   sendSign();
@@ -1100,7 +1149,7 @@ function sendSign() {
 
 // ─── Made with Love Modal ──────────────────────────────
 
-loveBtn.addEventListener('pointerdown', (e) => {
+loveBtn.addEventListener('click', (e) => {
   e.stopPropagation();
   e.preventDefault();
   loveModal.classList.add('visible');
@@ -1123,8 +1172,26 @@ loveModal.addEventListener('click', (e) => {
 // ─── Vibe Check & Mute UI ──────────────────────────────
 
 const mutedPlayers = new Set(); // socket IDs of muted strangers
-let bookmarkedRooms = new Set();
+let bookmarkedRooms = loadBookmarks();
 let currentZoom = 1;
+
+function loadBookmarks() {
+  try {
+    const stored = JSON.parse(sessionStorage.getItem('freelobby-bookmarks') || '[]');
+    if (!Array.isArray(stored)) return new Set();
+    return new Set(stored.filter(code => typeof code === 'string' && /^[A-Z0-9]{6}$/.test(code)));
+  } catch {
+    return new Set();
+  }
+}
+
+function persistBookmarks() {
+  try {
+    sessionStorage.setItem('freelobby-bookmarks', JSON.stringify([...bookmarkedRooms]));
+  } catch {
+    // Bookmarks remain available for the current page even if storage is blocked.
+  }
+}
 
 // "✦ Vibe Check" button in the action popup
 vibeActionBtn.addEventListener('click', () => {
@@ -1233,8 +1300,11 @@ function getClientFootprint(type, rotation) {
 // Generate furniture palette
 FURNITURE_NAMES.forEach((name, i) => {
   const btn = document.createElement('button');
+  btn.type = 'button';
   btn.className = 'furn-btn' + (i === 0 ? ' active' : '');
   btn.title = name;
+  btn.setAttribute('aria-label', name);
+  btn.setAttribute('aria-pressed', String(i === 0));
   btn.dataset.type = String(i);
   btn.textContent = FURNITURE_ICONS[i];
   btn.addEventListener('click', () => {
@@ -1247,16 +1317,20 @@ FURNITURE_NAMES.forEach((name, i) => {
 
 function updateBuildUI() {
   furniturePalette.querySelectorAll('.furn-btn').forEach((el, i) => {
-    el.classList.toggle('active', i === selectedFurnitureType && buildTool === 'place');
+    const active = i === selectedFurnitureType && buildTool === 'place';
+    el.classList.toggle('active', active);
+    el.setAttribute('aria-pressed', String(active));
   });
   toolPlace.classList.toggle('active', buildTool === 'place');
   toolRemove.classList.toggle('active', buildTool === 'remove');
+  toolPlace.setAttribute('aria-pressed', String(buildTool === 'place'));
+  toolRemove.setAttribute('aria-pressed', String(buildTool === 'remove'));
 }
 
 buildBtn.addEventListener('click', () => {
   buildMode = !buildMode;
-  buildBtn.classList.toggle('active', buildMode);
-  furniturePanel.classList.toggle('visible', buildMode);
+  setExpandedPanel(buildBtn, furniturePanel, buildMode);
+  if (buildMode) setExpandedPanel(musicBtn, musicPanel, false);
   if (buildMode) buildTool = 'place';
   updateBuildUI();
 });
@@ -1268,10 +1342,11 @@ toolRemove.addEventListener('click', () => { buildTool = 'remove'; updateBuildUI
 
 btnToggleHash.addEventListener('click', () => {
   hashPanel.classList.toggle('open');
+  btnToggleHash.setAttribute('aria-expanded', String(hashPanel.classList.contains('open')));
 });
 
 btnDownloadCard.addEventListener('click', () => {
-  const items = roomFurniture.map(f => f.item);
+  const items = roomFurniture.map(f => ({ ...f.item, on: f.interactiveOn === true }));
   const canvas = generateRoomCard(currentRoomId, items, roomTheme);
   const link = document.createElement('a');
   link.download = `freelobby-room-${currentRoomId || 'card'}.png`;
@@ -1361,6 +1436,7 @@ function preload() {
 function create() {
   scene = this;
   this.floorTiles = [];
+  assetNormalizer.normalizeFurnitureTextures(this, FURNITURE_DEFS.length);
 
   // Draw floor grid extending in all directions (3x the world size for generous padding)
   for (let x = -WORLD_WIDTH; x < WORLD_WIDTH * 2; x += 128) {
@@ -1805,11 +1881,28 @@ function applyRoomVisualTheme(theme) {
 
   roomFurniture.forEach(f => {
     if (!f.sprite) return;
-    f.sprite.setTint(visual.furnitureTint);
+    if (!f.interactiveOn) f.sprite.setTint(visual.furnitureTint);
   });
 }
 
 const INTERACTIVE_FURNITURE_TYPES = new Set([6, 13]); // Lamp, TV
+
+function setFurnitureInteractiveVisual(furniture, state, animate = false) {
+  if (!furniture || !furniture.glow) return;
+  furniture.interactiveOn = state === true;
+  const tint = furniture.interactiveOn
+    ? (furniture.item.t === 6 ? 0xffeebb : 0xaaddff)
+    : getRoomVisualTheme(roomTheme).furnitureTint;
+  const alpha = furniture.interactiveOn ? 0.25 : 0;
+
+  if (animate) {
+    scene.tweens.add({ targets: [furniture.glow], alpha, duration: 300, ease: 'Power2' });
+    scene.tweens.add({ targets: [furniture.sprite], tint, duration: 300 });
+  } else {
+    furniture.glow.setAlpha(alpha);
+    furniture.sprite.setTint(tint);
+  }
+}
 
 function renderFurnitureItem(item) {
   if (!scene) return;
@@ -1847,7 +1940,7 @@ function renderFurnitureItem(item) {
     }
   }
 
-  roomFurniture.push({ sprite, item, fp, glow });
+  roomFurniture.push({ sprite, item, fp, glow, interactiveOn: false });
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1938,43 +2031,12 @@ function generateRoomCard(roomId, furniture, theme) {
 
   // ─── Encode data strip in bottom pixel row ───
   // We use 2 pixels per item to avoid alpha=0 corruption.
-  // Format: [version][theme][0][255] [count][0][0][255] [t][x][y][255] [r][layer][0][255] ...
+  // Format: [version][theme][0][255] [count][0][0][255] [t][x][y][255] [r][layer][on][255] ...
   const imgData = ctx.getImageData(0, 0, CARD_WIDTH, CARD_HEIGHT);
   const data = imgData.data;
   const rowOffset = CARD_DATA_ROW * CARD_WIDTH * 4;
 
-  // Pixel 0: version + theme
-  data[rowOffset + 0] = 1; // version
-  data[rowOffset + 1] = theme || 0;
-  data[rowOffset + 2] = 0;
-  data[rowOffset + 3] = 255;
-
-  // Pixel 1: count
-  const count = furniture ? furniture.length : 0;
-  data[rowOffset + 4] = count;
-  data[rowOffset + 5] = 0;
-  data[rowOffset + 6] = 0;
-  data[rowOffset + 7] = 255;
-
-  // Pixels 2...N: each furniture item (2 pixels each)
-  if (furniture) {
-    console.log('[CardEncode] encoding', furniture.length, 'items');
-    furniture.forEach((item, i) => {
-      const dataOff = rowOffset + (i * 2 + 2) * 4;
-      data[dataOff + 0] = item.t;
-      data[dataOff + 1] = item.x;
-      data[dataOff + 2] = item.y;
-      data[dataOff + 3] = 255;
-
-      const metaOff = rowOffset + (i * 2 + 3) * 4;
-      data[metaOff + 0] = item.r || 0;
-      data[metaOff + 1] = item.layer || 0;
-      data[metaOff + 2] = 0;
-      data[metaOff + 3] = 255;
-
-      console.log(`[CardEncode] item ${i}: t=${item.t} x=${item.x} y=${item.y} r=${item.r} layer=${item.layer}`);
-    });
-  }
+  cardCodec.writeCardData(data, rowOffset, furniture || [], theme || 0);
 
   ctx.putImageData(imgData, 0, 0);
   return canvas;
@@ -1998,39 +2060,9 @@ function decodeRoomCard(imageFile, callback) {
         const data = imgData.data;
         const rowOffset = CARD_DATA_ROW * CARD_WIDTH * 4;
 
-        const version = data[rowOffset + 0];
-        console.log('[CardDecode] version:', version, 'first bytes:', data[rowOffset], data[rowOffset+1], data[rowOffset+2], data[rowOffset+3]);
-        if (version !== 1) {
-          callback(null, 'Unknown card version or corrupted data.');
-          return;
-        }
-
-        const theme = data[rowOffset + 1];
-        const count = data[rowOffset + 4];
-        console.log('[CardDecode] theme:', theme, 'count:', count);
-
-        if (count > 100) {
-          callback(null, 'Card contains too many items (max 100).');
-          return;
-        }
-
-        const furniture = [];
-        for (let i = 0; i < count; i++) {
-          const dataOff = rowOffset + (i * 2 + 2) * 4;
-          const metaOff = rowOffset + (i * 2 + 3) * 4;
-          const t = data[dataOff + 0];
-          const x = data[dataOff + 1];
-          const y = data[dataOff + 2];
-          const r = data[metaOff + 0];
-          const layer = data[metaOff + 1];
-          console.log(`[CardDecode] item ${i}: t=${t} x=${x} y=${y} r=${r} layer=${layer}`);
-          furniture.push({ t, x, y, r, layer });
-        }
-
-        callback({ theme, furniture }, null);
+        callback(cardCodec.readCardData(data, rowOffset, 100), null);
       } catch (err) {
-        console.error('[CardDecode] error:', err);
-        callback(null, 'Failed to decode card data.');
+        callback(null, err && err.message ? err.message : 'Failed to decode card data.');
       }
     };
     img.onerror = () => callback(null, 'Failed to load image.');
@@ -2172,12 +2204,23 @@ function connectSocket() {
     currentRoomId = roomId;
     roomIdDisplay.textContent = roomId;
     isRoomOwner = !!isOwner;
+    currentRoomIsPublic = isPublic !== false;
     roomTheme = theme || 0;
+    quietMode = !!you.quietMode;
+    quietBtn.classList.toggle('active', quietMode);
+    quietBtn.setAttribute('aria-pressed', String(quietMode));
     idleState.resetIdleState(localIdleState);
     // Build mode only available in private rooms where you are the owner
     const canBuild = isRoomOwner && !isPublic;
-    if (canBuild) { ownerBadge.classList.add('visible'); buildBtn.classList.add('visible'); }
-    else { ownerBadge.classList.remove('visible'); buildBtn.classList.remove('visible'); buildBtn.classList.remove('active'); furniturePanel.classList.remove('visible'); buildMode = false; }
+    if (canBuild) {
+      ownerBadge.classList.add('visible');
+      buildBtn.classList.add('visible');
+    } else {
+      ownerBadge.classList.remove('visible');
+      buildBtn.classList.remove('visible');
+      setExpandedPanel(buildBtn, furniturePanel, false);
+      buildMode = false;
+    }
     console.log(`✦ Joined room ${roomId}. Local player: ${you.name}. Owner: ${isRoomOwner}. Public: ${isPublic !== false}. Theme: ${roomTheme}.`);
 
     // Update room dimensions
@@ -2218,13 +2261,7 @@ function connectSocket() {
       for (const [idStr, state] of Object.entries(interactiveStates)) {
         const id = Number(idStr);
         const f = roomFurniture.find(rf => rf.item.id === id);
-        if (f && f.glow) {
-          if (state) {
-            f.glow.setAlpha(0.25);
-            if (f.item.t === 6) f.sprite.setTint(0xffeebb);
-            else if (f.item.t === 13) f.sprite.setTint(0xaaddff);
-          }
-        }
+        if (f && f.glow) setFurnitureInteractiveVisual(f, state, false);
       }
     }
 
@@ -2233,6 +2270,8 @@ function connectSocket() {
       ambientPanel.classList.add('visible');
       ambientTrackBtns.forEach(btn => {
         btn.classList.toggle('disabled', !isRoomOwner);
+        btn.disabled = !isRoomOwner;
+        btn.setAttribute('aria-disabled', String(!isRoomOwner));
       });
       setAmbientTrack(ambientTrack || 0);
     } else {
@@ -2246,7 +2285,7 @@ function connectSocket() {
       buildMusicGrid();
     } else {
       musicBtn.classList.remove('visible');
-      musicPanel.classList.remove('visible');
+      setExpandedPanel(musicBtn, musicPanel, false);
       seqStop();
     }
 
@@ -2257,6 +2296,9 @@ function connectSocket() {
       myColor = you.color;
       if (nameLabel) nameLabel.setPosition(you.x, you.y - 30);
       if (playerAccessory) playerAccessory.setPosition(you.x, you.y);
+      player.setAlpha(quietMode ? 0.35 : 1);
+      if (playerAccessory) playerAccessory.setAlpha(quietMode ? 0.35 : 1);
+      if (nameLabel) nameLabel.setAlpha(quietMode ? 0.35 : 1);
       standUp(player, playerAccessory);
     } else {
       spawnLocalPlayer(you);
@@ -2375,19 +2417,7 @@ function connectSocket() {
     if (!scene) return;
     const f = roomFurniture.find(rf => rf.item.id === id);
     if (!f || !f.glow) return;
-    if (state) {
-      scene.tweens.add({ targets: [f.glow], alpha: 0.25, duration: 300, ease: 'Power2' });
-      if (f.item.t === 6) {
-        // Lamp — warm tint boost
-        scene.tweens.add({ targets: [f.sprite], tint: 0xffeebb, duration: 300 });
-      } else if (f.item.t === 13) {
-        // TV — cyan tint boost
-        scene.tweens.add({ targets: [f.sprite], tint: 0xaaddff, duration: 300 });
-      }
-    } else {
-      scene.tweens.add({ targets: [f.glow], alpha: 0, duration: 300, ease: 'Power2' });
-      scene.tweens.add({ targets: [f.sprite], tint: getRoomVisualTheme(roomTheme).furnitureTint, duration: 300 });
-    }
+    setFurnitureInteractiveVisual(f, state, true);
   });
 
   socket.on('furnitureRemoved', ({ index }) => {
@@ -2401,16 +2431,24 @@ function connectSocket() {
     }
   });
 
-  socket.on('roomFurnitureReset', ({ furniture, theme }) => {
+  socket.on('roomFurnitureReset', ({ furniture, theme, interactiveStates }) => {
     if (!scene) return;
     roomFurniture.forEach(f => {
       if (scene && scene.furnitureGroup) scene.furnitureGroup.remove(f.sprite);
       f.sprite.destroy();
+      if (f.glow) f.glow.destroy();
     });
     roomFurniture = [];
     if (furniture) furniture.forEach(item => renderFurnitureItem(item));
     if (typeof theme === 'number') roomTheme = theme;
     applyRoomVisualTheme(roomTheme);
+    if (interactiveStates) {
+      for (const [idStr, state] of Object.entries(interactiveStates)) {
+        const id = Number(idStr);
+        const f = roomFurniture.find(rf => rf.item.id === id);
+        if (f && f.glow) setFurnitureInteractiveVisual(f, state, false);
+      }
+    }
   });
 
   socket.on('roomThemeChanged', ({ theme }) => {
@@ -2427,6 +2465,16 @@ function connectSocket() {
   socket.on('buildError', ({ message }) => {
     if (!scene) return;
     showError(message);
+  });
+
+  socket.on('inputError', ({ message }) => {
+    showError(message);
+  });
+
+  socket.on('idleTimeout', ({ message }) => {
+    showError(message);
+    exitGame();
+    setConnectionStatus(true);
   });
 
   socket.on('error', ({ message }) => {

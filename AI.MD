@@ -1,8 +1,8 @@
 # FreeLobby AI Handoff
 
-> Updated: 2026-07-08
+> Updated: 2026-07-09
 > Stack: Node.js + Express + Socket.IO + Phaser 3
-> Current focus: visual refresh implementation pass complete; next step is deeper polish/QA
+> Current focus: stabilization and repository handoff fixes complete; next step is deliberate look-and-feel work
 
 FreeLobby is a no-login browser hangout for low-pressure anonymous presence. The core promise is consent-first: users can share space non-verbally, but names and text are gated by mutual Vibe Check.
 
@@ -17,6 +17,9 @@ FreeLobby is a no-login browser hangout for low-pressure anonymous presence. The
 - `public/css/style.css` owns landing, HUD, panel, mobile, accessibility, and visual styling.
 - `public/js/game.js` owns Phaser rendering, movement, room UI, Socket.IO client handling, furniture rendering, cards, emotes, signs, audio, and sequencer.
 - `public/js/idle-state.js` contains testable idle/sit state helpers used by `game.js`.
+- `public/js/asset-normalizer.js` removes neutral baked mattes from the current furniture sources before Phaser creates room sprites. Its pixel behavior is unit-tested.
+- `public/js/card-codec.js` owns the tested pixel-row Memory Card format, including theme, layout, rotation/layer metadata, and lamp/TV on-state.
+- `public/js/shell-state.js` owns the tested landing/game visibility transition, including `hidden`, `inert`, and `aria-hidden` state.
 - `tests/*.test.js` uses Node's built-in test runner. Run `node --test tests/*.test.js`.
 
 There is still no database. Common rooms persist in memory for the life of the server process. Random and private rooms are deleted when empty.
@@ -70,6 +73,28 @@ Important: common rooms are public in the broad sense, but they are not random-m
 - The mobile refresh keeps the private-room Music button reachable above the emote control. Do not hide `.music-btn` globally on mobile; private rooms depend on it.
 - Disabled sign input copy is intentionally short (`Vibe Check required`) so it fits inside the mobile bottom dock.
 
+## Repository Stabilization Pass
+
+- Browser dependencies are pinned in `package.json` and served through exact `/vendor/*` routes. Normal page load no longer contacts Google Fonts, unpkg, jsDelivr, or cdn.socket.io.
+- Express is pinned to 4.22.2 and `ws` is overridden to 8.21.0, the compatible patched release used by both server and browser Socket.IO trees. `npm audit --omit=dev` reports zero vulnerabilities after the change.
+- Socket.IO limits messages to 32KB and disables per-message deflate. Every state-changing event that expects an object is rejected at socket middleware when it receives `null`, an array, or another malformed envelope.
+- `normalizeCustomization()` and `normalizeFurnitureItem()` are the canonical trust-boundary helpers. Furniture types, integer coordinates, rotations, optional layers, and interactive flags must be valid before room state changes.
+- `createRateLimiter()` provides per-socket event windows. Room changes/lists, movement, furniture editing, toggles, and imports are bounded; the existing emote, sign, and Vibe Check cooldowns remain in place.
+- Room creation at the server cap now accounts for whether the player's current non-common room will be deleted. `fleeRoom` can no longer grow the room map beyond `MAX_ROOMS`.
+- Pending Vibe Checks expire after the same 15-second window used by the client prompt, so dismissed requests cannot be accepted later by a custom client.
+- Idle expiry removes the player from the room and emits `idleTimeout`; it does not server-disconnect the socket. The client returns to landing and can immediately re-enter.
+- Security headers set CSP, no-referrer, no-sniff, no-framing, and deny camera/microphone/geolocation. HTML/CSS/JS use revalidation; furniture assets cache for one day; pinned vendor files are immutable for one day.
+- Room Memory Cards now encode lamp/TV on-state in the second metadata pixel. The server reconstructs `interactiveStates`, and `roomFurnitureReset` sends and applies those states.
+- Furniture reset destroys glow objects as well as sprites, closing the prior visual/object leak.
+- Landing cards are non-shrinking and scroll cleanly at 1280x720. Mobile furniture/music panels sit above ambience instead of overlapping it.
+- Common/public room cards, bookmark joins, and sequencer cells are real buttons. Bookmarks use `sessionStorage`, visible dialogs synchronize `aria-hidden`, owner ambience controls use real disabled state, and browser zoom is no longer disabled.
+- Music and Build panels are mutually exclusive. The `M` shortcut is ignored outside private rooms.
+- The current 256px opaque-matte furniture sources are normalized to transparent textures at runtime. New assets should use alpha directly, but the compatibility path prevents rectangular matte artifacts today.
+- `tests/socket-integration.test.js` starts the real server and uses two Socket.IO clients to prove malformed payload rejection, invalid furniture rejection, and consent-gated sign delivery.
+- `.github/workflows/ci.yml` runs syntax checks and the full suite on Node.js 20 and 22 for every pull request and push to `main`.
+- Room entry now makes the fading landing screen inert immediately and applies the semantic `hidden` state after its 600ms transition. Returning cancels pending removal, restores the landing screen, and hides the game application from assistive technology.
+- The HTTP integration test requests Lucide, Phaser, and Socket.IO vendor bundles. This guards the exact deep-package paths used at startup; Lucide 1.24.0 publishes `dist/umd/lucide.min.js` and the route returns 200.
+
 ## Movement / Idle Details
 
 The old idle animation used one global `isLocalSitting` flag inside shared `sitDown()` / `standUp()` helpers. Those helpers were also called for remote players, so remote movement could reset local sitting state. Because `sitDown()` tweened `sprite.y + 10`, the local player could repeatedly drift downward while idle and bypass Arcade physics collision.
@@ -95,8 +120,12 @@ Run these before claiming changes are good:
 ```bash
 node --check server/index.js
 node --check public/js/idle-state.js
+node --check public/js/asset-normalizer.js
+node --check public/js/card-codec.js
+node --check public/js/shell-state.js
 node --check public/js/game.js
 node --test tests/*.test.js
+npm audit --omit=dev
 ```
 
 On Windows PowerShell, `npm test` may be blocked by the `npm.ps1` execution policy. Use `npm.cmd test` when that happens.
@@ -108,6 +137,11 @@ For browser smoke:
 - Go to a Random Room should create/join a random room ID, not show a common room name.
 - A private room owner should see Build, Ambience, and Music controls.
 - Idle for 5 seconds should squash the avatar without changing its map position.
+- On 390x844, Build/Music panels must not overlap the ambience or sign controls.
+- Common-room `M` must not open the sequencer; private-room Music must set `aria-hidden="false"` while open.
+- Reloading the landing page in the same tab must retain session bookmarks.
+- After a room join and the 600ms fade, `#landing-screen` must compute to `display: none`, remain inert/`aria-hidden`, and `#game-container` must compute to `display: block`.
+- Chromium may emit `GPU stall due to ReadPixels` only while the test harness captures the WebGL canvas. Treat that specific screenshot-time message as a headless capture artifact; the app has no `readPixels` call. Continue failing smoke tests on every other console warning or error.
 
 ## Visual Refresh Audit
 
@@ -134,10 +168,10 @@ When continuing the visual refresh:
 
 ## Good Next Step
 
-Do a focused polish pass on spacing, type scale, and individual panel states after more playtesting. The big visual system is now in place, so the next improvements should be small, screenshot-driven adjustments rather than another broad rewrite.
+Begin the new look-and-feel pass from screenshots and selected visual directions. Preserve the corrected responsive/ARIA behavior, the code-native furniture normalization path, and the consent/security tests while changing presentation.
 
 ## Remaining System Improvement Targets
 
-- `public/js/game.js` is still the largest risk surface at roughly 2.4k lines. The next system refactor should extract client modules around socket room events, UI overlays, audio, and furniture/cards.
-- Socket.IO integration tests would catch multi-client behavior better than helper tests alone. Good first cases: room switching, sign visibility after Vibe Check, Quiet Mode auto-decline, furniture placement collision, and disconnect cleanup.
+- `public/js/game.js` remains the largest risk surface at roughly 2.4k lines. `idle-state.js`, `asset-normalizer.js`, and `card-codec.js` demonstrate the preferred UMD/CommonJS extraction pattern; next candidates are audio and overlay state.
+- Expand Socket.IO integration coverage beyond the new consent/sign case. Good next cases are Quiet Mode auto-decline, furniture collision placement, room-cap behavior, owner disconnect, and idle-timeout readmission.
 - Server-side furniture validation still lives inside `server/index.js`. If build tools expand, move furniture footprints and validation into a testable helper module.

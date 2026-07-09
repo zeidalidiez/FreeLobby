@@ -3,10 +3,15 @@ const http = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
 const {
+  asEventObject,
+  canCreateRoomAfterLeaving,
   clearRevealedPairsForPlayer,
   createPendingVibeChecks,
+  createRateLimiter,
   findJoinableRoom,
   isAllowedEmote,
+  normalizeCustomization,
+  normalizeFurnitureItem,
   normalizePlayerMove,
   sanitizeSignText,
   shouldLeaveRoomBeforeJoin,
@@ -14,7 +19,10 @@ const {
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server);
+const io = new Server(server, {
+  maxHttpBufferSize: 32 * 1024,
+  perMessageDeflate: false,
+});
 
 const PORT = process.env.PORT || 3000;
 
@@ -26,6 +34,8 @@ const MAX_FURNITURE        = 100;
 const GRID_SIZE            = 64;
 const ROOM_EMOTE_CAP_PER_SEC = 30;
 const DEFAULT_PRIVATE_ROOM_THEME = 3;
+const ROOM_THEME_COUNT = 4;
+const MAX_LEGACY_HASH_BYTES = 64 * 1024;
 
 // ─── Common Room Definitions ────────────────────────────
 // Common rooms are server-curated, persistent, and never die when empty.
@@ -292,9 +302,9 @@ function sanitizeName(raw) {
   // Strip control characters and zero-width characters, then clip to 24.
   const cleaned = raw
     .replace(/[\u0000-\u001F\u007F-\u009F\u200B-\u200F\u202A-\u202E\uFEFF]/g, '')
-    .trim()
-    .slice(0, 24);
-  return cleaned.length > 0 ? cleaned : 'Anon';
+    .trim();
+  const clipped = Array.from(cleaned).slice(0, 24).join('');
+  return clipped.length > 0 ? clipped : 'Anon';
 }
 
 function joinPlayerToRoom(socket, roomId, name, customization) {
@@ -325,7 +335,7 @@ function joinPlayerToRoom(socket, roomId, name, customization) {
     y: spawnY,
     color,
     lastActive: Date.now(),
-    customization: customization || { colorIdx: 0, shape: 0, accessory: 0, pulse: 1 },
+    customization: normalizeCustomization(customization),
     quietMode: false,
   };
 
@@ -337,19 +347,83 @@ function joinPlayerToRoom(socket, roomId, name, customization) {
   return playerData;
 }
 
-// Serve static frontend files
-app.use(express.static(path.join(__dirname, '..', 'public')));
+app.disable('x-powered-by');
+app.use((req, res, next) => {
+  res.setHeader('Content-Security-Policy', [
+    "default-src 'self'",
+    "script-src 'self'",
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: blob:",
+    "connect-src 'self' ws: wss:",
+    "font-src 'self'",
+    "media-src 'self' blob:",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "frame-ancestors 'none'",
+  ].join('; '));
+  res.setHeader('Referrer-Policy', 'no-referrer');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  next();
+});
+
+const vendorFiles = {
+  '/vendor/lucide.min.js': require.resolve('lucide/dist/umd/lucide.min.js'),
+  '/vendor/phaser.min.js': require.resolve('phaser/dist/phaser.min.js'),
+  '/vendor/socket.io.min.js': path.resolve(
+    path.dirname(require.resolve('socket.io-client')),
+    '..', '..', 'dist', 'socket.io.min.js',
+  ),
+};
+for (const [route, file] of Object.entries(vendorFiles)) {
+  app.get(route, (_req, res) => res.sendFile(file, { maxAge: '1d', immutable: true }));
+}
+
+// Serve static frontend files. HTML stays fresh; fingerprint-free assets get a short cache.
+app.use(express.static(path.join(__dirname, '..', 'public'), {
+  etag: true,
+  maxAge: 0,
+  setHeaders(res, filePath) {
+    if (filePath.includes(`${path.sep}assets${path.sep}`)) {
+      res.setHeader('Cache-Control', 'public, max-age=86400');
+    } else {
+      res.setHeader('Cache-Control', 'no-cache');
+    }
+  },
+}));
 
 // ─── Socket.IO ──────────────────────────────────────────
 io.on('connection', (socket) => {
   console.log(`✦ Player connected   [${socket.id}]`);
+  const allowEvent = createRateLimiter();
+  const objectPayloadEvents = new Set([
+    'createRoom', 'joinRoom', 'joinRandomRoom', 'fleeRoom', 'joinCommonRoom',
+    'placeFurniture', 'removeFurniture', 'toggleFurniture', 'importRoomHash',
+    'setRoomFurniture', 'setRoomTheme', 'setAmbientTrack', 'playerMove',
+    'sendEmote', 'sendSign', 'quietMode', 'vibeCheckRequest', 'vibeCheckRespond',
+  ]);
+
+  socket.use(([eventName, payload], next) => {
+    if (objectPayloadEvents.has(eventName) && asEventObject(payload) !== payload) {
+      socket.emit('inputError', { message: 'That request could not be understood.' });
+      return;
+    }
+    next();
+  });
+
+  function withinRateLimit(key, limit, windowMs) {
+    return allowEvent(key, limit, windowMs);
+  }
 
   // ── Create Room ──
-  socket.on('createRoom', ({ name, customization }) => {
-    if (rooms.size >= MAX_ROOMS) {
+  socket.on('createRoom', (payload) => {
+    if (!withinRateLimit('room-change', 5, 10000)) return;
+    const { name, customization } = asEventObject(payload);
+    if (!canCreateRoomAfterLeaving(rooms, socket, MAX_ROOMS)) {
       socket.emit('error', { message: 'Server is full. Try again later.' });
       return;
     }
+    removePlayerFromRoom(socket);
     const roomId = generateRoomId();
     // Create Room always creates a PRIVATE room with the creator as owner
     rooms.set(roomId, { players: new Map(), revealedPairs: new Set(), pendingVibeChecks: createPendingVibeChecks(), ownerId: socket.id, isPublic: false, furniture: [], occupiedCells: new Set(), blockedCells: new Set(), theme: DEFAULT_PRIVATE_ROOM_THEME, emoteWindow: { startMs: 0, count: 0 }, nextFurnitureId: 1, interactiveStates: new Map(), ambientTrack: 0 });
@@ -380,7 +454,14 @@ io.on('connection', (socket) => {
   });
 
   // ── Join Specific Room ──
-  socket.on('joinRoom', ({ roomId, name, customization }) => {
+  socket.on('joinRoom', (payload) => {
+    if (!withinRateLimit('room-change', 5, 10000)) return;
+    const { roomId: rawRoomId, name, customization } = asEventObject(payload);
+    const roomId = typeof rawRoomId === 'string' ? rawRoomId.toUpperCase() : '';
+    if (!/^[A-Z0-9]{6}$/.test(roomId)) {
+      socket.emit('error', { message: 'Room code must be 6 letters or numbers.' });
+      return;
+    }
     const room = rooms.get(roomId);
     if (!room) { socket.emit('error', { message: `Room "${roomId}" not found.` }); return; }
     const maxPlayers = room.maxPlayers || MAX_PLAYERS_PER_ROOM;
@@ -416,7 +497,9 @@ io.on('connection', (socket) => {
   });
 
   // ── Join Random Room ──
-  socket.on('joinRandomRoom', ({ name, customization }) => {
+  socket.on('joinRandomRoom', (payload) => {
+    if (!withinRateLimit('room-change', 5, 10000)) return;
+    const { name, customization } = asEventObject(payload);
     let roomId = findJoinableRoom(rooms, { maxPlayersPerRoom: MAX_PLAYERS_PER_ROOM });
     if (!roomId) {
       if (rooms.size >= MAX_ROOMS) { socket.emit('error', { message: 'Server is full. Try again later.' }); return; }
@@ -461,7 +544,13 @@ io.on('connection', (socket) => {
     socket.roomId = null;
   });
 
-  socket.on('fleeRoom', ({ name, customization }) => {
+  socket.on('fleeRoom', (payload) => {
+    if (!withinRateLimit('room-change', 5, 10000)) return;
+    const { name, customization } = asEventObject(payload);
+    if (!canCreateRoomAfterLeaving(rooms, socket, MAX_ROOMS)) {
+      socket.emit('error', { message: 'Server is full. Try again later.' });
+      return;
+    }
     removePlayerFromRoom(socket);
     const roomId = generateRoomId();
     // Flee always creates a PRIVATE room owned by the fleer
@@ -494,16 +583,20 @@ io.on('connection', (socket) => {
 
   // ── Get Common Rooms ──
   socket.on('getCommonRooms', () => {
+    if (!withinRateLimit('room-lists', 10, 5000)) return;
     socket.emit('commonRoomsList', getCommonRoomsList());
   });
 
   // ── Get Public Rooms ──
   socket.on('getPublicRooms', () => {
+    if (!withinRateLimit('room-lists', 10, 5000)) return;
     socket.emit('publicRoomsList', getPublicRoomsList());
   });
 
   // ── Join Common Room ──
-  socket.on('joinCommonRoom', ({ roomId, name, customization }) => {
+  socket.on('joinCommonRoom', (payload) => {
+    if (!withinRateLimit('room-change', 5, 10000)) return;
+    const { roomId, name, customization } = asEventObject(payload);
     const room = rooms.get(roomId);
     if (!room || !room.isCommon) { socket.emit('error', { message: 'Common room not found.' }); return; }
     const maxPlayers = room.maxPlayers || MAX_PLAYERS_PER_COMMON_ROOM;
@@ -539,22 +632,25 @@ io.on('connection', (socket) => {
   });
 
   // ── Furniture Placement ──
-  socket.on('placeFurniture', ({ item }) => {
+  socket.on('placeFurniture', (payload) => {
+    if (!withinRateLimit('furniture-edit', 60, 5000)) return;
+    const rawItem = asEventObject(payload).item;
+    const item = normalizeFurnitureItem(rawItem, { typeCount: FURNITURE_FOOTPRINTS.length });
     const roomId = socket.roomId;
     if (!roomId || !rooms.has(roomId)) return;
     const room = rooms.get(roomId);
     // Build mode only works in private rooms with an owner
     if (room.isPublic || room.ownerId !== socket.id) return;
-    if (!item || typeof item.t !== 'number') return;
+    if (!item) {
+      socket.emit('buildError', { message: 'Invalid furniture item.' });
+      return;
+    }
     if (room.furniture.length >= MAX_FURNITURE) {
       socket.emit('buildError', { message: `Room furniture limit reached (${MAX_FURNITURE}).` });
       return;
     }
     const maxX = Math.floor(1200 / GRID_SIZE);
     const maxY = Math.floor(800 / GRID_SIZE);
-    if (item.r < 0 || item.r > 3) item.r = 0;
-    if (item.t < 0 || item.t >= FURNITURE_FOOTPRINTS.length) return;
-
     const fp = getFootprint(item.t, item.r);
     if (item.x < 0 || item.x + fp.w > maxX || item.y < 0 || item.y + fp.h > maxY) {
       socket.emit('buildError', { message: 'Furniture out of bounds.' });
@@ -579,13 +675,15 @@ io.on('connection', (socket) => {
     io.in(roomId).emit('furniturePlaced', { item });
   });
 
-  socket.on('removeFurniture', ({ index }) => {
+  socket.on('removeFurniture', (payload) => {
+    if (!withinRateLimit('furniture-edit', 60, 5000)) return;
+    const { index } = asEventObject(payload);
     const roomId = socket.roomId;
     if (!roomId || !rooms.has(roomId)) return;
     const room = rooms.get(roomId);
     // Build mode only works in private rooms with an owner
     if (room.isPublic || room.ownerId !== socket.id) return;
-    if (index >= 0 && index < room.furniture.length) {
+    if (Number.isInteger(index) && index >= 0 && index < room.furniture.length) {
       const item = room.furniture[index];
       const cells = getCells(item);
       for (const cell of cells) {
@@ -600,7 +698,10 @@ io.on('connection', (socket) => {
 
   // ── Toggle Interactive Furniture ──
   const INTERACTIVE_TYPES = new Set([6, 13]); // Lamp, TV
-  socket.on('toggleFurniture', ({ id }) => {
+  socket.on('toggleFurniture', (payload) => {
+    if (!withinRateLimit('furniture-toggle', 20, 5000)) return;
+    const { id } = asEventObject(payload);
+    if (!Number.isInteger(id)) return;
     const roomId = socket.roomId;
     if (!roomId || !rooms.has(roomId)) return;
     const room = rooms.get(roomId);
@@ -622,11 +723,12 @@ io.on('connection', (socket) => {
     const maxY = Math.floor(800 / GRID_SIZE);
     const newOccupied = new Set();
     const newBlocked = new Set();
+    const normalizedFurniture = [];
+    const interactiveFlags = [];
 
-    for (const item of furniture) {
-      if (!item || typeof item.t !== 'number') return { ok: false, error: 'Invalid furniture item.' };
-      if (item.t < 0 || item.t >= FURNITURE_FOOTPRINTS.length) return { ok: false, error: 'Unknown furniture type.' };
-      if (item.r < 0 || item.r > 3) item.r = 0;
+    for (const rawItem of furniture) {
+      const item = normalizeFurnitureItem(rawItem, { typeCount: FURNITURE_FOOTPRINTS.length });
+      if (!item) return { ok: false, error: 'Invalid furniture item.' };
 
       const fp = getFootprint(item.t, item.r);
       if (item.x < 0 || item.x + fp.w > maxX || item.y < 0 || item.y + fp.h > maxY) {
@@ -639,16 +741,43 @@ io.on('connection', (socket) => {
         newOccupied.add(cell);
         if (!fp.walkable) newBlocked.add(cell);
       }
+      interactiveFlags.push(item.on === true && INTERACTIVE_TYPES.has(item.t));
+      delete item.on;
+      normalizedFurniture.push(item);
     }
-    return { ok: true, occupied: newOccupied, blocked: newBlocked };
+    return { ok: true, furniture: normalizedFurniture, interactiveFlags, occupied: newOccupied, blocked: newBlocked };
+  }
+
+  function resetRoomFurniture(room, result) {
+    room.nextFurnitureId = 1;
+    room.interactiveStates = new Map();
+    for (let index = 0; index < result.furniture.length; index++) {
+      const item = result.furniture[index];
+      item.id = room.nextFurnitureId++;
+      if (result.interactiveFlags[index]) room.interactiveStates.set(item.id, true);
+    }
+    room.furniture = result.furniture;
+    room.occupiedCells = result.occupied;
+    room.blockedCells = result.blocked;
+  }
+
+  function interactiveStatesObject(room) {
+    return Object.fromEntries(room.interactiveStates.entries());
   }
 
   // ── Import Room Hash (Legacy Base64 JSON) ──
-  socket.on('importRoomHash', ({ hash }) => {
+  socket.on('importRoomHash', (payload) => {
+    if (!withinRateLimit('furniture-import', 3, 10000)) return;
+    const { hash } = asEventObject(payload);
     const roomId = socket.roomId;
     if (!roomId || !rooms.has(roomId)) return;
     const room = rooms.get(roomId);
     if (room.ownerId !== socket.id) return;
+
+    if (typeof hash !== 'string' || hash.length > MAX_LEGACY_HASH_BYTES) {
+      socket.emit('buildError', { message: 'Invalid room hash.' });
+      return;
+    }
 
     let furniture;
     try {
@@ -662,18 +791,18 @@ io.on('connection', (socket) => {
     const result = validateFurnitureArray(furniture);
     if (!result.ok) { socket.emit('buildError', { message: result.error }); return; }
 
-    // Reassign IDs on import
-    room.nextFurnitureId = 1;
-    room.interactiveStates = new Map();
-    for (const item of furniture) item.id = room.nextFurnitureId++;
-    room.furniture = furniture;
-    room.occupiedCells = result.occupied;
-    room.blockedCells = result.blocked;
-    io.in(roomId).emit('roomFurnitureReset', { furniture, theme: room.theme });
+    resetRoomFurniture(room, result);
+    io.in(roomId).emit('roomFurnitureReset', {
+      furniture: room.furniture,
+      theme: room.theme,
+      interactiveStates: interactiveStatesObject(room),
+    });
   });
 
   // ── Set Room Furniture (raw array from decoded memory card) ──
-  socket.on('setRoomFurniture', ({ furniture, theme }) => {
+  socket.on('setRoomFurniture', (payload) => {
+    if (!withinRateLimit('furniture-import', 3, 10000)) return;
+    const { furniture, theme } = asEventObject(payload);
     const roomId = socket.roomId;
     if (!roomId || !rooms.has(roomId)) return;
     const room = rooms.get(roomId);
@@ -682,37 +811,41 @@ io.on('connection', (socket) => {
     const result = validateFurnitureArray(furniture);
     if (!result.ok) { socket.emit('buildError', { message: result.error }); return; }
 
-    if (typeof theme === 'number' && theme >= 0) room.theme = theme;
+    if (theme !== undefined && (!Number.isInteger(theme) || theme < 0 || theme >= ROOM_THEME_COUNT)) {
+      socket.emit('buildError', { message: 'Unknown room theme.' });
+      return;
+    }
+    if (theme !== undefined) room.theme = theme;
 
-    // Reassign IDs on load
-    room.nextFurnitureId = 1;
-    room.interactiveStates = new Map();
-    for (const item of furniture) item.id = room.nextFurnitureId++;
-    room.furniture = furniture;
-    room.occupiedCells = result.occupied;
-    room.blockedCells = result.blocked;
-    io.in(roomId).emit('roomFurnitureReset', { furniture, theme: room.theme });
+    resetRoomFurniture(room, result);
+    io.in(roomId).emit('roomFurnitureReset', {
+      furniture: room.furniture,
+      theme: room.theme,
+      interactiveStates: interactiveStatesObject(room),
+    });
   });
 
   // ── Set Room Theme ──
-  socket.on('setRoomTheme', ({ theme }) => {
+  socket.on('setRoomTheme', (payload) => {
+    const { theme } = asEventObject(payload);
     const roomId = socket.roomId;
     if (!roomId || !rooms.has(roomId)) return;
     const room = rooms.get(roomId);
     if (room.ownerId !== socket.id) return;
-    if (typeof theme === 'number' && theme >= 0) {
+    if (Number.isInteger(theme) && theme >= 0 && theme < ROOM_THEME_COUNT) {
       room.theme = theme;
       io.in(roomId).emit('roomThemeChanged', { theme: room.theme });
     }
   });
 
   // ── Ambient Audio Track ──
-  socket.on('setAmbientTrack', ({ track }) => {
+  socket.on('setAmbientTrack', (payload) => {
+    const { track } = asEventObject(payload);
     const roomId = socket.roomId;
     if (!roomId || !rooms.has(roomId)) return;
     const room = rooms.get(roomId);
     if (room.ownerId !== socket.id) return;
-    if (typeof track !== 'number' || track < 0 || track > 2) return;
+    if (!Number.isInteger(track) || track < 0 || track > 2) return;
     room.ambientTrack = track;
     io.in(roomId).emit('ambientTrackChanged', { track });
     console.log(`   ↳ Ambient track set to ${track} in room ${roomId}`);
@@ -720,6 +853,7 @@ io.on('connection', (socket) => {
 
   // ── Player Movement ──
   socket.on('playerMove', (data) => {
+    if (!withinRateLimit('player-move', 30, 1000)) return;
     const roomId = socket.roomId;
     if (!roomId || !rooms.has(roomId)) return;
     const room = rooms.get(roomId);
@@ -734,7 +868,8 @@ io.on('connection', (socket) => {
   });
 
   // ── Emote ──
-  socket.on('sendEmote', ({ emote }) => {
+  socket.on('sendEmote', (payload) => {
+    const { emote } = asEventObject(payload);
     const roomId = socket.roomId;
     if (!roomId || !rooms.has(roomId)) return;
     if (!isAllowedEmote(emote)) return;
@@ -755,7 +890,8 @@ io.on('connection', (socket) => {
   });
 
   // ── Sign ──
-  socket.on('sendSign', ({ text }) => {
+  socket.on('sendSign', (payload) => {
+    const { text } = asEventObject(payload);
     const roomId = socket.roomId;
     if (!roomId || !rooms.has(roomId)) return;
     const room = rooms.get(roomId);
@@ -778,7 +914,8 @@ io.on('connection', (socket) => {
   });
 
   // ── Quiet Mode ──
-  socket.on('quietMode', ({ enabled }) => {
+  socket.on('quietMode', (payload) => {
+    const { enabled } = asEventObject(payload);
     const roomId = socket.roomId;
     if (!roomId || !rooms.has(roomId)) return;
     const room = rooms.get(roomId);
@@ -791,13 +928,14 @@ io.on('connection', (socket) => {
 
   // ── Vibe Check: Request ──
   // Player A clicks "Vibe Check" on Player B
-  socket.on('vibeCheckRequest', ({ targetId }) => {
+  socket.on('vibeCheckRequest', (payload) => {
+    const { targetId } = asEventObject(payload);
     const roomId = socket.roomId;
     if (!roomId || !rooms.has(roomId)) return;
     const room = rooms.get(roomId);
 
     // Validate target exists in room
-    if (!room.players.has(targetId)) return;
+    if (typeof targetId !== 'string' || targetId === socket.id || !room.players.has(targetId)) return;
 
     // Already revealed?
     if (room.revealedPairs.has(pairKey(socket.id, targetId))) return;
@@ -827,12 +965,14 @@ io.on('connection', (socket) => {
 
   // ── Vibe Check: Response ──
   // Player B responds yes or no
-  socket.on('vibeCheckRespond', ({ fromId, accepted }) => {
+  socket.on('vibeCheckRespond', (payload) => {
+    const { fromId, accepted } = asEventObject(payload);
     const roomId = socket.roomId;
     if (!roomId || !rooms.has(roomId)) return;
     const room = rooms.get(roomId);
     if (socket.playerData) socket.playerData.lastActive = Date.now();
 
+    if (typeof fromId !== 'string' || typeof accepted !== 'boolean') return;
     if (!room.pendingVibeChecks.consume(fromId, socket.id)) return;
 
     if (!accepted) {
@@ -874,32 +1014,46 @@ io.on('connection', (socket) => {
 // ── Idle Checking ──
 const IDLE_TIMEOUT_MS = 15 * 60 * 1000; // 15 minutes
 
-setInterval(() => {
-  const now = Date.now();
+function evictIdlePlayers(now = Date.now()) {
   for (const [roomId, room] of rooms.entries()) {
     for (const [playerId, pd] of room.players.entries()) {
       if (now - pd.lastActive > IDLE_TIMEOUT_MS) {
         const socket = io.sockets.sockets.get(playerId);
         if (socket) {
-          socket.emit('error', { message: 'You were idle for a while, so we let you drift back to the lobby.' });
-          socket.disconnect(true);
+          removePlayerFromRoom(socket);
+          socket.emit('idleTimeout', { message: 'You were idle for a while, so we let you drift back to the lobby.' });
         }
       }
     }
   }
-}, 60000); // Verify AFK players every minute
+}
+
+const idleCheckInterval = setInterval(evictIdlePlayers, 60000); // Verify AFK players every minute
+idleCheckInterval.unref();
 
 // ─── Initialize Common Rooms ────────────────────────────
 initCommonRooms();
 
 // ─── Start server ───────────────────────────────────────
-server.listen(PORT, () => {
-  console.log(`
-  ╔══════════════════════════════════════╗
-  ║         ✦  FreeLobby  ✦             ║
-  ║   Server running on port ${PORT}        ║
-  ║   http://localhost:${PORT}              ║
-  ║   Max rooms: ${MAX_ROOMS}  |  Private: ${MAX_PLAYERS_PER_ROOM}  |  Common: ${MAX_PLAYERS_PER_COMMON_ROOM}   ║
-  ╚══════════════════════════════════════╝
-  `);
-});
+function startServer(port = PORT) {
+  return new Promise((resolve, reject) => {
+    server.once('error', reject);
+    server.listen(port, () => {
+      server.removeListener('error', reject);
+      const address = server.address();
+      const actualPort = typeof address === 'object' && address ? address.port : port;
+      console.log(`✦ FreeLobby listening on http://localhost:${actualPort}`);
+      console.log(`  Max rooms: ${MAX_ROOMS} | Private cap: ${MAX_PLAYERS_PER_ROOM} | Common cap: ${MAX_PLAYERS_PER_COMMON_ROOM}`);
+      resolve(actualPort);
+    });
+  });
+}
+
+if (require.main === module) {
+  startServer().catch((error) => {
+    console.error('Failed to start FreeLobby:', error);
+    process.exitCode = 1;
+  });
+}
+
+module.exports = { app, evictIdlePlayers, io, rooms, server, startServer };

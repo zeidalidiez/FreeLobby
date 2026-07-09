@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [20, 22]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+      - run: npm ci
+      - run: node --check server/index.js
+      - run: node --check public/js/idle-state.js
+      - run: node --check public/js/asset-normalizer.js
+      - run: node --check public/js/card-codec.js
+      - run: node --check public/js/game.js
+      - run: npm test

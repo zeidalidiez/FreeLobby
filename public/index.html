@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>FreeLobby — A Calm Social Space</title>
   <meta name="description" content="A minimalist, browser-based multiplayer room where introverts can get a quick, safe hit of social interaction with strangers at any hour.">
   <link rel="stylesheet" href="css/style.css">
@@ -39,7 +39,7 @@
       <div class="landing-columns">
         <div class="landing-col">
           <h3 class="col-title">Common Rooms</h3>
-          <div class="common-rooms" id="common-rooms" role="list" aria-label="Common rooms list">
+          <div class="common-rooms" id="common-rooms" aria-label="Common rooms list">
             <div class="common-room-skeleton" role="status" aria-live="polite">Loading…</div>
           </div>
         </div>
@@ -81,14 +81,14 @@
 
       <div class="bookmarks-section" id="bookmarks-section">
         <h3 class="col-title">Bookmarks</h3>
-        <div class="bookmarks-list" id="bookmarks-list" role="list" aria-label="Bookmarked rooms">
+        <div class="bookmarks-list" id="bookmarks-list" aria-label="Bookmarked rooms">
           <div class="bookmark-empty">Bookmark rooms to find them again</div>
         </div>
       </div>
 
       <div class="public-rooms-section" id="public-rooms-section">
         <h3 class="col-title">Active Public Rooms</h3>
-        <div class="public-rooms" id="public-rooms" role="list" aria-label="Active public rooms">
+        <div class="public-rooms" id="public-rooms" aria-label="Active public rooms">
           <div class="common-room-skeleton" role="status" aria-live="polite">Loading…</div>
         </div>
       </div>
@@ -142,7 +142,7 @@
   </div>
 
   <!-- ═══ GAME VIEW ═══ -->
-  <div id="game-container" role="application" aria-label="FreeLobby game world. Use arrow keys or WASD to move. Click to move. Tab through UI elements."></div>
+  <div id="game-container" role="application" aria-label="FreeLobby game world. Use arrow keys or WASD to move. Click to move. Tab through UI elements." aria-hidden="true"></div>
 
   <!-- ═══ MOBILE ZOOM CONTROLS ═══ -->
   <div id="zoom-controls" class="zoom-controls" role="group" aria-label="Zoom controls">
@@ -170,9 +170,9 @@
 
   <button id="flee-btn" title="Escape to an empty room" aria-label="Flee to a new empty private room">Go to empty room</button>
 
-  <button id="quiet-btn" title="Quiet Mode: appear invisible, auto-decline Vibe Checks" aria-label="Toggle quiet mode">Quiet</button>
+  <button id="quiet-btn" title="Quiet Mode: appear invisible, auto-decline Vibe Checks" aria-label="Toggle quiet mode" aria-pressed="false">Quiet</button>
 
-  <button id="build-btn" title="Toggle build mode" aria-label="Toggle furniture build mode">Build</button>
+  <button id="build-btn" title="Toggle build mode" aria-label="Toggle furniture build mode" aria-expanded="false" aria-controls="furniture-panel" aria-pressed="false">Build</button>
 
   <button id="back-btn" aria-label="Return to lobby">← Lobby</button>
 
@@ -259,7 +259,7 @@
   </div>
 
   <!-- ═══ MUSIC MAKER ═══ -->
-  <button id="music-btn" class="music-btn" title="Open music maker" aria-label="Open music sequencer">🎹</button>
+  <button id="music-btn" class="music-btn" title="Open music maker" aria-label="Open music sequencer" aria-expanded="false" aria-controls="music-panel" aria-pressed="false">🎹</button>
   <div id="music-panel" class="music-panel" role="dialog" aria-label="Music sequencer" aria-hidden="true">
     <div class="music-header">
       <span class="music-title">Sequencer</span>
@@ -312,10 +312,13 @@
   <div id="error-toast" class="error-toast" role="alert" aria-live="assertive"></div>
 
   <!-- ═══ SCRIPTS ═══ -->
-  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.min.js"></script>
-  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <script src="vendor/lucide.min.js"></script>
+  <script src="vendor/phaser.min.js"></script>
+  <script src="vendor/socket.io.min.js"></script>
   <script src="js/idle-state.js"></script>
+  <script src="js/asset-normalizer.js"></script>
+  <script src="js/card-codec.js"></script>
+  <script src="js/shell-state.js"></script>
   <script src="js/game.js"></script>
 </body>
 </html>
