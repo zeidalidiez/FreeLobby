@@ -1,7 +1,8 @@
 const assert = require('node:assert/strict');
 const { after, before, test } = require('node:test');
 const { io: createClient } = require('socket.io-client');
-const { evictIdlePlayers, io, server, startServer } = require('../server/index');
+const furnitureCatalog = require('../public/js/furniture-catalog');
+const { evictIdlePlayers, io, rooms, server, startServer } = require('../server/index');
 
 let baseUrl;
 const clients = [];
@@ -59,6 +60,25 @@ test('HTTP shell is self-hosted and sends restrictive security headers', async (
   }
 });
 
+test('curated common rooms showcase the expanded hotel catalog', () => {
+  const commonRooms = ['LOBBY', 'GARDEN', 'LIBRARY', 'SUITE'].map(id => rooms.get(id));
+  assert.ok(commonRooms.every(Boolean));
+  assert.ok(commonRooms.every(room => room.furniture.length >= 20));
+
+  const showcasedTypes = new Set(commonRooms.flatMap(room => room.furniture.map(item => item.t)));
+  for (const type of [20, 27, 42, 50, 70, 77, 82, 89, 90, 91, 94, 95, 99]) {
+    assert.ok(showcasedTypes.has(type), `${furnitureCatalog.ITEMS[type].name} should be showcased`);
+  }
+
+  for (const room of commonRooms) {
+    for (const item of room.furniture) {
+      assert.ok(furnitureCatalog.ITEMS[item.t], `unknown type ${item.t}`);
+      assert.ok(item.x >= 0 && item.x < room.width / 64);
+      assert.ok(item.y >= 0 && item.y < room.height / 64);
+    }
+  }
+});
+
 test('socket boundary rejects malformed payloads and preserves consent-gated signs', async () => {
   const malformedClient = await connectClient();
   const inputError = waitForEvent(malformedClient, 'inputError');
@@ -90,9 +110,43 @@ test('socket boundary rejects malformed payloads and preserves consent-gated sig
   guest.emit('joinRoom', {
     roomId,
     name: 'Guest',
-    customization: { colorIdx: 2, shape: 0, accessory: 0, pulse: 1 },
+    customization: {
+      colorIdx: 2,
+      shape: 4,
+      accessory: 7,
+      pulse: 1,
+      eyes: 5,
+      brows: 4,
+      mouth: 5,
+      detail: 5,
+    },
   });
-  await guestJoined;
+  const guestRoom = await guestJoined;
+  assert.deepEqual(guestRoom.you.customization, {
+    colorIdx: 2,
+    shape: 4,
+    accessory: 7,
+    pulse: 1,
+    eyes: 5,
+    brows: 4,
+    mouth: 5,
+    detail: 5,
+  });
+
+  const customStyle = {
+    preset: 1,
+    intensity: 0,
+    wall: '#f0dfc4',
+    floor: '#8f7658',
+    accent: '#64846f',
+  };
+  const styleChanged = waitForEvent(guest, 'roomStyleChanged');
+  owner.emit('setRoomStyle', { style: customStyle });
+  assert.deepEqual((await styleChanged).style, customStyle);
+
+  const invalidStyle = waitForEvent(owner, 'buildError');
+  owner.emit('setRoomStyle', { style: { ...customStyle, wall: 'not-a-color' } });
+  assert.match((await invalidStyle).message, /wall/i);
 
   let leakedSign = false;
   guest.once('playerSign', () => { leakedSign = true; });

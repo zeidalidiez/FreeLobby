@@ -2,6 +2,8 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
+const furnitureCatalog = require('../public/js/furniture-catalog');
+const roomStyles = require('../public/js/room-style');
 const {
   asEventObject,
   canCreateRoomAfterLeaving,
@@ -33,7 +35,7 @@ const MAX_PLAYERS_PER_COMMON_ROOM = 25;
 const MAX_FURNITURE        = 100;
 const GRID_SIZE            = 64;
 const ROOM_EMOTE_CAP_PER_SEC = 30;
-const DEFAULT_PRIVATE_ROOM_THEME = 3;
+const DEFAULT_PRIVATE_ROOM_THEME = 0;
 const ROOM_THEME_COUNT = 4;
 const MAX_LEGACY_HASH_BYTES = 64 * 1024;
 
@@ -50,24 +52,34 @@ const COMMON_ROOMS_DEF = [
     height: 1000,
     maxPlayers: 25,
     furniture: [
-      { t: 7, x: 10, y: 6, r: 0 },   // rug center
-      { t: 4, x: 11, y: 7, r: 0 },   // chair
-      { t: 4, x: 14, y: 7, r: 0 },   // chair
-      { t: 4, x: 11, y: 10, r: 2 },  // chair
-      { t: 4, x: 14, y: 10, r: 2 },  // chair
-      { t: 10, x: 12, y: 8, r: 0 },  // couch
-      { t: 6, x: 9, y: 5, r: 0 },    // lamp
-      { t: 6, x: 17, y: 5, r: 0 },   // lamp
-      { t: 5, x: 8, y: 12, r: 0 },   // plant
-      { t: 5, x: 18, y: 12, r: 0 },  // plant
-      { t: 13, x: 15, y: 4, r: 0 },  // tv
-      { t: 11, x: 20, y: 8, r: 0 },  // console
-      { t: 15, x: 22, y: 6, r: 0 },  // cat
-      { t: 16, x: 7, y: 9, r: 0 },   // dog
-      { t: 0, x: 5, y: 5, r: 0 },    // cube decor
-      { t: 1, x: 5, y: 13, r: 0 },   // sphere decor
-      { t: 2, x: 21, y: 13, r: 0 },  // cylinder decor
-      { t: 3, x: 21, y: 5, r: 0 },   // pyramid decor
+      { t: 77, x: 10, y: 6, r: 0 },  // grand lounge rug
+      { t: 76, x: 5, y: 10, r: 0 },  // round lobby rug
+      { t: 27, x: 10, y: 5, r: 0 },  // hotel loveseat
+      { t: 27, x: 11, y: 9, r: 2 },  // hotel loveseat
+      { t: 20, x: 9, y: 7, r: 1 },   // club chair
+      { t: 21, x: 14, y: 7, r: 3 },  // wingback chair
+      { t: 30, x: 11, y: 7, r: 0 },  // coffee table
+      { t: 25, x: 10, y: 12, r: 0 }, // lobby bench
+      { t: 90, x: 4, y: 3, r: 0 },   // reception desk
+      { t: 92, x: 7, y: 4, r: 0 },   // concierge bell
+      { t: 93, x: 4, y: 5, r: 0 },   // room key rack
+      { t: 73, x: 7, y: 3, r: 0 },   // room telephone
+      { t: 91, x: 19, y: 3, r: 0 },  // brass luggage cart
+      { t: 97, x: 21, y: 4, r: 0 },  // suitcase stack
+      { t: 89, x: 19, y: 6, r: 0 },  // stocked minibar
+      { t: 95, x: 19, y: 8, r: 0 },  // coffee station
+      { t: 94, x: 18, y: 11, r: 0 }, // room-service cart
+      { t: 52, x: 4, y: 8, r: 0 },   // lobby sideboard
+      { t: 87, x: 6, y: 8, r: 0 },   // fresh flowers
+      { t: 61, x: 12, y: 2, r: 0 },  // lobby chandelier
+      { t: 57, x: 8, y: 5, r: 0 },   // floor lamp
+      { t: 57, x: 15, y: 5, r: 0 },  // floor lamp
+      { t: 67, x: 9, y: 3, r: 0 },   // woven tapestry
+      { t: 68, x: 15, y: 3, r: 0 },  // lobby clock
+      { t: 82, x: 5, y: 13, r: 0 },  // monstera
+      { t: 83, x: 21, y: 11, r: 0 }, // parlor palm
+      { t: 15, x: 16, y: 11, r: 0 }, // patchwork cat
+      { t: 99, x: 8, y: 12, r: 0 },  // patchwork turtle
     ],
   },
   {
@@ -79,75 +91,105 @@ const COMMON_ROOMS_DEF = [
     height: 1000,
     maxPlayers: 20,
     furniture: [
-      { t: 7, x: 8, y: 4, r: 0 },    // rug
-      { t: 7, x: 14, y: 10, r: 0 },  // rug
-      { t: 4, x: 9, y: 5, r: 0 },    // chair
-      { t: 4, x: 15, y: 11, r: 2 },  // chair
-      { t: 5, x: 7, y: 3, r: 0 },    // plant
-      { t: 5, x: 12, y: 7, r: 0 },   // plant
-      { t: 5, x: 18, y: 12, r: 0 },  // plant
-      { t: 5, x: 20, y: 4, r: 0 },   // plant
-      { t: 6, x: 10, y: 8, r: 0 },   // lamp
-      { t: 6, x: 16, y: 6, r: 0 },   // lamp
-      { t: 15, x: 11, y: 9, r: 0 },  // cat
-      { t: 17, x: 19, y: 8, r: 0 },  // rabbit
-      { t: 18, x: 6, y: 11, r: 0 },  // fishbowl
-      { t: 0, x: 5, y: 7, r: 0 },    // cube
-      { t: 1, x: 21, y: 10, r: 0 },  // sphere
+      { t: 79, x: 8, y: 5, r: 0 },   // floral rug
+      { t: 78, x: 15, y: 9, r: 0 },  // geometric rug
+      { t: 39, x: 9, y: 6, r: 0 },   // bistro table
+      { t: 23, x: 8, y: 6, r: 1 },   // cane chair
+      { t: 23, x: 11, y: 6, r: 3 },  // cane chair
+      { t: 44, x: 15, y: 10, r: 0 }, // daybed
+      { t: 26, x: 17, y: 5, r: 1 },  // window bench
+      { t: 69, x: 4, y: 4, r: 1 },   // folding screen
+      { t: 62, x: 10, y: 3, r: 0 },  // paper lantern
+      { t: 64, x: 10, y: 7, r: 0 },  // candle cluster
+      { t: 74, x: 9, y: 6, r: 0 },   // tea service
+      { t: 82, x: 6, y: 3, r: 0 },   // monstera
+      { t: 83, x: 13, y: 3, r: 0 },  // parlor palm
+      { t: 84, x: 6, y: 10, r: 0 },  // button fern
+      { t: 85, x: 20, y: 4, r: 0 },  // rubber plant
+      { t: 86, x: 20, y: 10, r: 0 }, // patched cactus
+      { t: 87, x: 16, y: 8, r: 0 },  // fresh flowers
+      { t: 88, x: 12, y: 10, r: 0 }, // lobby bonsai
+      { t: 17, x: 18, y: 9, r: 0 },  // patchwork rabbit
+      { t: 19, x: 7, y: 8, r: 0 },   // patchwork bird
+      { t: 99, x: 13, y: 12, r: 0 }, // patchwork turtle
     ],
   },
   {
     id: 'LIBRARY',
     name: 'The Library',
     description: 'Low light, soft chairs, good for lurking',
-    theme: 2,
+    theme: 3,
     width: 1600,
     height: 1000,
     maxPlayers: 20,
     furniture: [
-      { t: 7, x: 6, y: 5, r: 0 },    // rug
-      { t: 7, x: 16, y: 5, r: 0 },   // rug
-      { t: 7, x: 11, y: 11, r: 0 },  // rug
-      { t: 4, x: 7, y: 6, r: 0 },    // chair
-      { t: 4, x: 17, y: 6, r: 0 },   // chair
-      { t: 4, x: 12, y: 12, r: 2 },  // chair
-      { t: 10, x: 9, y: 5, r: 0 },   // couch
-      { t: 10, x: 19, y: 5, r: 0 },  // couch
-      { t: 6, x: 8, y: 4, r: 0 },    // lamp
-      { t: 6, x: 18, y: 4, r: 0 },   // lamp
-      { t: 6, x: 13, y: 10, r: 0 },  // lamp
-      { t: 5, x: 5, y: 10, r: 0 },   // plant
-      { t: 5, x: 22, y: 10, r: 0 },  // plant
-      { t: 13, x: 14, y: 3, r: 0 },  // tv
-      { t: 12, x: 10, y: 8, r: 0 },  // computer
-      { t: 15, x: 20, y: 9, r: 0 },  // cat
-      { t: 16, x: 6, y: 9, r: 0 },   // dog
+      { t: 80, x: 5, y: 5, r: 1 },   // striped rug
+      { t: 77, x: 12, y: 8, r: 0 },  // grand lounge rug
+      { t: 21, x: 12, y: 9, r: 0 },  // wingback chair
+      { t: 21, x: 15, y: 9, r: 0 },  // wingback chair
+      { t: 29, x: 6, y: 8, r: 1 },   // reading chaise
+      { t: 31, x: 13, y: 9, r: 0 },  // round coffee table
+      { t: 50, x: 4, y: 3, r: 0 },   // tall bookcase
+      { t: 50, x: 4, y: 6, r: 0 },   // tall bookcase
+      { t: 51, x: 18, y: 3, r: 0 },  // open shelving
+      { t: 51, x: 18, y: 6, r: 0 },  // open shelving
+      { t: 37, x: 9, y: 4, r: 0 },   // writing desk
+      { t: 24, x: 10, y: 5, r: 2 },  // desk chair
+      { t: 63, x: 9, y: 4, r: 0 },   // desk lamp
+      { t: 58, x: 11, y: 8, r: 0 },  // reading lamp
+      { t: 58, x: 16, y: 8, r: 0 },  // reading lamp
+      { t: 70, x: 10, y: 12, r: 0 }, // hotel fireplace
+      { t: 72, x: 14, y: 12, r: 0 }, // record player
+      { t: 67, x: 13, y: 3, r: 0 },  // woven tapestry
+      { t: 68, x: 16, y: 3, r: 0 },  // lobby clock
+      { t: 74, x: 13, y: 9, r: 0 },  // tea service
+      { t: 84, x: 6, y: 12, r: 0 },  // button fern
+      { t: 85, x: 21, y: 11, r: 0 }, // rubber plant
+      { t: 15, x: 18, y: 10, r: 0 }, // patchwork cat
+      { t: 16, x: 7, y: 11, r: 0 },  // patchwork dog
+    ],
+  },
+  {
+    id: 'SUITE',
+    name: 'Sunroom Suite',
+    description: 'A warm hotel room with room service and space to unwind',
+    theme: 2,
+    width: 1600,
+    height: 1000,
+    maxPlayers: 16,
+    furniture: [
+      { t: 79, x: 10, y: 7, r: 0 },  // floral rug
+      { t: 42, x: 10, y: 3, r: 0 },  // king bed
+      { t: 49, x: 9, y: 4, r: 0 },   // hotel nightstand
+      { t: 49, x: 13, y: 4, r: 0 },  // hotel nightstand
+      { t: 56, x: 9, y: 4, r: 0 },   // bedside lamp
+      { t: 56, x: 13, y: 4, r: 0 },  // bedside lamp
+      { t: 27, x: 9, y: 10, r: 0 },  // hotel loveseat
+      { t: 30, x: 11, y: 10, r: 0 }, // coffee table
+      { t: 22, x: 13, y: 10, r: 3 }, // slipper chair
+      { t: 89, x: 18, y: 4, r: 0 },  // stocked minibar
+      { t: 95, x: 18, y: 6, r: 0 },  // coffee station
+      { t: 94, x: 17, y: 10, r: 0 }, // room-service cart
+      { t: 55, x: 15, y: 5, r: 0 },  // folding luggage rack
+      { t: 97, x: 16, y: 5, r: 0 },  // suitcase stack
+      { t: 38, x: 4, y: 5, r: 0 },   // vanity table
+      { t: 65, x: 4, y: 3, r: 0 },   // arched mirror
+      { t: 47, x: 4, y: 9, r: 0 },   // wardrobe
+      { t: 54, x: 6, y: 9, r: 0 },   // room safe
+      { t: 9, x: 4, y: 12, r: 0 },   // soaking tub
+      { t: 98, x: 6, y: 12, r: 0 },  // towel rack
+      { t: 69, x: 18, y: 12, r: 0 }, // folding screen
+      { t: 13, x: 14, y: 9, r: 0 },  // hotel television
+      { t: 87, x: 12, y: 10, r: 0 }, // fresh flowers
+      { t: 83, x: 21, y: 10, r: 0 }, // parlor palm
+      { t: 16, x: 8, y: 12, r: 0 },  // patchwork dog
     ],
   },
 ];
 
-const FURNITURE_FOOTPRINTS = [
-  { w: 1, h: 1, walkable: false }, // 0: Cube
-  { w: 1, h: 1, walkable: false }, // 1: Sphere
-  { w: 1, h: 1, walkable: false }, // 2: Cylinder
-  { w: 1, h: 1, walkable: false }, // 3: Pyramid
-  { w: 1, h: 1, walkable: true  }, // 4: Chair
-  { w: 1, h: 1, walkable: false }, // 5: Plant
-  { w: 1, h: 1, walkable: false }, // 6: Lamp
-  { w: 2, h: 2, walkable: true  }, // 7: Rug
-  { w: 2, h: 2, walkable: true  }, // 8: Bed
-  { w: 2, h: 1, walkable: false }, // 9: Bathtub
-  { w: 2, h: 1, walkable: true  }, // 10: Couch
-  { w: 1, h: 1, walkable: false }, // 11: Console
-  { w: 1, h: 1, walkable: false }, // 12: Computer
-  { w: 2, h: 1, walkable: false }, // 13: TV
-  { w: 1, h: 1, walkable: false }, // 14: Toilet
-  { w: 1, h: 1, walkable: true  }, // 15: Cat
-  { w: 1, h: 1, walkable: true  }, // 16: Dog
-  { w: 1, h: 1, walkable: true  }, // 17: Rabbit
-  { w: 1, h: 1, walkable: false }, // 18: Fishbowl
-  { w: 1, h: 1, walkable: true  }, // 19: Bird
-];
+const FURNITURE_FOOTPRINTS = furnitureCatalog.ITEMS.map(
+  definition => ({ w: definition.w, h: definition.h, walkable: definition.walkable }),
+);
 
 function getFootprint(type, rotation) {
   const fp = FURNITURE_FOOTPRINTS[type];
@@ -253,7 +295,7 @@ function removePlayerFromRoom(socket) {
 }
 
 function createRoom() {
-  return { players: new Map(), revealedPairs: new Set(), pendingVibeChecks: createPendingVibeChecks(), occupiedCells: new Set(), blockedCells: new Set(), theme: 0, emoteWindow: { startMs: 0, count: 0 }, width: 1200, height: 800 };
+  return { players: new Map(), revealedPairs: new Set(), pendingVibeChecks: createPendingVibeChecks(), occupiedCells: new Set(), blockedCells: new Set(), theme: 0, style: roomStyles.styleFromPreset(0), emoteWindow: { startMs: 0, count: 0 }, width: 1200, height: 800 };
 }
 
 function initCommonRooms() {
@@ -269,6 +311,7 @@ function initCommonRooms() {
       occupiedCells: new Set(),
       blockedCells: new Set(),
       theme: def.theme || 0,
+      style: roomStyles.styleFromPreset(def.theme || 0),
       emoteWindow: { startMs: 0, count: 0 },
       nextFurnitureId: 1,
       interactiveStates: new Map(),
@@ -426,7 +469,7 @@ io.on('connection', (socket) => {
     removePlayerFromRoom(socket);
     const roomId = generateRoomId();
     // Create Room always creates a PRIVATE room with the creator as owner
-    rooms.set(roomId, { players: new Map(), revealedPairs: new Set(), pendingVibeChecks: createPendingVibeChecks(), ownerId: socket.id, isPublic: false, furniture: [], occupiedCells: new Set(), blockedCells: new Set(), theme: DEFAULT_PRIVATE_ROOM_THEME, emoteWindow: { startMs: 0, count: 0 }, nextFurnitureId: 1, interactiveStates: new Map(), ambientTrack: 0 });
+    rooms.set(roomId, { players: new Map(), revealedPairs: new Set(), pendingVibeChecks: createPendingVibeChecks(), ownerId: socket.id, isPublic: false, furniture: [], occupiedCells: new Set(), blockedCells: new Set(), theme: DEFAULT_PRIVATE_ROOM_THEME, style: roomStyles.styleFromPreset(DEFAULT_PRIVATE_ROOM_THEME), emoteWindow: { startMs: 0, count: 0 }, nextFurnitureId: 1, interactiveStates: new Map(), ambientTrack: 0 });
     const playerData = joinPlayerToRoom(socket, roomId, name, customization);
 
     const room = rooms.get(roomId);
@@ -445,6 +488,7 @@ io.on('connection', (socket) => {
       isCommon: false,
       furniture: room.furniture,
       theme: room.theme,
+      style: room.style || roomStyles.styleFromPreset(room.theme),
       interactiveStates: interactiveStatesObj,
       ambientTrack: room.ambientTrack || 0,
       width: room.width || 1200,
@@ -485,6 +529,7 @@ io.on('connection', (socket) => {
       commonName: room.commonName || null,
       furniture: room.furniture,
       theme: room.theme,
+      style: room.style || roomStyles.styleFromPreset(room.theme),
       interactiveStates: interactiveStatesObj2,
       ambientTrack: room.ambientTrack || 0,
       width: room.width || 1200,
@@ -505,7 +550,7 @@ io.on('connection', (socket) => {
       if (rooms.size >= MAX_ROOMS) { socket.emit('error', { message: 'Server is full. Try again later.' }); return; }
       roomId = generateRoomId();
       // Auto-created random rooms have NO owner and are PUBLIC
-      rooms.set(roomId, { players: new Map(), revealedPairs: new Set(), pendingVibeChecks: createPendingVibeChecks(), ownerId: null, isPublic: true, furniture: [], occupiedCells: new Set(), blockedCells: new Set(), theme: 0, emoteWindow: { startMs: 0, count: 0 }, nextFurnitureId: 1, interactiveStates: new Map(), ambientTrack: 0 });
+      rooms.set(roomId, { players: new Map(), revealedPairs: new Set(), pendingVibeChecks: createPendingVibeChecks(), ownerId: null, isPublic: true, furniture: [], occupiedCells: new Set(), blockedCells: new Set(), theme: 0, style: roomStyles.styleFromPreset(0), emoteWindow: { startMs: 0, count: 0 }, nextFurnitureId: 1, interactiveStates: new Map(), ambientTrack: 0 });
       console.log(`   ↳ No open rooms, auto-created random ${roomId}`);
     }
 
@@ -528,6 +573,7 @@ io.on('connection', (socket) => {
       commonName: room.commonName || null,
       furniture: room.furniture,
       theme: room.theme,
+      style: room.style || roomStyles.styleFromPreset(room.theme),
       interactiveStates: interactiveStatesObj3,
       ambientTrack: room.ambientTrack || 0,
       width: room.width || 1200,
@@ -554,7 +600,7 @@ io.on('connection', (socket) => {
     removePlayerFromRoom(socket);
     const roomId = generateRoomId();
     // Flee always creates a PRIVATE room owned by the fleer
-    rooms.set(roomId, { players: new Map(), revealedPairs: new Set(), pendingVibeChecks: createPendingVibeChecks(), ownerId: socket.id, isPublic: false, furniture: [], occupiedCells: new Set(), blockedCells: new Set(), theme: DEFAULT_PRIVATE_ROOM_THEME, emoteWindow: { startMs: 0, count: 0 }, nextFurnitureId: 1, interactiveStates: new Map(), ambientTrack: 0 });
+    rooms.set(roomId, { players: new Map(), revealedPairs: new Set(), pendingVibeChecks: createPendingVibeChecks(), ownerId: socket.id, isPublic: false, furniture: [], occupiedCells: new Set(), blockedCells: new Set(), theme: DEFAULT_PRIVATE_ROOM_THEME, style: roomStyles.styleFromPreset(DEFAULT_PRIVATE_ROOM_THEME), emoteWindow: { startMs: 0, count: 0 }, nextFurnitureId: 1, interactiveStates: new Map(), ambientTrack: 0 });
     const room = rooms.get(roomId);
     const playerData = joinPlayerToRoom(socket, roomId, name, customization);
 
@@ -573,6 +619,7 @@ io.on('connection', (socket) => {
       isCommon: false,
       furniture: room.furniture,
       theme: room.theme,
+      style: room.style || roomStyles.styleFromPreset(room.theme),
       interactiveStates: interactiveStatesObj4,
       ambientTrack: room.ambientTrack || 0,
       width: room.width || 1200,
@@ -620,6 +667,7 @@ io.on('connection', (socket) => {
       commonName: room.commonName || null,
       furniture: room.furniture,
       theme: room.theme,
+      style: room.style || roomStyles.styleFromPreset(room.theme),
       interactiveStates: interactiveStatesObjC,
       ambientTrack: room.ambientTrack || 0,
       width: room.width || 1600,
@@ -697,7 +745,11 @@ io.on('connection', (socket) => {
   });
 
   // ── Toggle Interactive Furniture ──
-  const INTERACTIVE_TYPES = new Set([6, 13]); // Lamp, TV
+  const INTERACTIVE_TYPES = new Set(
+    furnitureCatalog.ITEMS
+      .map((definition, type) => definition.interactive ? type : -1)
+      .filter(type => type >= 0),
+  );
   socket.on('toggleFurniture', (payload) => {
     if (!withinRateLimit('furniture-toggle', 20, 5000)) return;
     const { id } = asEventObject(payload);
@@ -795,6 +847,7 @@ io.on('connection', (socket) => {
     io.in(roomId).emit('roomFurnitureReset', {
       furniture: room.furniture,
       theme: room.theme,
+      style: room.style || roomStyles.styleFromPreset(room.theme),
       interactiveStates: interactiveStatesObject(room),
     });
   });
@@ -802,7 +855,7 @@ io.on('connection', (socket) => {
   // ── Set Room Furniture (raw array from decoded memory card) ──
   socket.on('setRoomFurniture', (payload) => {
     if (!withinRateLimit('furniture-import', 3, 10000)) return;
-    const { furniture, theme } = asEventObject(payload);
+    const { furniture, theme, style } = asEventObject(payload);
     const roomId = socket.roomId;
     if (!roomId || !rooms.has(roomId)) return;
     const room = rooms.get(roomId);
@@ -815,12 +868,24 @@ io.on('connection', (socket) => {
       socket.emit('buildError', { message: 'Unknown room theme.' });
       return;
     }
-    if (theme !== undefined) room.theme = theme;
+    if (style !== undefined) {
+      const styleErrors = roomStyles.validateStyle(style);
+      if (styleErrors.length > 0) {
+        socket.emit('buildError', { message: styleErrors[0] });
+        return;
+      }
+      room.style = roomStyles.normalizeStyle(style);
+      room.theme = room.style.preset;
+    } else if (theme !== undefined) {
+      room.theme = theme;
+      room.style = roomStyles.styleFromPreset(theme);
+    }
 
     resetRoomFurniture(room, result);
     io.in(roomId).emit('roomFurnitureReset', {
       furniture: room.furniture,
       theme: room.theme,
+      style: room.style || roomStyles.styleFromPreset(room.theme),
       interactiveStates: interactiveStatesObject(room),
     });
   });
@@ -834,8 +899,26 @@ io.on('connection', (socket) => {
     if (room.ownerId !== socket.id) return;
     if (Number.isInteger(theme) && theme >= 0 && theme < ROOM_THEME_COUNT) {
       room.theme = theme;
-      io.in(roomId).emit('roomThemeChanged', { theme: room.theme });
+      room.style = roomStyles.styleFromPreset(theme);
+      io.in(roomId).emit('roomStyleChanged', { theme: room.theme, style: room.style });
     }
+  });
+
+  socket.on('setRoomStyle', (payload) => {
+    if (!withinRateLimit('room-style', 20, 5000)) return;
+    const { style } = asEventObject(payload);
+    const roomId = socket.roomId;
+    if (!roomId || !rooms.has(roomId)) return;
+    const room = rooms.get(roomId);
+    if (room.ownerId !== socket.id || room.isPublic) return;
+    const errors = roomStyles.validateStyle(style);
+    if (errors.length > 0) {
+      socket.emit('buildError', { message: errors[0] });
+      return;
+    }
+    room.style = roomStyles.normalizeStyle(style);
+    room.theme = room.style.preset;
+    io.in(roomId).emit('roomStyleChanged', { theme: room.theme, style: room.style });
   });
 
   // ── Ambient Audio Track ──

@@ -32,6 +32,10 @@ test('craft texture keys are deterministic and theme-normalized', () => {
   assert.equal(craft.furnitureTextureKey(2, 13, true), 'craft-furn-2-13-on');
   assert.equal(craft.playerTextureKey(2, 9), 'craft-player-diamond-9');
   assert.equal(craft.accessoryTextureKey(1, 3), 'craft-accessory-headphones-3');
+  assert.equal(
+    craft.avatarTextureKey({ colorIdx: 9, shape: 4, eyes: 5, brows: 4, mouth: 5, detail: 5 }),
+    'craft-avatar-4-9-5-4-5-5',
+  );
 });
 
 test('all four craft themes expose the complete semantic palette', () => {
@@ -43,4 +47,54 @@ test('all four craft themes expose the complete semantic palette', () => {
   for (const theme of craft.THEME_PALETTES) {
     for (const key of required) assert.ok(theme[key], `${theme.name}.${key}`);
   }
+});
+
+test('avatar parts cover the expanded mix-and-match system', () => {
+  assert.equal(craft.SHAPE_NAMES.length, 5);
+  assert.equal(craft.ACCESSORY_NAMES.length, 8);
+  assert.equal(craft.EYE_NAMES.length, 6);
+  assert.equal(craft.BROW_NAMES.length, 5);
+  assert.equal(craft.MOUTH_NAMES.length, 6);
+  assert.equal(craft.DETAIL_NAMES.length, 6);
+});
+
+test('avatar look codes round-trip and keep legacy four-character codes readable', () => {
+  const customization = {
+    colorIdx: 9,
+    shape: 4,
+    accessory: 7,
+    pulse: 2,
+    eyes: 5,
+    brows: 4,
+    mouth: 5,
+    detail: 5,
+  };
+  assert.equal(craft.encodeAvatarLook(customization), 'A94725455');
+  assert.deepEqual(craft.decodeAvatarLook('a94725455'), customization);
+  assert.deepEqual(craft.decodeAvatarLook('9230'), {
+    colorIdx: 9,
+    shape: 2,
+    accessory: 3,
+    pulse: 0,
+    eyes: 0,
+    brows: 0,
+    mouth: 0,
+    detail: 0,
+  });
+  assert.equal(craft.decodeAvatarLook('AZ0000000'), null);
+  assert.equal(craft.decodeAvatarLook('too-short'), null);
+});
+
+test('random avatars can reach every final option without exceeding supported ranges', () => {
+  const avatar = craft.randomAvatarCustomization(() => 0.999999);
+  assert.deepEqual(avatar, {
+    colorIdx: 9,
+    shape: 4,
+    accessory: 7,
+    pulse: 2,
+    eyes: 5,
+    brows: 4,
+    mouth: 5,
+    detail: 5,
+  });
 });

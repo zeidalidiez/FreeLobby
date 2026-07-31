@@ -30,13 +30,13 @@ All state-changing Socket.IO events require object payloads. Room changes, movem
 4. Room Model
 
 Common Rooms:
-Server-curated persistent spaces such as The Lobby, Zen Garden, and The Library. They have pre-placed furniture, higher player caps, and never delete while the server is running. They are joined through the common-room list or the default Enter The Lobby action. They are not matchmaker targets.
+Server-curated persistent spaces: The Lobby, Zen Garden, The Library, and Sunroom Suite. They have richer pre-placed furniture, higher player caps, and never delete while the server is running. They are joined through the common-room list or the default Enter The Lobby action. They are not matchmaker targets.
 
 Random Rooms:
 No-owner public rooms used only by the random matchmaker. They are intentionally empty and non-decoratable. They disappear when empty.
 
 Private Rooms:
-Created by a user, owned by the creator, and joined by room code or local bookmark. Private room owners can build, set ambience, use Memory Cards, and flee into a safe private retreat. Private rooms disappear when empty.
+Created by a user, owned by the creator, and joined by room code or local bookmark. Private room owners can build, set the room's full visual style, set ambience, use Memory Cards, and flee into a safe private retreat. Private rooms disappear when empty.
 
 5. Current Mechanics
 
@@ -44,16 +44,21 @@ Movement:
 Top-down Phaser movement with keyboard and click-to-move. The player physics body collides with walls and solid furniture. Idle/sit animation is visual only and does not move the physics body. The server performs lightweight authority checks on reported movement before rebroadcasting positions.
 
 Presence:
-Avatars are procedural fabric patches with color, shape, accessory, and pulse customization. They share the room's material language but keep faces and distinct silhouettes so they cannot be confused with furniture. Idle players sit after 5 seconds. Quiet Mode lowers opacity and auto-declines Vibe Checks.
+Avatars are procedural fabric patches with independently selectable color, shape, eyes, brows, mouth, face detail, accessory, and pulse. New visitors receive a randomized mix by default and can edit every layer from a live preview. They share the room's material language but keep faces and distinct silhouettes so they cannot be confused with furniture. Idle players sit after 5 seconds. Quiet Mode lowers opacity and auto-declines Vibe Checks.
 
 Communication:
 Emotes are room-visible, palette-limited, and rate-limited. Signs are 10-character text bubbles visible only between accepted Vibe Check pairs. Muting a stranger hides that stranger's emotes locally for the current session.
 
 Rooms and Furniture:
-Private room owners can place up to 100 items from the 20-item furniture/pet set. Every item is assembled at runtime from layered CC0 textile/board materials, shape paths, borders, and stitches. Walkable furniture does not block movement; solid furniture does. Lamps and TVs are interactive and synced across the room.
+Private room owners can place up to 100 objects from a 100-item catalog across Seating, Tables, Beds, Storage, Lighting, Decor, Rugs, Plants, Hotel, and Pets. The catalog includes sofas, armchairs, hotel beds, minibars, reception desks, luggage carts, room-service carts, coffee stations, housekeeping carts, storage, lighting, decor, and pets. Every item is assembled at runtime from layered CC0 textile/board materials, shape paths, borders, and stitches. Walkable furniture does not block movement; solid furniture does. Supported lights, screens, appliances, and hotel props expose synchronized interactive states.
+
+The desktop owner workflow is a wide, categorized, searchable Sims-like drawer with selection preview and rotation. At mobile widths it becomes a draggable bottom sheet with peek, half, and expanded snaps; Rotate, Place, and Remove stay above the sheet in thumb reach.
+
+Room Style:
+Private rooms begin with the warm Welcome Inn preset. Owners can switch among Welcome Inn, Garden Suite, Sunroom, and Midnight, then independently change wall, floor, accent, and Quiet/Cozy/Layered texture intensity. Presets and direct edits update the room's generated floor, wall, furniture, and interaction textures for every connected player.
 
 Room Memory Cards:
-Private room layouts can be exported as PNG cards with encoded layout, theme, and lamp/TV state data and later imported into another private room.
+Private room layouts can be exported as PNG cards with encoded layout, preset, intensity, direct wall/floor/accent colors, and interactive state data and later imported into another private room. Version 1 theme-only cards remain importable.
 
 Audio:
 Private rooms support shared owner-controlled ambience: Silence, Rain, or Drone. The music maker is a local 4x4 sequencer with synthesized kick, snare, hi-hat, and synth tracks.
@@ -70,7 +75,7 @@ State:
 All core state is in-memory. There is no account system, no user-uploaded media, and no database.
 
 Tests:
-Node's built-in test runner covers room-state, payload normalization, event rate limiting, the craft-material manifest/compositor contract, and idle-state helpers. A Socket.IO integration test exercises malformed events, invalid furniture, room joining, Vibe Check, and consent-gated sign delivery. Run `npm test`.
+Node's built-in test runner covers room-state, payload normalization, event rate limiting, the 100-item catalog contract, room styles, avatar Look Codes, Memory Cards, the craft-material manifest/compositor contract, and idle-state helpers. A Socket.IO integration test exercises malformed events, expanded avatars, synchronized custom styles, curated-room coverage, invalid furniture, room joining, Vibe Check, and consent-gated sign delivery. Run `npm test`.
 
 Runtime dependencies:
 Phaser, the Socket.IO client, Lucide, system-font stacks, and seven CC0 material scans are served by FreeLobby itself. The application does not contact third-party CDNs during normal page load.
@@ -82,14 +87,18 @@ fixed collection of final sprites:
 
 - Seven audited CC0 scans provide denim, linen, cotton, fleece, hessian,
   corduroy, and board grain.
-- Canvas recipes independently define silhouette, layers, material choice,
-  palette, borders, seams, and details.
+- A shared catalog defines 100 stable object ids and their metadata. Sixty-six
+  Canvas recipe branches independently define silhouette, layers, material
+  choice, palette, borders, seams, and details.
 - The same recipes drive room sprites, interactive states, build thumbnails,
   avatars, walls, floors, and Memory Card art.
-- Common rooms use distinct semantic palettes while sharing construction rules.
+- Four presets and direct color/intensity controls share construction rules;
+  custom combinations are generated lazily.
+- Avatar bodies and faces are composed lazily from independent layers, while
+  accessories remain reusable overlays.
 - New visual work should extend this grammar without weakening consent,
   accessibility, responsive behavior, or the stable numeric furniture protocol.
 
-Good next targets are additional object recipe variants, more theme palettes,
-and Socket.IO integration coverage for Quiet Mode, room transitions, furniture
-placement, and disconnect cleanup.
+After the integrated visual review, good next targets are focused recipe and
+curated-room tuning from concrete feedback, plus Socket.IO integration coverage
+for Quiet Mode, room transitions, furniture placement, and disconnect cleanup.
