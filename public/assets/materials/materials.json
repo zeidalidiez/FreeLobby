@@ -1,0 +1,106 @@
+{
+  "schemaVersion": 1,
+  "license": {
+    "id": "CC0-1.0",
+    "name": "CC0 1.0 Universal",
+    "url": "https://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  "source": {
+    "name": "Poly Haven",
+    "licenseUrl": "https://polyhaven.com/license",
+    "apiUrl": "https://api.polyhaven.com/"
+  },
+  "retrieved": "2026-07-30",
+  "materials": [
+    {
+      "id": "denim-dark",
+      "file": "denim-dark.jpg",
+      "sourceAssetId": "denim_fabric_05",
+      "sourceAssetUrl": "https://polyhaven.com/a/denim_fabric_05",
+      "sourceFileUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/denim_fabric_05/denim_fabric_05_diff_1k.jpg",
+      "authors": {
+        "colormass": "Photography",
+        "Rico Cilliers": "Processing"
+      },
+      "sourceMd5": "65a27bcb67f5afb98a0bb623e1bd7d96",
+      "sha256": "38a33838172801f4be45fa107278f15b32eb84ca671eb923cb6de462bb687f9d"
+    },
+    {
+      "id": "linen",
+      "file": "linen.jpg",
+      "sourceAssetId": "rough_linen",
+      "sourceAssetUrl": "https://polyhaven.com/a/rough_linen",
+      "sourceFileUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/rough_linen/rough_linen_diff_1k.jpg",
+      "authors": {
+        "colormass": "Photography",
+        "Rico Cilliers": "Processing"
+      },
+      "sourceMd5": "663db789fb075462b685c1f740e58930",
+      "sha256": "04897d7611d7390ddf5b2c6f7273f448dfc48341fdbd1f4f207fa30b331d7f57"
+    },
+    {
+      "id": "cotton",
+      "file": "cotton.jpg",
+      "sourceAssetId": "cotton_jersey",
+      "sourceAssetUrl": "https://polyhaven.com/a/cotton_jersey",
+      "sourceFileUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/cotton_jersey/cotton_jersey_diff_1k.jpg",
+      "authors": {
+        "colormass": "Photography",
+        "Rico Cilliers": "Processing"
+      },
+      "sourceMd5": "d2f4493fdd48634b50d40f810ce9deb7",
+      "sha256": "0f1b790e4087223275aaa6fdffdd46a556a26d2af72cd811acf72ba9c21ec1f6"
+    },
+    {
+      "id": "fleece",
+      "file": "fleece.jpg",
+      "sourceAssetId": "caban",
+      "sourceAssetUrl": "https://polyhaven.com/a/caban",
+      "sourceFileUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/caban/caban_diff_1k.jpg",
+      "authors": {
+        "colormass": "Photography",
+        "Rico Cilliers": "Processing"
+      },
+      "sourceMd5": "4b9ff6f1c315df49e04b24ea5ad73975",
+      "sha256": "e6502a2516772c3158d11fc447a4d0972900dc81347334465b99b18f3b09524c"
+    },
+    {
+      "id": "hessian",
+      "file": "hessian.jpg",
+      "sourceAssetId": "hessian_230",
+      "sourceAssetUrl": "https://polyhaven.com/a/hessian_230",
+      "sourceFileUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/hessian_230/hessian_230_diff_1k.jpg",
+      "authors": {
+        "colormass": "Photography",
+        "Rico Cilliers": "Processing"
+      },
+      "sourceMd5": "6d2cee5fb9e5584b7a202ab27e1a6dcc",
+      "sha256": "ef9ac1a0129b6d0f44b6d5beb68db7be7a0adf11e09fe52fd2cdc9370b27d4ba"
+    },
+    {
+      "id": "corduroy",
+      "file": "corduroy.jpg",
+      "sourceAssetId": "ribbed_corduroy",
+      "sourceAssetUrl": "https://polyhaven.com/a/ribbed_corduroy",
+      "sourceFileUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/ribbed_corduroy/ribbed_corduroy_diff_1k.jpg",
+      "authors": {
+        "colormass": "Photography",
+        "Rico Cilliers": "Processing"
+      },
+      "sourceMd5": "24ae6556664651ba5d3390f35967c217",
+      "sha256": "4ca8faa90670d9ac921bc0d8a7edebbe6cd807078fa2ba0a5362c962206f70fe"
+    },
+    {
+      "id": "board",
+      "file": "board.jpg",
+      "sourceAssetId": "oriented_strand_board",
+      "sourceAssetUrl": "https://polyhaven.com/a/oriented_strand_board",
+      "sourceFileUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/oriented_strand_board/oriented_strand_board_diff_1k.jpg",
+      "authors": {
+        "Dimitrios Savva": "All"
+      },
+      "sourceMd5": "86976bb53daadfc21378430951dc573d",
+      "sha256": "f2564c203e5ad37dfa240b43e9e954f9638592159fc52ac37fcefb78b8cea682"
+    }
+  ]
+}

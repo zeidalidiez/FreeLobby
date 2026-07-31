@@ -1,122 +1,135 @@
-# FreeLobby — Asset Spec for External Artists
+# FreeLobby Craft Asset System
 
-> **For:** AI image generators, pixel artists, or contributors creating placeholder-to-final art  
-> **Style:** Retro-futuristic / Tron / Cyberpunk / Minimalist  
-> **Engine:** Phaser 3 (WebGL/Canvas)  
-> **Last updated:** 2026-07-09
+> **Engine:** Phaser 3 + Canvas 2D texture compositor
+> **Source license:** CC0 1.0 Universal
+> **Last updated:** 2026-07-30
 
----
+FreeLobby does not ship one finished image per object. It ships a small set of
+CC0 material scans, then `public/js/craft-textures.js` clips, recolors, layers,
+outlines, and stitches those materials into every gameplay texture at startup.
+The result is a handmade/DIY visual language whose parts can be changed
+independently.
 
-## 1. Visual Identity (Non-Negotiable)
+## Source materials
 
-**Palette**
-- Background: `#050508` (deep void black)
-- Grid/accents: `#00f0ff` (electric cyan)
-- Neon highlight: `#ffffff` (pure white, used for bright edges)
-- Player colors: 10 neon swatches — cyan `#00f0ff`, magenta `#ff00ff`, lime `#39ff14`, hot pink `#ff007f`, yellow `#ffff00`, orange `#ff8800`, purple `#bd00ff`, blue `#0088ff`, red `#ff3333`, teal `#00ffcc`
-- Everything glows. No flat fills. Every sprite needs a bright outer rim and a softer inner core.
+The canonical inventory is
+`public/assets/materials/materials.json`. It records the original Poly Haven
+asset and download URLs, authors, license, retrieval date, source MD5, and
+checked-in SHA-256 for every file.
 
-**Aesthetic rules**
-- Wireframe / outline-first. Think Tron lightcycles, not solid cartoons.
-- 1px–2px bright outlines, semi-transparent inner fill.
-- Keep gradients limited to restrained cyan edge glow; room color comes from Phaser tinting.
-- Keep silhouettes centered and readable when Phaser scales them down to the 64px gameplay grid.
+| Material id | File | Typical use |
+| --- | --- | --- |
+| `denim` | `denim-dark.jpg` | floors, dark structural pieces |
+| `linen` | `linen.jpg` | upholstery, panels, broad light pieces |
+| `cotton` | `cotton.jpg` | UI surfaces, cushions, avatar patches |
+| `fleece` | `fleece.jpg` | soft pet and accessory details |
+| `hessian` | `hessian.jpg` | rough rugs and natural objects |
+| `corduroy` | `corduroy.jpg` | ribbed upholstery and accents |
+| `board` | `board.jpg` | frames, legs, shelves, appliance bodies |
 
----
+All seven files are unmodified 1K diffuse JPGs released by Poly Haven under
+CC0. They are self-hosted; the running application never contacts Poly Haven.
+Attribution is not required, but provenance is retained so a source can always
+be audited or replaced.
 
-## 2. Asset Inventory
+## Composition model
 
-### A. Player Avatars (Procedural base shapes)
-**Status:** Currently code-generated. **If replacing with sprites**, provide:
+`craft-textures.js` is the single source of truth for art recipes. Each recipe
+uses ordinary Canvas paths plus one or more material fills:
 
-| Shape | File | Size | Notes |
-|-------|------|------|-------|
-| Circle | `assets/player-circle.png` | 64×64 | Centered. Outer 2px glow ring, inner white core. Transparent background. |
-| Square | `assets/player-square.png` | 64×64 | Same glow structure. Slight rounded corners (2px radius) acceptable. |
-| Diamond | `assets/player-diamond.png` | 64×64 | 45° rotated square. Same glow. |
+1. Pick a semantic material and palette color.
+2. Create a recolored tile while preserving the scan's luminance and texture.
+3. Clip the tile into a readable top-down shape.
+4. Layer structural, soft, inset, and detail pieces.
+5. Add borders, seams, stitches, facial marks, or highlights where useful.
+6. install the finished canvas as a Phaser texture.
 
-**Tinting:** Phaser tints these white base sprites to the player's chosen neon color at runtime. So the base PNG should be **white/cyan-tinted** with transparency. Do NOT bake player colors into the sprite.
+The source scans, shape geometry, colors, and edge treatments remain separate.
+Changing a couch fabric therefore does not require redrawing the couch, and a
+recipe can be generated, edited, or remixed without touching a fixed sprite
+sheet.
 
-### B. Accessories (Overlays)
-| Name | File | Size | Anchor Point |
-|------|------|------|-------------|
-| Headphones | `assets/acc-headphones.png` | 64×64 | Centered on top of head (around y≈16 on a 64×64 canvas) |
-| Halo | `assets/acc-halo.png` | 64×64 | Floating above head (y≈8) |
-| Beanie | `assets/acc-beanie.png` | 64×64 | Top of head (y≈4) |
+## Generated inventory
 
-**Rules:** Accessories are rendered *on top* of the player sprite at the same scale. Keep line art consistent with the avatar glow style (2px white outline). Phaser tints them to match the player's color.
+### Rooms
 
-### C. Furniture (20 types)
-**Current source size:** 256×256. Phaser fits each source to its one- or multi-cell footprint with `setDisplaySize()`. The higher-resolution source preserves clean linework at different camera zoom levels.
+- Four 128×128 floor textures with material grain and a low-contrast stitched
+  64-pixel placement grid.
+- Four 64×64 wall textures with layered textile/board construction.
+- Semantic palettes for Lobby, Garden, Library, and Private rooms. A theme
+  change swaps the generated floor, wall, furniture, and interactive textures.
 
-The checked-in furniture was originally rendered onto opaque dark/white mattes. `public/js/asset-normalizer.js` converts those neutral matte pixels to alpha at load time while retaining cyan antialiasing and glow. New contributions should use real alpha directly; the normalizer remains a compatibility safety net.
+### Avatars
 
-| ID | Name | File | Size | Walkable? | Style notes |
-|----|------|------|------|-----------|-------------|
-| 0 | Cube | `assets/furn-cube.png` | 256×256 | No | Wireframe cube, cyan outline, hollow center |
-| 1 | Sphere | `assets/furn-sphere.png` | 256×256 | No | Wireframe sphere, cross-section rings |
-| 2 | Cylinder | `assets/furn-cylinder.png` | 256×256 | No | Wireframe cylinder, top ellipse visible |
-| 3 | Pyramid | `assets/furn-pyramid.png` | 256×256 | No | Wireframe 4-sided pyramid |
-| 4 | Chair | `assets/furn-chair.png` | 256×256 | Yes | Simple blocky chair, open seat (no back blocking walk) |
-| 5 | Plant | `assets/furn-plant.png` | 256×256 | No | Spiky neon succulent or wireframe fractal leaf |
-| 6 | Lamp | `assets/furn-lamp.png` | 256×256 | No | Tall thin stand with glowing bulb top |
-| 7 | Rug | `assets/furn-rug.png` | 256×256 | Yes | Flat grid-pattern mat. Displayed across 2×2 cells. |
-| 8 | Bed | `assets/furn-bed.png` | 256×256 | Yes | Low platform bed, displayed across 2×2 cells |
-| 9 | Bathtub | `assets/furn-bathtub.png` | 256×256 | No | Wireframe tub silhouette, displayed across 2×1 cells |
-| 10 | Couch | `assets/furn-couch.png` | 256×256 | Yes | Low neon couch, displayed across 2×1 cells |
-| 11 | Console | `assets/furn-console.png` | 256×256 | No | Small game console or control deck |
-| 12 | Computer | `assets/furn-computer.png` | 256×256 | No | Monitor and keyboard, readable at gameplay zoom |
-| 13 | TV | `assets/furn-tv.png` | 256×256 | No | Wide screen, displayed across 2×1 cells, interactive toggle |
-| 14 | Toilet | `assets/furn-toilet.png` | 256×256 | No | Simple iconic outline |
-| 15 | Cat | `assets/pet-cat.png` | 256×256 | Yes | Small pet silhouette, readable as a cat |
-| 16 | Dog | `assets/pet-dog.png` | 256×256 | Yes | Small pet silhouette, readable as a dog |
-| 17 | Rabbit | `assets/pet-rabbit.png` | 256×256 | Yes | Small pet silhouette with clear ears |
-| 18 | Fishbowl | `assets/pet-fishbowl.png` | 256×256 | No | Small bowl, solid collision |
-| 19 | Bird | `assets/pet-bird.png` | 256×256 | Yes | Small perched bird silhouette |
+- 3 silhouettes: circle, square, diamond.
+- 10 color variants per silhouette.
+- 3 accessory overlays plus none: headphones, halo, beanie.
+- Fabric borders and tiny facial marks keep avatars readable as people rather
+  than furniture.
 
-**Furniture rules:**
-- Transparent background (`.png` with alpha).
-- White/cyan base. Phaser tints at runtime to the room owner's chosen accent (or default cyan).
-- Keep line weight consistent: 2px outer, 1px inner detail.
-- Keep baked glow restrained. Lamp/TV on-state glow and room tinting are added by Phaser.
+### Furniture and pets
 
-### D. Floor & Wall Tiles
+The existing network ids, footprints, collision behavior, and Memory Card
+encoding remain stable. Only the rendering source changed.
 
-**Status:** Both are generated in `public/js/game.js`; there are no checked-in floor or wall PNGs. The floor texture is 128×128 and the wall texture is 64×64 before room-specific tinting.
+| ID | Name | Footprint | Walkable | Recipe intent |
+| ---: | --- | --- | :---: | --- |
+| 0 | Storage Cube | 1×1 | No | soft storage cube with inset top |
+| 1 | Round Pouf | 1×1 | No | stitched round pouf |
+| 2 | Stool | 1×1 | No | layered cylindrical stool |
+| 3 | Floor Cushion | 1×1 | No | diamond floor cushion |
+| 4 | Chair | 1×1 | Yes | wooden frame and upholstered seat |
+| 5 | Plant | 1×1 | No | board pot with layered cloth leaves |
+| 6 | Lamp | 1×1 | No | base, stem, and shade; off/on variants |
+| 7 | Rug | 2×2 | Yes | textile field, border, fringe, stitch motif |
+| 8 | Bed | 2×2 | Yes | frame, mattress, blanket, pillow |
+| 9 | Bathtub | 2×1 | No | rim, water inset, small fittings |
+| 10 | Couch | 2×1 | Yes | frame, arms, three separate cushions |
+| 11 | Console | 1×1 | No | compact control deck with buttons |
+| 12 | Computer | 1×1 | No | monitor, screen inset, stand, keyboard |
+| 13 | TV | 2×1 | No | wide framed screen; off/on variants |
+| 14 | Toilet | 1×1 | No | tank, seat, bowl |
+| 15 | Cat | 1×1 | Yes | body, head, ears, tail, face |
+| 16 | Dog | 1×1 | Yes | body, head, ears, muzzle, tail |
+| 17 | Rabbit | 1×1 | Yes | body, head, long ears, tail |
+| 18 | Fishbowl | 1×1 | No | rim, glass/water field, fish |
+| 19 | Bird | 1×1 | Yes | body, wing, head, beak, legs |
 
-### E. UI / Icons (optional upgrades)
-| Name | File | Size | Notes |
-|------|------|------|-------|
-| Emote bubble | `assets/emote-bubble.png` | 48×48 | Tiny floating circle for emote background. Optional — currently code-drawn. |
-| Click pulse | `assets/click-pulse.png` | 32×32 | Expanding ring for click-to-move feedback. Optional. |
-| Memory card template | `assets/card-bg.png` | 320×200 | Background art for the Room Memory Card export. Dark with corner brackets, cyan border. Optional — currently code-drawn. |
+The owner build palette renders previews from these exact installed textures,
+so its thumbnail cannot drift from the in-room object.
 
----
+### Interface and Memory Cards
 
-## 3. Technical Constraints
+The HTML/CSS shell uses the same local material files beneath translucent color
+layers. Panels use cloth grain, warm borders, and dashed stitch outlines. Room
+Memory Card previews call the furniture recipes rather than drawing abstract
+placeholder marks.
 
-**Format:** PNG-24 with alpha channel. No JPEG.
+## Technical rules
 
-**Scaling:** Phaser uses `setDisplaySize()` to fit furniture to its cell footprint. Keep the silhouette centered with useful padding so single-cell items remain readable at 64px.
+- Do not add downloaded art unless its redistribution license is verified and
+  recorded in `materials.json`. CC0 is the default requirement.
+- Keep source materials self-hosted and deterministic. Normal page load must not
+  contact an asset CDN.
+- Add or change object geometry in `craft-textures.js`; do not reintroduce one
+  opaque PNG per furniture item.
+- Preserve furniture ids and footprints because the server protocol and Memory
+  Cards encode them numerically.
+- Build textures at a 2× backing resolution, then expose their logical gameplay
+  size to Phaser. This preserves small stitches without changing collisions.
+- Keep important silhouettes readable at one 64×64 cell. Texture is detail, not
+  a substitute for shape.
+- Add an off/on derivative for any new synchronized interactive object.
+- Update `tests/craft-textures.test.js` and the material manifest hashes when
+  source files change.
 
-**Tinting:** All gameplay sprites (avatars, accessories, furniture) are tinted at runtime. Base PNG should be **white/neutral** with transparency. The engine multiplies the sprite color by the tint color.
+## Adding a material
 
-**File location:** Drop finished furniture assets in `public/assets/` using the names above. `preload()` loads every entry in `FURNITURE_DEFS`, and `asset-normalizer.js` prepares the texture before the room renders.
-
-**Performance target:** Keep each source under 80KB and the complete furniture set at or below 1MB. The current set is approximately 981KiB. Assets are cached by the server for one day.
-
----
-
-## 4. Example Prompt for AI Image Generators
-
-> "A minimalist Tron-style wireframe cube centered on a transparent 256x256 canvas, crisp electric cyan outline, hollow center, restrained cyan edge glow, solid graphic shapes, retro-futuristic, readable when scaled to 64 pixels"
-
----
-
-## 5. What NOT to do
-
-- Do not bake player colors into avatars — the engine tints them.
-- Do not add opaque matte backgrounds, cast shadows, or complex scene lighting.
-- Do not exceed 256×256 for furniture source art.
-- Do not use photographic textures or photorealism. Keep it iconic and symbolic.
-- Do not create animated sprites (gifs). Phaser handles animation via code tweening.
+1. Download a diffuse/albedo image from a verified CC0 source.
+2. Place it in `public/assets/materials/` with a stable descriptive name.
+3. Record license, provenance, authors, source checksum, and checked-in SHA-256
+   in `materials.json`.
+4. Register the file in `SOURCE_MATERIALS`.
+5. Use it in at least one explicit recipe or remove it.
+6. Run `npm test`, then inspect landing, each room theme, build mode, and mobile
+   gameplay at 390×844.
