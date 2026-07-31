@@ -77,6 +77,7 @@ let isRoomOwner = false;
 let currentRoomIsPublic = true;
 let quietMode = false;
 const idleState = window.FreeLobbyIdle;
+const furnitureCatalog = window.FreeLobbyFurniture;
 const craftTextures = window.FreeLobbyCraft;
 const cardCodec = window.FreeLobbyCards;
 
@@ -1228,28 +1229,7 @@ let buildMode = false;
 let buildTool = 'place';
 let selectedFurnitureType = 0;
 
-const FURNITURE_DEFS = [
-  { name: 'Storage Cube', icon: '🧊', w: 1, h: 1, walkable: false },
-  { name: 'Round Pouf',   icon: '🔮', w: 1, h: 1, walkable: false },
-  { name: 'Stool',        icon: '🛢️', w: 1, h: 1, walkable: false },
-  { name: 'Floor Cushion', icon: '🔺', w: 1, h: 1, walkable: false },
-  { name: 'Chair',      icon: '🪑', w: 1, h: 1, walkable: true  },
-  { name: 'Plant',      icon: '🪴', w: 1, h: 1, walkable: false },
-  { name: 'Lamp',       icon: '🛋️', w: 1, h: 1, walkable: false },
-  { name: 'Rug',        icon: '🟪', w: 2, h: 2, walkable: true  },
-  { name: 'Bed',        icon: '🛏️', w: 2, h: 2, walkable: true  },
-  { name: 'Bathtub',    icon: '🛁', w: 2, h: 1, walkable: false },
-  { name: 'Couch',      icon: '🛋️', w: 2, h: 1, walkable: true  },
-  { name: 'Console',    icon: '🎮', w: 1, h: 1, walkable: false },
-  { name: 'Computer',   icon: '💻', w: 1, h: 1, walkable: false },
-  { name: 'TV',         icon: '📺', w: 2, h: 1, walkable: false },
-  { name: 'Toilet',     icon: '🚽', w: 1, h: 1, walkable: false },
-  { name: 'Cat',        icon: '🐱', w: 1, h: 1, walkable: true  },
-  { name: 'Dog',        icon: '🐶', w: 1, h: 1, walkable: true  },
-  { name: 'Rabbit',     icon: '🐰', w: 1, h: 1, walkable: true  },
-  { name: 'Fishbowl',   icon: '🐠', w: 1, h: 1, walkable: false },
-  { name: 'Bird',       icon: '🐦', w: 1, h: 1, walkable: true  },
-];
+const FURNITURE_DEFS = furnitureCatalog.ITEMS;
 
 const FURNITURE_NAMES = FURNITURE_DEFS.map(d => d.name);
 const FURNITURE_FOOTPRINTS = FURNITURE_DEFS.map(d => ({ w: d.w, h: d.h, walkable: d.walkable }));
@@ -1365,6 +1345,7 @@ function create() {
   this.floorTiles = [];
   craftTextures.install(this, {
     footprints: FURNITURE_FOOTPRINTS,
+    definitions: FURNITURE_DEFS,
     playerColors: COLOR_HEX_STR,
   });
   refreshFurniturePaletteArtwork(roomTheme);
@@ -1826,7 +1807,9 @@ function applyRoomVisualTheme(theme) {
   refreshFurniturePaletteArtwork(theme || 0);
 }
 
-const INTERACTIVE_FURNITURE_TYPES = new Set([6, 13]); // Lamp, TV
+const INTERACTIVE_FURNITURE_TYPES = new Set(
+  FURNITURE_DEFS.map((definition, type) => definition.interactive ? type : -1).filter(type => type >= 0),
+);
 
 function setFurnitureInteractiveVisual(furniture, state, animate = false) {
   if (!furniture || !furniture.glow) return;

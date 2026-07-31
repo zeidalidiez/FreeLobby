@@ -2,6 +2,7 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
+const furnitureCatalog = require('../public/js/furniture-catalog');
 const {
   asEventObject,
   canCreateRoomAfterLeaving,
@@ -126,28 +127,9 @@ const COMMON_ROOMS_DEF = [
   },
 ];
 
-const FURNITURE_FOOTPRINTS = [
-  { w: 1, h: 1, walkable: false }, // 0: Cube
-  { w: 1, h: 1, walkable: false }, // 1: Sphere
-  { w: 1, h: 1, walkable: false }, // 2: Cylinder
-  { w: 1, h: 1, walkable: false }, // 3: Pyramid
-  { w: 1, h: 1, walkable: true  }, // 4: Chair
-  { w: 1, h: 1, walkable: false }, // 5: Plant
-  { w: 1, h: 1, walkable: false }, // 6: Lamp
-  { w: 2, h: 2, walkable: true  }, // 7: Rug
-  { w: 2, h: 2, walkable: true  }, // 8: Bed
-  { w: 2, h: 1, walkable: false }, // 9: Bathtub
-  { w: 2, h: 1, walkable: true  }, // 10: Couch
-  { w: 1, h: 1, walkable: false }, // 11: Console
-  { w: 1, h: 1, walkable: false }, // 12: Computer
-  { w: 2, h: 1, walkable: false }, // 13: TV
-  { w: 1, h: 1, walkable: false }, // 14: Toilet
-  { w: 1, h: 1, walkable: true  }, // 15: Cat
-  { w: 1, h: 1, walkable: true  }, // 16: Dog
-  { w: 1, h: 1, walkable: true  }, // 17: Rabbit
-  { w: 1, h: 1, walkable: false }, // 18: Fishbowl
-  { w: 1, h: 1, walkable: true  }, // 19: Bird
-];
+const FURNITURE_FOOTPRINTS = furnitureCatalog.ITEMS.map(
+  definition => ({ w: definition.w, h: definition.h, walkable: definition.walkable }),
+);
 
 function getFootprint(type, rotation) {
   const fp = FURNITURE_FOOTPRINTS[type];
@@ -697,7 +679,11 @@ io.on('connection', (socket) => {
   });
 
   // ── Toggle Interactive Furniture ──
-  const INTERACTIVE_TYPES = new Set([6, 13]); // Lamp, TV
+  const INTERACTIVE_TYPES = new Set(
+    furnitureCatalog.ITEMS
+      .map((definition, type) => definition.interactive ? type : -1)
+      .filter(type => type >= 0),
+  );
   socket.on('toggleFurniture', (payload) => {
     if (!withinRateLimit('furniture-toggle', 20, 5000)) return;
     const { id } = asEventObject(payload);
