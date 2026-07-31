@@ -1,7 +1,8 @@
 const assert = require('node:assert/strict');
 const { after, before, test } = require('node:test');
 const { io: createClient } = require('socket.io-client');
-const { evictIdlePlayers, io, server, startServer } = require('../server/index');
+const furnitureCatalog = require('../public/js/furniture-catalog');
+const { evictIdlePlayers, io, rooms, server, startServer } = require('../server/index');
 
 let baseUrl;
 const clients = [];
@@ -56,6 +57,25 @@ test('HTTP shell is self-hosted and sends restrictive security headers', async (
     const vendorResponse = await fetch(`${baseUrl}/vendor/${vendorFile}`);
     assert.equal(vendorResponse.status, 200, `${vendorFile} should be served`);
     assert.match(vendorResponse.headers.get('cache-control'), /immutable/);
+  }
+});
+
+test('curated common rooms showcase the expanded hotel catalog', () => {
+  const commonRooms = ['LOBBY', 'GARDEN', 'LIBRARY', 'SUITE'].map(id => rooms.get(id));
+  assert.ok(commonRooms.every(Boolean));
+  assert.ok(commonRooms.every(room => room.furniture.length >= 20));
+
+  const showcasedTypes = new Set(commonRooms.flatMap(room => room.furniture.map(item => item.t)));
+  for (const type of [20, 27, 42, 50, 70, 77, 82, 89, 90, 91, 94, 95, 99]) {
+    assert.ok(showcasedTypes.has(type), `${furnitureCatalog.ITEMS[type].name} should be showcased`);
+  }
+
+  for (const room of commonRooms) {
+    for (const item of room.furniture) {
+      assert.ok(furnitureCatalog.ITEMS[item.t], `unknown type ${item.t}`);
+      assert.ok(item.x >= 0 && item.x < room.width / 64);
+      assert.ok(item.y >= 0 && item.y < room.height / 64);
+    }
   }
 });
 

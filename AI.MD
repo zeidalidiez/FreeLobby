@@ -1,8 +1,8 @@
 # FreeLobby AI Handoff
 
-> Updated: 2026-07-30
+> Updated: 2026-07-31
 > Stack: Node.js + Express + Socket.IO + Phaser 3
-> Current focus: CC0 craft-material rendering is implemented; preserve the compositor contract while extending it
+> Current focus: the 100-item cozy-hotel migration is implemented; preserve its catalog, style, avatar, and responsive-drawer contracts
 
 FreeLobby is a no-login browser hangout for low-pressure anonymous presence. The core promise is consent-first: users can share space non-verbally, but names and text are gated by mutual Vibe Check.
 
@@ -17,9 +17,11 @@ FreeLobby is a no-login browser hangout for low-pressure anonymous presence. The
 - `public/css/style.css` owns landing, HUD, panel, mobile, accessibility, and visual styling.
 - `public/js/game.js` owns Phaser rendering, movement, room UI, Socket.IO client handling, furniture rendering, cards, emotes, signs, audio, and sequencer.
 - `public/js/idle-state.js` contains testable idle/sit state helpers used by `game.js`.
-- `public/js/craft-textures.js` loads seven self-hosted CC0 material scans and composes floors, walls, avatars, accessories, all 20 furniture/pet types, interactive states, build previews, and Memory Card art as layered Phaser textures. Its manifest and key contracts are unit-tested.
+- `public/js/furniture-catalog.js` is the shared client/server source of truth for all 100 furniture definitions, categories, footprints, walkability, recipes, search tags, and interaction metadata. Numeric ids `0–19` remain backward-compatible.
+- `public/js/room-style.js` owns four presets, direct-color normalization/validation, intensity, palette derivation, and stable style signatures.
+- `public/js/craft-textures.js` loads seven self-hosted CC0 material scans and composes floors, walls, lazy custom styles, combinatorial avatars, accessories, all 100 furniture/pet types, interactive states, build previews, and Memory Card art as layered Phaser textures. Its manifest and key contracts are unit-tested.
 - `public/assets/materials/materials.json` is the canonical license, provenance, source-checksum, and checked-in-hash inventory for the craft scans.
-- `public/js/card-codec.js` owns the tested pixel-row Memory Card format, including theme, layout, rotation/layer metadata, and lamp/TV on-state.
+- `public/js/card-codec.js` owns version 2 of the tested pixel-row Memory Card format, including preset, intensity, direct wall/floor/accent colors, layout, rotation/layer metadata, and interactive state. Version 1 theme cards remain importable.
 - `public/js/shell-state.js` owns the tested landing/game visibility transition, including `hidden`, `inert`, and `aria-hidden` state.
 - `tests/*.test.js` uses Node's built-in test runner. Run `node --test tests/*.test.js`.
 
@@ -43,10 +45,12 @@ There is still no database. Common rooms persist in memory for the life of the s
 
 Important: common rooms are public in the broad sense, but they are not random-matchmaker targets. `findJoinableRoom()` must continue to exclude `room.isCommon`.
 
+Current curated rooms are The Lobby, Zen Garden, The Library, and Sunroom Suite. Their seeds intentionally showcase the expanded catalog and may layer walkable rugs/decor beneath furniture.
+
 ## Latest Stabilization Changes
 
 - Added `server/room-state.js` and regression tests for matchmaking and pending Vibe Check state.
-- Fixed random matchmaking so "Go to a Random Room" no longer sends users into The Lobby, Zen Garden, or The Library.
+- Fixed random matchmaking so "Go to a Random Room" never sends users into a curated common room.
 - Added pending Vibe Check tracking. A custom client can no longer emit `vibeCheckRespond` to force a name reveal without a matching pending request.
 - Added `public/js/idle-state.js` and regression tests for independent idle state.
 - Fixed the sliding idle bug by removing global cross-player sitting state and stopping sit/stand animation from tweening the physics sprite's `y` position.
@@ -60,21 +64,23 @@ Important: common rooms are public in the broad sense, but they are not random-m
   - `clearRevealedPairsForPlayer()` removes Vibe Check reveal state by exact socket id instead of substring matching.
   - `shouldLeaveRoomBeforeJoin()` keeps successful room transitions from leaving a socket joined to an old room.
 
-## Latest Visual Refresh Changes
+## Cozy Hotel Migration (2026-07-31)
 
-- Replaced the neon sprite pipeline with a reusable handmade/DIY material system. The runtime clips recolored CC0 denim, linen, cotton, fleece, hessian, corduroy, and board scans into independently editable shape layers.
-- `craft-textures.js` owns four semantic palettes and the rendering recipes. Preserve the separation between source material, geometry, palette, and edge/seam treatment.
-- All 20 furniture/pet entries are recognizable object recipes rather than abstract stand-ins. Their server ids, footprints, collision rules, and Memory Card encoding did not change.
-- Avatars are 48-pixel fabric patches with faces and accessory overlays, keeping them visually distinct from furniture while sharing its material grammar.
-- The build palette uses data URLs made from the exact installed furniture textures, so previews cannot drift from in-room art.
-- Floors use material grain with a low-contrast stitched placement grid; walls use layered textile/board tiles. `applyRoomVisualTheme()` swaps generated floor, wall, furniture, and interactive textures instead of tinting old PNGs.
-- The landing, in-room HUD, owner tools, and export card use cloth grain, warm structural borders, and stitch details without changing the DOM or event wiring.
+- The handmade runtime clips recolored CC0 denim, linen, cotton, fleece, hessian, corduroy, and board scans into independently editable shape layers.
+- `furniture-catalog.js` contains exactly 100 entries across Seating, Tables, Beds, Storage, Lighting, Decor, Rugs, Plants, Hotel, and Pets. The validator intentionally rejects catalogs outside the 80–100 range.
+- The drawing library has 66 explicit geometry recipes. Variants share a recipe only where their real-world construction is meaningfully related. Preserve the separation between catalog metadata, source material, geometry, palette, and edge/seam treatment.
+- The hotel inventory includes recognizable minibars, reception desks, luggage carts, room-service carts, coffee stations, housekeeping carts, hotel beds, storage, lighting, and accessories.
+- Avatars are 48-pixel fabric patches composed from 5 shapes, 10 colors, 6 eye sets, 5 brows, 6 mouths, 6 details, and 8 accessory choices. The incoming mix is randomized and only entered body/face combinations are generated.
+- Look Codes are versioned 9-character strings beginning with `A`. The importer also accepts the old 4-character format.
+- `room-style.js` owns Welcome Inn, Garden Suite, Sunroom, and Midnight plus Quiet/Cozy/Layered intensity. Direct wall/floor/accent changes create a lazily regenerated `custom` texture slot and synchronize through `setRoomStyle`.
+- Welcome Inn is the warm private-room default. Theme ids are `0` Welcome Inn, `1` Garden Suite, `2` Sunroom, and `3` Midnight. Common-room mappings are Lobby `0`, Garden `1`, Library `3`, and Sunroom Suite `2`.
+- The owner builder is a searchable, categorized, wide desktop drawer. At `max-width: 720px`, the same DOM becomes a draggable bottom sheet with `peek`, `half`, and `expanded` snaps and placement controls above the sheet.
+- The build palette uses data URLs made from the exact installed furniture textures, including a custom room style, so previews cannot drift from in-room art.
+- Floors use material grain with a low-contrast stitched placement grid; walls use layered textile/board tiles. `applyRoomVisualStyle()` swaps generated floor, wall, furniture, and interactive textures.
+- The landing, in-room HUD, owner tools, and export card use cloth grain, warm structural borders, and stitch details.
 - Existing `.visible` class toggles still drive whether controls render; do not replace those toggles without checking every caller in `public/js/game.js`.
-- Added Lucide icons through `public/index.html`. `installInterfaceIcons()`, `setIconButtonContent()`, and `setBookmarkButtonState()` in `public/js/game.js` rewrite icon button contents and refresh Lucide after state changes.
-- For icon-managed buttons, avoid direct `textContent` updates. Use `setIconButtonContent(button, icon, label, fallback)` so the SVG icon, fallback glyph, and accessible text stay in sync.
-- Room visual theme metadata in `ROOM_THEME_VISUALS` maps theme `0` to lobby/teal, `1` to garden/green, `2` to library/plum, and `3` to private/blue.
-- `server/index.js` now assigns distinct theme ids to the common rooms: `LOBBY` -> `0`, `GARDEN` -> `1`, `LIBRARY` -> `2`.
-- The mobile refresh keeps the private-room Music button reachable above the emote control. Do not hide `.music-btn` globally on mobile; private rooms depend on it.
+- `installInterfaceIcons()`, `setIconButtonContent()`, and `setBookmarkButtonState()` in `public/js/game.js` rewrite icon button contents and refresh Lucide after state changes. Avoid direct `textContent` updates on icon-managed buttons.
+- The mobile layout keeps the private-room Music button reachable above the emote control. Do not hide `.music-btn` globally on mobile.
 - Disabled sign input copy is intentionally short (`Vibe Check required`) so it fits inside the mobile bottom dock.
 
 ## Repository Stabilization Pass
@@ -88,13 +94,13 @@ Important: common rooms are public in the broad sense, but they are not random-m
 - Pending Vibe Checks expire after the same 15-second window used by the client prompt, so dismissed requests cannot be accepted later by a custom client.
 - Idle expiry removes the player from the room and emits `idleTimeout`; it does not server-disconnect the socket. The client returns to landing and can immediately re-enter.
 - Security headers set CSP, no-referrer, no-sniff, no-framing, and deny camera/microphone/geolocation. HTML/CSS/JS use revalidation; furniture assets cache for one day; pinned vendor files are immutable for one day.
-- Room Memory Cards now encode lamp/TV on-state in the second metadata pixel. The server reconstructs `interactiveStates`, and `roomFurnitureReset` sends and applies those states.
+- Room Memory Cards now encode full room style and interactive state. The server reconstructs `interactiveStates`, and `roomFurnitureReset` sends and applies those states plus normalized style.
 - Furniture reset destroys glow objects as well as sprites, closing the prior visual/object leak.
 - Landing cards are non-shrinking and scroll cleanly at 1280x720. Mobile furniture/music panels sit above ambience instead of overlapping it.
 - Common/public room cards, bookmark joins, and sequencer cells are real buttons. Bookmarks use `sessionStorage`, visible dialogs synchronize `aria-hidden`, owner ambience controls use real disabled state, and browser zoom is no longer disabled.
 - Music and Build panels are mutually exclusive. The `M` shortcut is ignored outside private rooms.
 - The former 256px furniture/pet PNGs and matte-normalization compatibility module were removed. Do not restore that parallel pipeline; extend the craft recipes or audited material inventory instead.
-- `tests/socket-integration.test.js` starts the real server and uses two Socket.IO clients to prove malformed payload rejection, invalid furniture rejection, and consent-gated sign delivery.
+- `tests/socket-integration.test.js` starts the real server and uses two Socket.IO clients to prove malformed payload rejection, expanded avatar normalization, synchronized custom room styles, invalid furniture rejection, curated-room catalog coverage, and consent-gated sign delivery.
 - `.github/workflows/ci.yml` runs syntax checks and the full suite on Node.js 20 and 22 for every pull request and push to `main`.
 - Room entry now makes the fading landing screen inert immediately and applies the semantic `hidden` state after its 600ms transition. Returning cancels pending removal, restores the landing screen, and hides the game application from assistive technology.
 - The HTTP integration test requests Lucide, Phaser, and Socket.IO vendor bundles. This guards the exact deep-package paths used at startup; Lucide 1.24.0 publishes `dist/umd/lucide.min.js` and the route returns 200.
@@ -124,6 +130,8 @@ Run these before claiming changes are good:
 ```bash
 node --check server/index.js
 node --check public/js/idle-state.js
+node --check public/js/furniture-catalog.js
+node --check public/js/room-style.js
 node --check public/js/craft-textures.js
 node --check public/js/card-codec.js
 node --check public/js/shell-state.js
@@ -137,11 +145,13 @@ On Windows PowerShell, `npm test` may be blocked by the `npm.ps1` execution poli
 For browser smoke:
 
 - Landing at 1280x720 should show the title and allow scrolling to all controls.
+- Avatar customization should expose all independent parts, randomize into a new 9-character Look Code, redraw its canvas preview, and accept a legacy 4-character code.
 - Enter The Lobby should still join a common room.
 - Go to a Random Room should create/join a random room ID, not show a common room name.
 - A private room owner should see Build, Ambience, and Music controls.
+- The desktop builder should expose all 100 items when All is selected, search by name/tag, rotate selection, and switch to four room presets plus direct colors/intensity.
 - Idle for 5 seconds should squash the avatar without changing its map position.
-- On 390x844, Build/Music panels must not overlap the ambience or sign controls.
+- On 390x844, Build must open as a bottom sheet, move among peek/half/expanded snaps, keep Rotate/Place/Remove in thumb reach, and avoid covering the ambience/sign controls.
 - Common-room `M` must not open the sequencer; private-room Music must set `aria-hidden="false"` while open.
 - Reloading the landing page in the same tab must retain session bookmarks.
 - After a room join and the 600ms fade, `#landing-screen` must compute to `display: none`, remain inert/`aria-hidden`, and `#game-container` must compute to `display: block`.
@@ -173,9 +183,10 @@ When extending the visual system:
 
 ## Good Next Step
 
-Extend the existing recipe library with alternate material/layer combinations or
-additional semantic palettes. Preserve the corrected responsive/ARIA behavior,
-the stable furniture protocol, and the consent/security tests.
+After the integrated browser review is approved, tune individual recipes,
+catalog names/tags, curated-room composition, and muted preset values from
+specific user feedback. Do not add another parallel art pipeline or change the
+numeric protocol merely to make visual tuning easier.
 
 ## Remaining System Improvement Targets
 

@@ -52,24 +52,34 @@ const COMMON_ROOMS_DEF = [
     height: 1000,
     maxPlayers: 25,
     furniture: [
-      { t: 7, x: 10, y: 6, r: 0 },   // rug center
-      { t: 4, x: 11, y: 7, r: 0 },   // chair
-      { t: 4, x: 14, y: 7, r: 0 },   // chair
-      { t: 4, x: 11, y: 10, r: 2 },  // chair
-      { t: 4, x: 14, y: 10, r: 2 },  // chair
-      { t: 10, x: 12, y: 8, r: 0 },  // couch
-      { t: 6, x: 9, y: 5, r: 0 },    // lamp
-      { t: 6, x: 17, y: 5, r: 0 },   // lamp
-      { t: 5, x: 8, y: 12, r: 0 },   // plant
-      { t: 5, x: 18, y: 12, r: 0 },  // plant
-      { t: 13, x: 15, y: 4, r: 0 },  // tv
-      { t: 11, x: 20, y: 8, r: 0 },  // console
-      { t: 15, x: 22, y: 6, r: 0 },  // cat
-      { t: 16, x: 7, y: 9, r: 0 },   // dog
-      { t: 0, x: 5, y: 5, r: 0 },    // cube decor
-      { t: 1, x: 5, y: 13, r: 0 },   // sphere decor
-      { t: 2, x: 21, y: 13, r: 0 },  // cylinder decor
-      { t: 3, x: 21, y: 5, r: 0 },   // pyramid decor
+      { t: 77, x: 10, y: 6, r: 0 },  // grand lounge rug
+      { t: 76, x: 5, y: 10, r: 0 },  // round lobby rug
+      { t: 27, x: 10, y: 5, r: 0 },  // hotel loveseat
+      { t: 27, x: 11, y: 9, r: 2 },  // hotel loveseat
+      { t: 20, x: 9, y: 7, r: 1 },   // club chair
+      { t: 21, x: 14, y: 7, r: 3 },  // wingback chair
+      { t: 30, x: 11, y: 7, r: 0 },  // coffee table
+      { t: 25, x: 10, y: 12, r: 0 }, // lobby bench
+      { t: 90, x: 4, y: 3, r: 0 },   // reception desk
+      { t: 92, x: 7, y: 4, r: 0 },   // concierge bell
+      { t: 93, x: 4, y: 5, r: 0 },   // room key rack
+      { t: 73, x: 7, y: 3, r: 0 },   // room telephone
+      { t: 91, x: 19, y: 3, r: 0 },  // brass luggage cart
+      { t: 97, x: 21, y: 4, r: 0 },  // suitcase stack
+      { t: 89, x: 19, y: 6, r: 0 },  // stocked minibar
+      { t: 95, x: 19, y: 8, r: 0 },  // coffee station
+      { t: 94, x: 18, y: 11, r: 0 }, // room-service cart
+      { t: 52, x: 4, y: 8, r: 0 },   // lobby sideboard
+      { t: 87, x: 6, y: 8, r: 0 },   // fresh flowers
+      { t: 61, x: 12, y: 2, r: 0 },  // lobby chandelier
+      { t: 57, x: 8, y: 5, r: 0 },   // floor lamp
+      { t: 57, x: 15, y: 5, r: 0 },  // floor lamp
+      { t: 67, x: 9, y: 3, r: 0 },   // woven tapestry
+      { t: 68, x: 15, y: 3, r: 0 },  // lobby clock
+      { t: 82, x: 5, y: 13, r: 0 },  // monstera
+      { t: 83, x: 21, y: 11, r: 0 }, // parlor palm
+      { t: 15, x: 16, y: 11, r: 0 }, // patchwork cat
+      { t: 99, x: 8, y: 12, r: 0 },  // patchwork turtle
     ],
   },
   {
@@ -81,21 +91,27 @@ const COMMON_ROOMS_DEF = [
     height: 1000,
     maxPlayers: 20,
     furniture: [
-      { t: 7, x: 8, y: 4, r: 0 },    // rug
-      { t: 7, x: 14, y: 10, r: 0 },  // rug
-      { t: 4, x: 9, y: 5, r: 0 },    // chair
-      { t: 4, x: 15, y: 11, r: 2 },  // chair
-      { t: 5, x: 7, y: 3, r: 0 },    // plant
-      { t: 5, x: 12, y: 7, r: 0 },   // plant
-      { t: 5, x: 18, y: 12, r: 0 },  // plant
-      { t: 5, x: 20, y: 4, r: 0 },   // plant
-      { t: 6, x: 10, y: 8, r: 0 },   // lamp
-      { t: 6, x: 16, y: 6, r: 0 },   // lamp
-      { t: 15, x: 11, y: 9, r: 0 },  // cat
-      { t: 17, x: 19, y: 8, r: 0 },  // rabbit
-      { t: 18, x: 6, y: 11, r: 0 },  // fishbowl
-      { t: 0, x: 5, y: 7, r: 0 },    // cube
-      { t: 1, x: 21, y: 10, r: 0 },  // sphere
+      { t: 79, x: 8, y: 5, r: 0 },   // floral rug
+      { t: 78, x: 15, y: 9, r: 0 },  // geometric rug
+      { t: 39, x: 9, y: 6, r: 0 },   // bistro table
+      { t: 23, x: 8, y: 6, r: 1 },   // cane chair
+      { t: 23, x: 11, y: 6, r: 3 },  // cane chair
+      { t: 44, x: 15, y: 10, r: 0 }, // daybed
+      { t: 26, x: 17, y: 5, r: 1 },  // window bench
+      { t: 69, x: 4, y: 4, r: 1 },   // folding screen
+      { t: 62, x: 10, y: 3, r: 0 },  // paper lantern
+      { t: 64, x: 10, y: 7, r: 0 },  // candle cluster
+      { t: 74, x: 9, y: 6, r: 0 },   // tea service
+      { t: 82, x: 6, y: 3, r: 0 },   // monstera
+      { t: 83, x: 13, y: 3, r: 0 },  // parlor palm
+      { t: 84, x: 6, y: 10, r: 0 },  // button fern
+      { t: 85, x: 20, y: 4, r: 0 },  // rubber plant
+      { t: 86, x: 20, y: 10, r: 0 }, // patched cactus
+      { t: 87, x: 16, y: 8, r: 0 },  // fresh flowers
+      { t: 88, x: 12, y: 10, r: 0 }, // lobby bonsai
+      { t: 17, x: 18, y: 9, r: 0 },  // patchwork rabbit
+      { t: 19, x: 7, y: 8, r: 0 },   // patchwork bird
+      { t: 99, x: 13, y: 12, r: 0 }, // patchwork turtle
     ],
   },
   {
@@ -107,23 +123,66 @@ const COMMON_ROOMS_DEF = [
     height: 1000,
     maxPlayers: 20,
     furniture: [
-      { t: 7, x: 6, y: 5, r: 0 },    // rug
-      { t: 7, x: 16, y: 5, r: 0 },   // rug
-      { t: 7, x: 11, y: 11, r: 0 },  // rug
-      { t: 4, x: 7, y: 6, r: 0 },    // chair
-      { t: 4, x: 17, y: 6, r: 0 },   // chair
-      { t: 4, x: 12, y: 12, r: 2 },  // chair
-      { t: 10, x: 9, y: 5, r: 0 },   // couch
-      { t: 10, x: 19, y: 5, r: 0 },  // couch
-      { t: 6, x: 8, y: 4, r: 0 },    // lamp
-      { t: 6, x: 18, y: 4, r: 0 },   // lamp
-      { t: 6, x: 13, y: 10, r: 0 },  // lamp
-      { t: 5, x: 5, y: 10, r: 0 },   // plant
-      { t: 5, x: 22, y: 10, r: 0 },  // plant
-      { t: 13, x: 14, y: 3, r: 0 },  // tv
-      { t: 12, x: 10, y: 8, r: 0 },  // computer
-      { t: 15, x: 20, y: 9, r: 0 },  // cat
-      { t: 16, x: 6, y: 9, r: 0 },   // dog
+      { t: 80, x: 5, y: 5, r: 1 },   // striped rug
+      { t: 77, x: 12, y: 8, r: 0 },  // grand lounge rug
+      { t: 21, x: 12, y: 9, r: 0 },  // wingback chair
+      { t: 21, x: 15, y: 9, r: 0 },  // wingback chair
+      { t: 29, x: 6, y: 8, r: 1 },   // reading chaise
+      { t: 31, x: 13, y: 9, r: 0 },  // round coffee table
+      { t: 50, x: 4, y: 3, r: 0 },   // tall bookcase
+      { t: 50, x: 4, y: 6, r: 0 },   // tall bookcase
+      { t: 51, x: 18, y: 3, r: 0 },  // open shelving
+      { t: 51, x: 18, y: 6, r: 0 },  // open shelving
+      { t: 37, x: 9, y: 4, r: 0 },   // writing desk
+      { t: 24, x: 10, y: 5, r: 2 },  // desk chair
+      { t: 63, x: 9, y: 4, r: 0 },   // desk lamp
+      { t: 58, x: 11, y: 8, r: 0 },  // reading lamp
+      { t: 58, x: 16, y: 8, r: 0 },  // reading lamp
+      { t: 70, x: 10, y: 12, r: 0 }, // hotel fireplace
+      { t: 72, x: 14, y: 12, r: 0 }, // record player
+      { t: 67, x: 13, y: 3, r: 0 },  // woven tapestry
+      { t: 68, x: 16, y: 3, r: 0 },  // lobby clock
+      { t: 74, x: 13, y: 9, r: 0 },  // tea service
+      { t: 84, x: 6, y: 12, r: 0 },  // button fern
+      { t: 85, x: 21, y: 11, r: 0 }, // rubber plant
+      { t: 15, x: 18, y: 10, r: 0 }, // patchwork cat
+      { t: 16, x: 7, y: 11, r: 0 },  // patchwork dog
+    ],
+  },
+  {
+    id: 'SUITE',
+    name: 'Sunroom Suite',
+    description: 'A warm hotel room with room service and space to unwind',
+    theme: 2,
+    width: 1600,
+    height: 1000,
+    maxPlayers: 16,
+    furniture: [
+      { t: 79, x: 10, y: 7, r: 0 },  // floral rug
+      { t: 42, x: 10, y: 3, r: 0 },  // king bed
+      { t: 49, x: 9, y: 4, r: 0 },   // hotel nightstand
+      { t: 49, x: 13, y: 4, r: 0 },  // hotel nightstand
+      { t: 56, x: 9, y: 4, r: 0 },   // bedside lamp
+      { t: 56, x: 13, y: 4, r: 0 },  // bedside lamp
+      { t: 27, x: 9, y: 10, r: 0 },  // hotel loveseat
+      { t: 30, x: 11, y: 10, r: 0 }, // coffee table
+      { t: 22, x: 13, y: 10, r: 3 }, // slipper chair
+      { t: 89, x: 18, y: 4, r: 0 },  // stocked minibar
+      { t: 95, x: 18, y: 6, r: 0 },  // coffee station
+      { t: 94, x: 17, y: 10, r: 0 }, // room-service cart
+      { t: 55, x: 15, y: 5, r: 0 },  // folding luggage rack
+      { t: 97, x: 16, y: 5, r: 0 },  // suitcase stack
+      { t: 38, x: 4, y: 5, r: 0 },   // vanity table
+      { t: 65, x: 4, y: 3, r: 0 },   // arched mirror
+      { t: 47, x: 4, y: 9, r: 0 },   // wardrobe
+      { t: 54, x: 6, y: 9, r: 0 },   // room safe
+      { t: 9, x: 4, y: 12, r: 0 },   // soaking tub
+      { t: 98, x: 6, y: 12, r: 0 },  // towel rack
+      { t: 69, x: 18, y: 12, r: 0 }, // folding screen
+      { t: 13, x: 14, y: 9, r: 0 },  // hotel television
+      { t: 87, x: 12, y: 10, r: 0 }, // fresh flowers
+      { t: 83, x: 21, y: 10, r: 0 }, // parlor palm
+      { t: 16, x: 8, y: 12, r: 0 },  // patchwork dog
     ],
   },
 ];

@@ -15,9 +15,9 @@ I built this because I wanted a space where quiet people can just *be* around ot
 The entire room and interface language is built from a small, reusable library of self-hosted CC0 material scans.
 
 - Denim, linen, cotton, fleece, hessian, corduroy, and board scans are recolored and clipped into simple shapes at runtime.
-- Furniture is actual furniture: each of the 20 objects has its own readable silhouette, assembled from layered material pieces, seams, borders, and small stitched details.
-- Avatars and accessories use the same material grammar, so they belong to the room without being mistaken for furniture.
-- Four semantic palettes give the Lobby, Zen Garden, Library, and private rooms distinct moods without requiring duplicate source art.
+- Furniture is actual furniture: a 100-item hotel catalog is assembled from 66 layered drawing recipes, with readable silhouettes, seams, borders, and small stitched details.
+- Avatars use independently selectable body, fabric, eyes, brows, mouth, face-detail, accessory, and pulse layers, so they belong to the room without being mistaken for furniture.
+- Four warm presets—Welcome Inn, Garden Suite, Sunroom, and Midnight—can be used as-is or edited through direct wall, floor, accent, and texture-intensity controls.
 - The landing screen, HUD, owner tools, and Room Memory Card use the same tactile, sewn-together language.
 - Every source texture is CC0, self-hosted, checksummed, and documented in `public/assets/materials/materials.json`.
 
@@ -36,24 +36,26 @@ The screenshot-backed audit that kicked this off lives here:
 - **Anonymous by default.** Always.
 
 ### Handmade / DIY Aesthetic
-- Dark textile rooms with subtly stitched floor grids and layered fabric or board walls.
+- Cozy textile rooms with subtly stitched floor grids and layered fabric or board walls. Welcome Inn is the warm default; quieter and darker choices remain available.
 - Procedurally composed avatars and objects — no image uploads and no fixed sprite sheet to redraw.
 - Shapes, material choices, palettes, seams, and borders remain independent, so the art is easy to remix by hand or with AI-assisted tooling.
 
 ### Character Customization
-- 10 textile colors, 3 shapes (circle, square, diamond), 4 accessories (headphones, halo, beanie, none).
-- Your look is encoded into a tiny 4-character **Avatar Hash** (e.g. `0c10`) that you can copy/paste to save or share.
+- 10 textile colors, 5 shapes, 6 eye sets, 5 brow sets, 6 mouths, 6 face details, and 8 accessory choices.
+- New visitors start with a randomized mix instead of a single default expression, and every layer remains directly editable.
+- Your look is encoded into a 9-character **Look Code** (for example, `A94725455`) that you can copy/paste to save or share. Legacy 4-character Avatar Hashes still import.
 - Procedural glow pulse animation. Everyone sees your custom avatar.
 
 ### Rooms & Furniture
-- **Common Rooms** — server-curated persistent spaces (The Lobby, Zen Garden, Library) that never die when empty. Larger dimensions (1600×1000), higher player caps (20–25), pre-placed furniture. This is where you land by default.
+- **Common Rooms** — server-curated persistent spaces (The Lobby, Zen Garden, Library, and Sunroom Suite) that never die when empty. Larger dimensions (1600×1000), higher player caps (16–25), and richer pre-placed furniture show the hotel catalog in use. This is where you land by default.
 - **Random Rooms** — empty no-owner public rooms for the matchmaker. They are separate from Common Rooms, so clicking "Go to a Random Room" will not drop you into The Lobby.
 - **Private Rooms** — create a hidden retreat with a room code. Private rooms are the only user-owned spaces.
-- **Build Mode (owner-only, private rooms only):** Place up to 100 furniture items per room. Grid-snapped, Sims/Habbo-style.
-- **20 furniture types:** Storage Cube, Round Pouf, Stool, Floor Cushion, Chair, Plant, Lamp, Rug, Bed, Bathtub, Couch, Console, Computer, TV, Toilet, plus pets (Cat, Dog, Rabbit, Fishbowl, Bird).
+- **Build Mode (owner-only, private rooms only):** Search and browse 100 items across Seating, Tables, Beds, Storage, Lighting, Decor, Rugs, Plants, Hotel, and Pets. The desktop drawer uses a wide Sims-like catalog; mobile uses a draggable bottom sheet with peek, half, and expanded snaps.
+- **100 furniture types:** Hotel beds and seating, tables, wardrobes and safes, lamps, wall decor, rugs, plants, pets, minibars, reception desks, luggage carts, room-service carts, coffee stations, housekeeping carts, and more.
+- **Room Style:** Start from four presets, then directly change wall, floor, accent, and Quiet/Cozy/Layered texture intensity. Style changes synchronize to everyone in the private room.
 - **Walkable vs. Solid:** Chairs, rugs, beds, couches, and pets let you walk through them. Tables, plants, and appliances block movement. No overlapping placement.
-- **Interactive objects:** Lamps and TVs can be clicked by anyone to toggle on/off — glow and tint effects sync across the room.
-- **Room Memory Cards:** Download a handmade-style PNG card of your room layout. Upload it later to reconstruct everything — including room theme and lamp/TV interactive states.
+- **Interactive objects:** Lights, televisions, fireplaces, radios, record players, room safes, concierge bells, minibars, and coffee stations can expose synchronized on/off states where appropriate.
+- **Room Memory Cards:** Download a handmade-style PNG card of your room layout. Upload it later to reconstruct everything—including the full custom room style and interactive states. Version 1 theme cards still import.
 - **Bookmarks:** Save room codes in browser session storage so they survive refreshes without becoming an account or permanent tracking record.
 
 ### Presence & Comfort
@@ -78,7 +80,7 @@ The screenshot-backed audit that kicked this off lives here:
 | Backend | Node.js, Express, Socket.IO |
 | Hosting | Oracle Cloud Free Tier (1 vCPU, ~5GB disk, Ubuntu) |
 | Process Manager | PM2 |
-| Assets | Seven CC0 material scans + a runtime Canvas compositor that installs layered Phaser textures. No user uploads or external runtime asset calls. |
+| Assets | Seven CC0 material scans + a runtime Canvas compositor that installs layered Phaser textures for 100 catalog items and combinatorial avatars. No user uploads or external runtime asset calls. |
 
 All room state lives in-memory. Common Rooms persist while the server is running; random and private rooms disappear when empty. No persistent database required.
 
@@ -113,7 +115,7 @@ Run the regression tests with:
 npm test
 ```
 
-The suite includes helper tests plus a real multi-client Socket.IO check for malformed payload handling, consent-gated signs, shell visibility state, and every self-hosted vendor route.
+The suite includes helper tests plus a real multi-client Socket.IO check for malformed payload handling, expanded avatar payloads, synchronized custom room styles, consent-gated signs, curated-room catalog coverage, shell visibility state, and every self-hosted vendor route.
 Pull requests run the same syntax and test checks on Node.js 20 and 22 through GitHub Actions.
 
 Browser smoke tests should treat Chromium's `GPU stall due to ReadPixels` message during a screenshot of the Phaser canvas as a capture artifact. The application does not call `readPixels`; keep failing on other console warnings and errors.

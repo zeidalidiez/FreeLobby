@@ -2381,6 +2381,13 @@ body:not(.lucide-ready) [data-lucide] {
     rgba(15, 12, 24, 0.9);
 }
 
+.common-room-item[data-room="suite"] {
+  --room-accent: #d39a52;
+  background:
+    linear-gradient(135deg, rgba(226, 172, 92, 0.14), transparent 46%),
+    rgba(20, 16, 13, 0.92);
+}
+
 .common-room-name {
   font-size: 1rem;
   font-weight: 650;
@@ -3014,7 +3021,8 @@ body::before {
 }
 
 .common-room-item[data-room='garden'],
-.common-room-item[data-room='library'] {
+.common-room-item[data-room='library'],
+.common-room-item[data-room='suite'] {
   background-image:
     linear-gradient(rgba(35, 38, 40, 0.88), rgba(25, 28, 31, 0.94)),
     var(--material-linen);
