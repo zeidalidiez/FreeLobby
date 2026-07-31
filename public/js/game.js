@@ -77,7 +77,7 @@ let isRoomOwner = false;
 let currentRoomIsPublic = true;
 let quietMode = false;
 const idleState = window.FreeLobbyIdle;
-const assetNormalizer = window.FreeLobbyAssets;
+const craftTextures = window.FreeLobbyCraft;
 const cardCodec = window.FreeLobbyCards;
 
 // Ambient Audio state
@@ -114,48 +114,15 @@ const importHashInput    = document.getElementById('import-hash');
 const btnImportHash      = document.getElementById('btn-import-hash');
 
 const PLAYER_COLORS = [
-  0x00f0ff, 0xff00ff, 0x39ff14, 0xff007f, 0xffff00,
-  0xff8800, 0xbd00ff, 0x0088ff, 0xff3333, 0x00ffcc,
+  0x2db8b2, 0xd85a9a, 0x74b84d, 0xd94d77, 0xdfba3e,
+  0xdc773c, 0x9d62c4, 0x4c7dcc, 0xd65b52, 0x34ae88,
 ];
 const COLOR_HEX_STR = [
-  '#00f0ff', '#ff00ff', '#39ff14', '#ff007f', '#ffff00',
-  '#ff8800', '#bd00ff', '#0088ff', '#ff3333', '#00ffcc',
+  '#2db8b2', '#d85a9a', '#74b84d', '#d94d77', '#dfba3e',
+  '#dc773c', '#9d62c4', '#4c7dcc', '#d65b52', '#34ae88',
 ];
 
-const ROOM_THEME_VISUALS = [
-  {
-    name: 'lobby',
-    background: '#040508',
-    floorTint: 0x68f6ff,
-    floorAlpha: 0.86,
-    wallTint: 0x5df2ff,
-    furnitureTint: 0xffffff,
-  },
-  {
-    name: 'garden',
-    background: '#030805',
-    floorTint: 0x6ff2b1,
-    floorAlpha: 0.8,
-    wallTint: 0x74f6b8,
-    furnitureTint: 0xeafff6,
-  },
-  {
-    name: 'library',
-    background: '#07040b',
-    floorTint: 0xc79cff,
-    floorAlpha: 0.78,
-    wallTint: 0xd6a3ff,
-    furnitureTint: 0xfff3dc,
-  },
-  {
-    name: 'private',
-    background: '#050508',
-    floorTint: 0x7aa7ff,
-    floorAlpha: 0.82,
-    wallTint: 0x84dcff,
-    furnitureTint: 0xffffff,
-  },
-];
+const ROOM_THEME_VISUALS = craftTextures.THEME_PALETTES;
 
 function getRoomVisualTheme(theme) {
   if (!Number.isInteger(theme) || theme < 0) return ROOM_THEME_VISUALS[0];
@@ -1262,26 +1229,26 @@ let buildTool = 'place';
 let selectedFurnitureType = 0;
 
 const FURNITURE_DEFS = [
-  { name: 'Cube',       icon: '🧊', file: 'furn-cube',       w: 1, h: 1, walkable: false },
-  { name: 'Sphere',     icon: '🔮', file: 'furn-sphere',     w: 1, h: 1, walkable: false },
-  { name: 'Cylinder',   icon: '🛢️', file: 'furn-cylinder',   w: 1, h: 1, walkable: false },
-  { name: 'Pyramid',    icon: '🔺', file: 'furn-pyramid',    w: 1, h: 1, walkable: false },
-  { name: 'Chair',      icon: '🪑', file: 'furn-chair',      w: 1, h: 1, walkable: true  },
-  { name: 'Plant',      icon: '🪴', file: 'furn-plant',      w: 1, h: 1, walkable: false },
-  { name: 'Lamp',       icon: '🛋️', file: 'furn-lamp',       w: 1, h: 1, walkable: false },
-  { name: 'Rug',        icon: '🟪', file: 'furn-rug',        w: 2, h: 2, walkable: true  },
-  { name: 'Bed',        icon: '🛏️', file: 'furn-bed',        w: 2, h: 2, walkable: true  },
-  { name: 'Bathtub',    icon: '🛁', file: 'furn-bathtub',    w: 2, h: 1, walkable: false },
-  { name: 'Couch',      icon: '🛋️', file: 'furn-couch',      w: 2, h: 1, walkable: true  },
-  { name: 'Console',    icon: '🎮', file: 'furn-console',    w: 1, h: 1, walkable: false },
-  { name: 'Computer',   icon: '💻', file: 'furn-computer',   w: 1, h: 1, walkable: false },
-  { name: 'TV',         icon: '📺', file: 'furn-tv',         w: 2, h: 1, walkable: false },
-  { name: 'Toilet',     icon: '🚽', file: 'furn-toilet',     w: 1, h: 1, walkable: false },
-  { name: 'Cat',        icon: '🐱', file: 'pet-cat',         w: 1, h: 1, walkable: true  },
-  { name: 'Dog',        icon: '🐶', file: 'pet-dog',         w: 1, h: 1, walkable: true  },
-  { name: 'Rabbit',     icon: '🐰', file: 'pet-rabbit',      w: 1, h: 1, walkable: true  },
-  { name: 'Fishbowl',   icon: '🐠', file: 'pet-fishbowl',    w: 1, h: 1, walkable: false },
-  { name: 'Bird',       icon: '🐦', file: 'pet-bird',        w: 1, h: 1, walkable: true  },
+  { name: 'Storage Cube', icon: '🧊', w: 1, h: 1, walkable: false },
+  { name: 'Round Pouf',   icon: '🔮', w: 1, h: 1, walkable: false },
+  { name: 'Stool',        icon: '🛢️', w: 1, h: 1, walkable: false },
+  { name: 'Floor Cushion', icon: '🔺', w: 1, h: 1, walkable: false },
+  { name: 'Chair',      icon: '🪑', w: 1, h: 1, walkable: true  },
+  { name: 'Plant',      icon: '🪴', w: 1, h: 1, walkable: false },
+  { name: 'Lamp',       icon: '🛋️', w: 1, h: 1, walkable: false },
+  { name: 'Rug',        icon: '🟪', w: 2, h: 2, walkable: true  },
+  { name: 'Bed',        icon: '🛏️', w: 2, h: 2, walkable: true  },
+  { name: 'Bathtub',    icon: '🛁', w: 2, h: 1, walkable: false },
+  { name: 'Couch',      icon: '🛋️', w: 2, h: 1, walkable: true  },
+  { name: 'Console',    icon: '🎮', w: 1, h: 1, walkable: false },
+  { name: 'Computer',   icon: '💻', w: 1, h: 1, walkable: false },
+  { name: 'TV',         icon: '📺', w: 2, h: 1, walkable: false },
+  { name: 'Toilet',     icon: '🚽', w: 1, h: 1, walkable: false },
+  { name: 'Cat',        icon: '🐱', w: 1, h: 1, walkable: true  },
+  { name: 'Dog',        icon: '🐶', w: 1, h: 1, walkable: true  },
+  { name: 'Rabbit',     icon: '🐰', w: 1, h: 1, walkable: true  },
+  { name: 'Fishbowl',   icon: '🐠', w: 1, h: 1, walkable: false },
+  { name: 'Bird',       icon: '🐦', w: 1, h: 1, walkable: true  },
 ];
 
 const FURNITURE_NAMES = FURNITURE_DEFS.map(d => d.name);
@@ -1314,6 +1281,24 @@ FURNITURE_NAMES.forEach((name, i) => {
   });
   furniturePalette.appendChild(btn);
 });
+
+function refreshFurniturePaletteArtwork(theme = 0) {
+  if (!scene || !craftTextures) return;
+  furniturePalette.querySelectorAll('.furn-btn').forEach((button, type) => {
+    const source = craftTextures.furniturePreviewUrl(scene, theme, type);
+    if (!source) return;
+    let image = button.querySelector('.furn-preview');
+    if (!image) {
+      button.textContent = '';
+      image = document.createElement('img');
+      image.className = 'furn-preview';
+      image.alt = '';
+      image.setAttribute('aria-hidden', 'true');
+      button.appendChild(image);
+    }
+    image.src = source;
+  });
+}
 
 function updateBuildUI() {
   furniturePalette.querySelectorAll('.furn-btn').forEach((el, i) => {
@@ -1372,76 +1357,23 @@ cardFileInput.addEventListener('change', (e) => {
 
 function preload() {
   scene = this;
-
-  // Generate base shapes
-  ['circle', 'square', 'diamond'].forEach((shape) => {
-    const g = this.make.graphics({ add: false });
-    if (shape === 'circle') {
-      g.fillStyle(0xffffff, 0.15); g.fillCircle(24, 24, 24);
-      g.fillStyle(0xffffff, 0.4);  g.fillCircle(24, 24, 18);
-      g.fillStyle(0xffffff, 0.9);  g.fillCircle(24, 24, 10);
-      g.fillStyle(0xffffff, 1.0);  g.fillCircle(24, 24, 5);
-    } else if (shape === 'square') {
-      g.fillStyle(0xffffff, 0.15); g.fillRect(0, 0, 48, 48);
-      g.fillStyle(0xffffff, 0.4);  g.fillRect(6, 6, 36, 36);
-      g.fillStyle(0xffffff, 0.9);  g.fillRect(14, 14, 20, 20);
-      g.fillStyle(0xffffff, 1.0);  g.fillRect(19, 19, 10, 10);
-    } else if (shape === 'diamond') {
-      const drawD = (r) => { g.beginPath(); g.moveTo(24, 24-r); g.lineTo(24+r, 24); g.lineTo(24, 24+r); g.lineTo(24-r, 24); g.closePath(); g.fillPath(); };
-      g.fillStyle(0xffffff, 0.15); drawD(24);
-      g.fillStyle(0xffffff, 0.4);  drawD(18);
-      g.fillStyle(0xffffff, 0.9);  drawD(10);
-      g.fillStyle(0xffffff, 1.0);  drawD(5);
-    }
-    g.generateTexture(`player-${shape}`, 48, 48);
-    g.destroy();
-  });
-
-  // Accessories
-  const accG = this.make.graphics({ add: false });
-  // Headphones
-  accG.clear(); accG.lineStyle(3, 0xffffff, 0.9); accG.beginPath(); accG.arc(24, 22, 12, Math.PI, 0); accG.strokePath();
-  accG.fillStyle(0xffffff, 0.9); accG.fillRect(10, 20, 5, 10); accG.fillRect(33, 20, 5, 10);
-  accG.generateTexture('acc-headphones', 48, 48);
-  // Halo
-  accG.clear(); accG.lineStyle(2, 0xffffff, 0.9); accG.strokeEllipse(24, 10, 28, 8);
-  accG.generateTexture('acc-halo', 48, 48);
-  // Beanie
-  accG.clear(); accG.fillStyle(0xffffff, 0.9); accG.fillRect(10, 4, 28, 10); accG.fillRect(8, 10, 32, 4);
-  accG.generateTexture('acc-beanie', 48, 48);
-  accG.destroy();
-
-  // Load furniture assets from images
-  FURNITURE_DEFS.forEach((def, i) => {
-    this.load.image(`furn-${i}`, `assets/${def.file}.png`);
-  });
-
-  const floor = this.make.graphics({ add: false });
-  floor.fillStyle(0x050508, 1); floor.fillRect(0, 0, 128, 128);
-  floor.lineStyle(2, 0x00f0ff, 0.2); floor.strokeRect(0, 0, 128, 128);
-  floor.lineStyle(1, 0x00f0ff, 0.05);
-  floor.lineBetween(64, 0, 64, 128);
-  floor.lineBetween(0, 64, 128, 64);
-  floor.generateTexture('floor-tile', 128, 128);
-  floor.destroy();
-
-  const wall = this.make.graphics({ add: false });
-  wall.fillStyle(0x020205, 0.8); wall.fillRect(0, 0, 64, 64);
-  wall.lineStyle(3, 0x00f0ff, 0.6); wall.strokeRect(0, 0, 64, 64);
-  wall.lineStyle(1, 0xffffff, 0.8); wall.strokeRect(0, 0, 64, 64);
-  wall.generateTexture('wall-tile', 64, 64);
-  wall.destroy();
+  craftTextures.preload(this);
 }
 
 function create() {
   scene = this;
   this.floorTiles = [];
-  assetNormalizer.normalizeFurnitureTextures(this, FURNITURE_DEFS.length);
+  craftTextures.install(this, {
+    footprints: FURNITURE_FOOTPRINTS,
+    playerColors: COLOR_HEX_STR,
+  });
+  refreshFurniturePaletteArtwork(roomTheme);
 
   // Draw floor grid extending in all directions (3x the world size for generous padding)
   for (let x = -WORLD_WIDTH; x < WORLD_WIDTH * 2; x += 128) {
     for (let y = -WORLD_HEIGHT; y < WORLD_HEIGHT * 2; y += 128) {
-      const tile = this.add.image(x + 64, y + 64, 'floor-tile');
+      const tile = this.add.image(x + 64, y + 64, craftTextures.floorTextureKey(roomTheme));
+      tile.setDisplaySize(128, 128);
       tile.setDepth(-10);
       this.floorTiles.push(tile);
     }
@@ -1456,12 +1388,12 @@ function create() {
   this.drawRoomWalls = (w, h) => {
     wallGroup.clear(true, true);
     for (let x = 0; x < w; x += 64) {
-      wallGroup.add(this.add.image(x + 32, 0, 'wall-tile').setDepth(-5));
-      wallGroup.add(this.add.image(x + 32, h, 'wall-tile').setDepth(-5));
+      wallGroup.add(this.add.image(x + 32, 0, craftTextures.wallTextureKey(roomTheme)).setDisplaySize(64, 64).setDepth(-5));
+      wallGroup.add(this.add.image(x + 32, h, craftTextures.wallTextureKey(roomTheme)).setDisplaySize(64, 64).setDepth(-5));
     }
     for (let y = 0; y < h; y += 64) {
-      wallGroup.add(this.add.image(0, y + 32, 'wall-tile').setDepth(-5));
-      wallGroup.add(this.add.image(w, y + 32, 'wall-tile').setDepth(-5));
+      wallGroup.add(this.add.image(0, y + 32, craftTextures.wallTextureKey(roomTheme)).setDisplaySize(64, 64).setDepth(-5));
+      wallGroup.add(this.add.image(w, y + 32, craftTextures.wallTextureKey(roomTheme)).setDisplaySize(64, 64).setDepth(-5));
     }
     applyRoomVisualTheme(roomTheme);
   };
@@ -1469,7 +1401,7 @@ function create() {
 
   player = null;
 
-  this.cameras.main.setBackgroundColor('#050508');
+  this.cameras.main.setBackgroundColor(getRoomVisualTheme(roomTheme).background);
   this.cameras.main.setZoom(currentZoom);
   this.physics.world.setBounds(0, 0, ROOM_WIDTH, ROOM_HEIGHT);
 
@@ -1720,17 +1652,20 @@ function spawnLocalPlayer(data) {
   const cust = data.customization || CUSTOMIZATION;
   myColor = PLAYER_COLORS[cust.colorIdx] || data.color;
 
-  const shapeKey = ['player-circle', 'player-square', 'player-diamond'][cust.shape] || 'player-circle';
+  const shapeKey = craftTextures.playerTextureKey(cust.shape, cust.colorIdx);
   player = scene.physics.add.sprite(data.x, data.y, shapeKey);
-  player.setTint(myColor);
+  player.setDisplaySize(48, 48);
   player.setCollideWorldBounds(true);
   player.setDepth(10);
 
   if (playerAccessory) { playerAccessory.destroy(); playerAccessory = null; }
   if (cust.accessory > 0) {
-    const accKeys = ['', 'acc-headphones', 'acc-halo', 'acc-beanie'];
-    playerAccessory = scene.add.sprite(data.x, data.y, accKeys[cust.accessory]);
-    playerAccessory.setTint(myColor);
+    playerAccessory = scene.add.sprite(
+      data.x,
+      data.y,
+      craftTextures.accessoryTextureKey(cust.accessory, cust.colorIdx),
+    );
+    playerAccessory.setDisplaySize(48, 48);
     playerAccessory.setDepth(11);
   }
 
@@ -1763,18 +1698,20 @@ function spawnOtherPlayer(data) {
   if (otherPlayers.has(data.id)) return;
 
   const cust = data.customization || { colorIdx: 0, shape: 0, accessory: 0, pulse: 1 };
-  const color = PLAYER_COLORS[cust.colorIdx] || data.color;
-  const shapeKey = ['player-circle', 'player-square', 'player-diamond'][cust.shape] || 'player-circle';
+  const shapeKey = craftTextures.playerTextureKey(cust.shape, cust.colorIdx);
 
   const sprite = scene.add.sprite(data.x, data.y, shapeKey);
-  sprite.setTint(color);
+  sprite.setDisplaySize(48, 48);
   sprite.setDepth(5);
 
   let accessory = null;
   if (cust.accessory > 0) {
-    const accKeys = ['', 'acc-headphones', 'acc-halo', 'acc-beanie'];
-    accessory = scene.add.sprite(data.x, data.y, accKeys[cust.accessory]);
-    accessory.setTint(color);
+    accessory = scene.add.sprite(
+      data.x,
+      data.y,
+      craftTextures.accessoryTextureKey(cust.accessory, cust.colorIdx),
+    );
+    accessory.setDisplaySize(48, 48);
     accessory.setDepth(6);
   }
 
@@ -1867,22 +1804,26 @@ function applyRoomVisualTheme(theme) {
 
   if (scene.floorTiles) {
     scene.floorTiles.forEach(tile => {
-      tile.setTint(visual.floorTint);
-      tile.setAlpha(visual.floorAlpha);
+      tile.setTexture(craftTextures.floorTextureKey(theme || 0));
+      tile.setDisplaySize(128, 128);
+      tile.setAlpha(1);
     });
   }
 
   if (scene.wallGroup) {
     scene.wallGroup.getChildren().forEach(wall => {
-      wall.setTint(visual.wallTint);
-      wall.setAlpha(0.88);
+      wall.setTexture(craftTextures.wallTextureKey(theme || 0));
+      wall.setDisplaySize(64, 64);
+      wall.setAlpha(1);
     });
   }
 
   roomFurniture.forEach(f => {
     if (!f.sprite) return;
-    if (!f.interactiveOn) f.sprite.setTint(visual.furnitureTint);
+    f.sprite.setTexture(craftTextures.furnitureTextureKey(theme || 0, f.item.t, f.interactiveOn));
+    f.sprite.setDisplaySize(f.baseFp.w * 64, f.baseFp.h * 64);
   });
+  refreshFurniturePaletteArtwork(theme || 0);
 }
 
 const INTERACTIVE_FURNITURE_TYPES = new Set([6, 13]); // Lamp, TV
@@ -1890,31 +1831,45 @@ const INTERACTIVE_FURNITURE_TYPES = new Set([6, 13]); // Lamp, TV
 function setFurnitureInteractiveVisual(furniture, state, animate = false) {
   if (!furniture || !furniture.glow) return;
   furniture.interactiveOn = state === true;
-  const tint = furniture.interactiveOn
-    ? (furniture.item.t === 6 ? 0xffeebb : 0xaaddff)
-    : getRoomVisualTheme(roomTheme).furnitureTint;
   const alpha = furniture.interactiveOn ? 0.25 : 0;
+  const textureKey = craftTextures.furnitureTextureKey(
+    roomTheme,
+    furniture.item.t,
+    furniture.interactiveOn,
+  );
+  furniture.sprite.setTexture(textureKey);
+  furniture.sprite.setDisplaySize(furniture.baseFp.w * 64, furniture.baseFp.h * 64);
 
   if (animate) {
     scene.tweens.add({ targets: [furniture.glow], alpha, duration: 300, ease: 'Power2' });
-    scene.tweens.add({ targets: [furniture.sprite], tint, duration: 300 });
+    scene.tweens.add({
+      targets: furniture.sprite,
+      scaleX: furniture.sprite.scaleX * 1.04,
+      scaleY: furniture.sprite.scaleY * 1.04,
+      duration: 120,
+      yoyo: true,
+      ease: 'Sine.easeOut',
+    });
   } else {
     furniture.glow.setAlpha(alpha);
-    furniture.sprite.setTint(tint);
   }
 }
 
 function renderFurnitureItem(item) {
   if (!scene) return;
   const fp = getClientFootprint(item.t, item.r);
+  const baseFp = getClientFootprint(item.t, 0);
   const x = item.x * 64 + (fp.w * 64) / 2;
   const y = item.y * 64 + (fp.h * 64) / 2;
-  const sprite = scene.add.sprite(x, y, `furn-${item.t}`);
+  const sprite = scene.add.sprite(
+    x,
+    y,
+    craftTextures.furnitureTextureKey(roomTheme, item.t, item.on === true),
+  );
   sprite.setDepth(1);
-  sprite.setAlpha(0.8);
-  sprite.setTint(getRoomVisualTheme(roomTheme).furnitureTint);
-  // Force high-res assets to fit their grid footprint
-  sprite.setDisplaySize(fp.w * 64, fp.h * 64);
+  sprite.setAlpha(1);
+  // Size the unrotated recipe first; rotation then swaps rectangular bounds.
+  sprite.setDisplaySize(baseFp.w * 64, baseFp.h * 64);
   if (item.r) sprite.setAngle(item.r * 90);
   if (!fp.walkable && scene.furnitureGroup) {
     scene.furnitureGroup.add(sprite);
@@ -1934,13 +1889,14 @@ function renderFurnitureItem(item) {
       glow = scene.add.circle(x, y, Math.max(fp.w, fp.h) * 40, 0xffaa00, 0);
       glow.setDepth(0);
     } else if (item.t === 13) {
-      // TV — cyan screen glow
-      glow = scene.add.rectangle(x, y - 6, fp.w * 48, fp.h * 32, 0x00f0ff, 0);
+      // TV — soft screen glow aligned with the rotated furniture recipe.
+      glow = scene.add.rectangle(x, y, baseFp.w * 48, baseFp.h * 32, 0x6ca9aa, 0);
+      if (item.r) glow.setAngle(item.r * 90);
       glow.setDepth(0);
     }
   }
 
-  roomFurniture.push({ sprite, item, fp, glow, interactiveOn: false });
+  roomFurniture.push({ sprite, item, fp, baseFp, glow, interactiveOn: false });
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1956,33 +1912,35 @@ function generateRoomCard(roomId, furniture, theme) {
   canvas.width = CARD_WIDTH;
   canvas.height = CARD_HEIGHT;
   const ctx = canvas.getContext('2d');
+  const visual = getRoomVisualTheme(theme || 0);
 
-  // Background
-  ctx.fillStyle = '#050508';
+  const floorSource = scene?.textures
+    .get(craftTextures.floorTextureKey(theme || 0))
+    .getSourceImage();
+  if (floorSource) {
+    const backgroundPattern = ctx.createPattern(floorSource, 'repeat');
+    ctx.fillStyle = backgroundPattern;
+  } else {
+    ctx.fillStyle = visual.background;
+  }
+  ctx.fillRect(0, 0, CARD_WIDTH, CARD_HEIGHT);
+  ctx.fillStyle = 'rgba(15, 15, 16, 0.48)';
   ctx.fillRect(0, 0, CARD_WIDTH, CARD_HEIGHT);
 
-  // Neon border
-  ctx.strokeStyle = '#00f0ff';
-  ctx.lineWidth = 2;
-  ctx.strokeRect(4, 4, CARD_WIDTH - 8, CARD_HEIGHT - 8);
-
-  // Corner brackets
-  ctx.lineWidth = 3;
-  const cornerSize = 12;
-  // Top-left
-  ctx.beginPath(); ctx.moveTo(4, 16); ctx.lineTo(4, 4); ctx.lineTo(16, 4); ctx.stroke();
-  // Top-right
-  ctx.beginPath(); ctx.moveTo(CARD_WIDTH - 4, 16); ctx.lineTo(CARD_WIDTH - 4, 4); ctx.lineTo(CARD_WIDTH - 16, 4); ctx.stroke();
-  // Bottom-left
-  ctx.beginPath(); ctx.moveTo(4, CARD_HEIGHT - 16); ctx.lineTo(4, CARD_HEIGHT - 4); ctx.lineTo(16, CARD_HEIGHT - 4); ctx.stroke();
-  // Bottom-right
-  ctx.beginPath(); ctx.moveTo(CARD_WIDTH - 4, CARD_HEIGHT - 16); ctx.lineTo(CARD_WIDTH - 4, CARD_HEIGHT - 4); ctx.lineTo(CARD_WIDTH - 16, CARD_HEIGHT - 4); ctx.stroke();
+  ctx.strokeStyle = visual.wall;
+  ctx.lineWidth = 8;
+  ctx.strokeRect(5, 5, CARD_WIDTH - 10, CARD_HEIGHT - 10);
+  ctx.strokeStyle = visual.light;
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([5, 4]);
+  ctx.strokeRect(9, 9, CARD_WIDTH - 18, CARD_HEIGHT - 18);
+  ctx.setLineDash([]);
 
   // Header text
-  ctx.fillStyle = '#00f0ff';
-  ctx.font = 'bold 14px monospace';
+  ctx.fillStyle = visual.light;
+  ctx.font = 'bold 14px Georgia, serif';
   ctx.textAlign = 'center';
-  ctx.fillText('ROOM CARD', CARD_WIDTH / 2, 28);
+  ctx.fillText('FreeLobby Room Card', CARD_WIDTH / 2, 29);
 
   // Mini grid preview
   const previewX = 80;
@@ -1991,43 +1949,53 @@ function generateRoomCard(roomId, furniture, theme) {
   const previewH = 96;
   const cellSize = 8;
 
-  // Floor background based on theme
-  const themeColors = ['#0a0a12', '#1a0a0a', '#0a1a0a', '#0a0a1a'];
-  ctx.fillStyle = themeColors[theme % themeColors.length] || themeColors[0];
+  ctx.fillStyle = visual.floor;
   ctx.fillRect(previewX, previewY, previewW, previewH);
 
-  // Grid lines
-  ctx.strokeStyle = 'rgba(0, 240, 255, 0.15)';
+  // Stitched grid lines
+  ctx.strokeStyle = visual.seam;
   ctx.lineWidth = 1;
+  ctx.globalAlpha = 0.55;
+  ctx.setLineDash([2, 2]);
   for (let gx = 0; gx <= previewW; gx += cellSize) {
     ctx.beginPath(); ctx.moveTo(previewX + gx, previewY); ctx.lineTo(previewX + gx, previewY + previewH); ctx.stroke();
   }
   for (let gy = 0; gy <= previewH; gy += cellSize) {
     ctx.beginPath(); ctx.moveTo(previewX, previewY + gy); ctx.lineTo(previewX + previewW, previewY + gy); ctx.stroke();
   }
+  ctx.setLineDash([]);
+  ctx.globalAlpha = 1;
 
-  // Draw furniture icons on preview
-  const furniturePreviewColors = [
-    '#00f0ff', '#ff00ff', '#39ff14', '#ff007f',
-    '#ffff00', '#ff8800', '#bd00ff', '#0088ff'
-  ];
   if (furniture) {
     furniture.forEach(item => {
       const px = previewX + item.x * cellSize;
       const py = previewY + item.y * cellSize;
       const fp = getClientFootprint(item.t, item.r);
-      ctx.fillStyle = furniturePreviewColors[item.t % furniturePreviewColors.length];
-      ctx.globalAlpha = 0.6;
-      ctx.fillRect(px, py, fp.w * cellSize, fp.h * cellSize);
-      ctx.globalAlpha = 1.0;
+      const baseFp = getClientFootprint(item.t, 0);
+      const source = scene?.textures
+        .get(craftTextures.furnitureTextureKey(theme || 0, item.t, item.on === true))
+        .getSourceImage();
+      if (source) {
+        const drawWidth = baseFp.w * cellSize;
+        const drawHeight = baseFp.h * cellSize;
+        const rotation = ((item.r || 0) % 4 + 4) % 4;
+        ctx.save();
+        ctx.translate(
+          px + (fp.w * cellSize) / 2,
+          py + (fp.h * cellSize) / 2,
+        );
+        ctx.rotate(rotation * Math.PI / 2);
+        ctx.drawImage(source, -drawWidth / 2, -drawHeight / 2, drawWidth, drawHeight);
+        ctx.restore();
+      }
     });
   }
 
   // Footer branding
-  ctx.fillStyle = '#445566';
+  ctx.fillStyle = visual.secondary;
   ctx.font = '10px monospace';
   ctx.textAlign = 'right';
-  ctx.fillText('FreeLobby', CARD_WIDTH - 12, CARD_HEIGHT - 12);
+  ctx.fillText(roomId || 'PRIVATE', CARD_WIDTH - 15, CARD_HEIGHT - 14);
 
   // ─── Encode data strip in bottom pixel row ───
   // We use 2 pixels per item to avoid alpha=0 corruption.
@@ -2290,9 +2258,8 @@ function connectSocket() {
     }
 
     if (player) {
-      // Reposition and update color for local player
+      // Reposition and keep the local craft avatar in sync.
       player.setPosition(you.x, you.y);
-      player.setTint(you.color);
       myColor = you.color;
       if (nameLabel) nameLabel.setPosition(you.x, you.y - 30);
       if (playerAccessory) playerAccessory.setPosition(you.x, you.y);

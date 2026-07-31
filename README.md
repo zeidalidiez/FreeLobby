@@ -1,8 +1,8 @@
 # FreeLobby
 
-**A calm, safe, neon-lit corner of the internet for introverts who want a tiny hit of human connection without the pressure.**
+**A calm, safe, handmade corner of the internet for introverts who want a tiny hit of human connection without the pressure.**
 
-FreeLobby is a browser-based multiplayer hangout space — imagine a minimal, low-pressure Habbo Hotel where nobody can talk to you without your consent. You show up as a glowing neon shape, wander around wireframe rooms, and if you vibe with someone, you can mutually agree to reveal your names. That's it. No logins. No tracking. No drama.
+FreeLobby is a browser-based multiplayer hangout space — imagine a minimal, low-pressure Habbo Hotel where nobody can talk to you without your consent. You show up as a tiny fabric patch, wander around rooms assembled from textured shapes, and if you vibe with someone, you can mutually agree to reveal your names. That's it. No logins. No tracking. No drama.
 
 I built this because I wanted a space where quiet people can just *be* around other humans without the expectation to perform. Lurking is a valid playstyle here. Silence isn't awkward. You can sit in a room with strangers and feel a little less alone.
 
@@ -10,17 +10,16 @@ I built this because I wanted a space where quiet people can just *be* around ot
 
 ---
 
-## Visual Refresh
+## Craft Material System
 
-The neon grid soul is still here, but the interface now has a calmer, more deliberate console pass.
+The entire room and interface language is built from a small, reusable library of self-hosted CC0 material scans.
 
-- The landing screen is less cramped, with entry, common rooms, private rooms, bookmarks, and avatar tweaks separated into clearer zones.
-- The room HUD is quieter and easier to scan, with Back, Flee, Quiet, Build, room status, player count, and connection state treated like one system instead of scattered buttons.
-- Common rooms now have distinct moods: The Lobby stays cyan, Zen Garden leans green, and The Library gets a softer purple low-light feel.
-- Private room tools, ambience, music, signs, emotes, and support controls share the same glassy neon panel language.
-- Controls now use Lucide icons where that reads cleaner than raw text glyphs, while emotes and avatar accessories stay expressive.
-- The responsive shell now keeps every landing action reachable at short desktop heights, and owner tools avoid the mobile ambience/sign dock.
-- Entering a room now fully removes the faded landing layer from layout and keyboard navigation, then restores it cleanly when you return.
+- Denim, linen, cotton, fleece, hessian, corduroy, and board scans are recolored and clipped into simple shapes at runtime.
+- Furniture is actual furniture: each of the 20 objects has its own readable silhouette, assembled from layered material pieces, seams, borders, and small stitched details.
+- Avatars and accessories use the same material grammar, so they belong to the room without being mistaken for furniture.
+- Four semantic palettes give the Lobby, Zen Garden, Library, and private rooms distinct moods without requiring duplicate source art.
+- The landing screen, HUD, owner tools, and Room Memory Card use the same tactile, sewn-together language.
+- Every source texture is CC0, self-hosted, checksummed, and documented in `public/assets/materials/materials.json`.
 
 The screenshot-backed audit that kicked this off lives here:
 
@@ -36,13 +35,13 @@ The screenshot-backed audit that kicked this off lives here:
 - **Flee Button:** One-click escape to a brand new empty room. Always available.
 - **Anonymous by default.** Always.
 
-### Neon/Tron Aesthetic
-- Deep void-black worlds with electric cyan grid floors and glowing neon walls.
-- Procedurally drawn avatars — no image uploads, no moderation nightmares.
-- Everything is code-generated. Light, fast, and looks like a retro-futuristic dream.
+### Handmade / DIY Aesthetic
+- Dark textile rooms with subtly stitched floor grids and layered fabric or board walls.
+- Procedurally composed avatars and objects — no image uploads and no fixed sprite sheet to redraw.
+- Shapes, material choices, palettes, seams, and borders remain independent, so the art is easy to remix by hand or with AI-assisted tooling.
 
 ### Character Customization
-- 10 neon colors, 3 shapes (circle, square, diamond), 4 accessories (headphones, halo, beanie, none).
+- 10 textile colors, 3 shapes (circle, square, diamond), 4 accessories (headphones, halo, beanie, none).
 - Your look is encoded into a tiny 4-character **Avatar Hash** (e.g. `0c10`) that you can copy/paste to save or share.
 - Procedural glow pulse animation. Everyone sees your custom avatar.
 
@@ -51,10 +50,10 @@ The screenshot-backed audit that kicked this off lives here:
 - **Random Rooms** — empty no-owner public rooms for the matchmaker. They are separate from Common Rooms, so clicking "Go to a Random Room" will not drop you into The Lobby.
 - **Private Rooms** — create a hidden retreat with a room code. Private rooms are the only user-owned spaces.
 - **Build Mode (owner-only, private rooms only):** Place up to 100 furniture items per room. Grid-snapped, Sims/Habbo-style.
-- **20 furniture types:** Cube, Sphere, Cylinder, Pyramid, Chair, Plant, Lamp, Rug, Bed, Bathtub, Couch, Console, Computer, TV, Toilet, plus pets (Cat, Dog, Rabbit, Fishbowl, Bird).
+- **20 furniture types:** Storage Cube, Round Pouf, Stool, Floor Cushion, Chair, Plant, Lamp, Rug, Bed, Bathtub, Couch, Console, Computer, TV, Toilet, plus pets (Cat, Dog, Rabbit, Fishbowl, Bird).
 - **Walkable vs. Solid:** Chairs, rugs, beds, couches, and pets let you walk through them. Tables, plants, and appliances block movement. No overlapping placement.
 - **Interactive objects:** Lamps and TVs can be clicked by anyone to toggle on/off — glow and tint effects sync across the room.
-- **Room Memory Cards:** Download a cyberpunk PNG card of your room layout. Upload it later to reconstruct everything — including room theme and lamp/TV interactive states.
+- **Room Memory Cards:** Download a handmade-style PNG card of your room layout. Upload it later to reconstruct everything — including room theme and lamp/TV interactive states.
 - **Bookmarks:** Save room codes in browser session storage so they survive refreshes without becoming an account or permanent tracking record.
 
 ### Presence & Comfort
@@ -79,7 +78,7 @@ The screenshot-backed audit that kicked this off lives here:
 | Backend | Node.js, Express, Socket.IO |
 | Hosting | Oracle Cloud Free Tier (1 vCPU, ~5GB disk, Ubuntu) |
 | Process Manager | PM2 |
-| Assets | Procedural graphics + curated PNG sprites normalized to transparent Phaser textures at load time. No user uploads. |
+| Assets | Seven CC0 material scans + a runtime Canvas compositor that installs layered Phaser textures. No user uploads or external runtime asset calls. |
 
 All room state lives in-memory. Common Rooms persist while the server is running; random and private rooms disappear when empty. No persistent database required.
 
@@ -188,5 +187,3 @@ pm2 save
 MIT — FreeLobby is FOSS and anyone can run their own servers or build off of it. Not a product. Not a startup. A public service.
 
 If it brightened your day, consider supporting its existence: https://ko-fi.com/zeiddiez
-
-

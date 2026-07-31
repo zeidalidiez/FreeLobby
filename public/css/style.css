@@ -10,14 +10,14 @@
   --bg-card:        rgba(10, 10, 18, 0.85);
   --bg-card-hover:  rgba(20, 20, 35, 0.9);
 
-  /* Accent palette — electric neon */
+  /* Accent palette — overridden by the craft material layer below */
   --accent-primary:    #00f0ff;
   --accent-secondary:  #0088ff;
   --accent-warm:       #00f0ff;
   --accent-warm-soft:  #80f7ff;
   --accent-glow:       rgba(0, 240, 255, 0.2);
 
-  /* Text — cool neon-tinted whites */
+  /* Text — overridden by the warmer craft material layer below */
   --text-primary:   #e0f7ff;
   --text-secondary: #8aaabf;
   --text-muted:     #445566;
@@ -592,7 +592,7 @@ body::before {
 }
 
 #flee-btn:hover {
-  border-color: #ff007f; /* neon magenta for fleeing */
+  border-color: #ff007f; /* legacy danger token; craft layer supplies the final color */
   color: #ff80c0;
 }
 
@@ -2050,6 +2050,7 @@ body::before {
   }
 }
 
+
 /* ─── Zoom Controls ─────────────────────────────────── */
 .zoom-controls {
   position: fixed;
@@ -2089,7 +2090,7 @@ body::before {
 }
 
 /* ==========================================================================
-   Visual refresh: quiet neon social console
+   Layout and responsive shell
    ========================================================================== */
 
 :root {
@@ -2868,5 +2869,284 @@ body:not(.lucide-ready) [data-lucide] {
   .zoom-controls {
     bottom: calc(92px + env(safe-area-inset-bottom));
     right: calc(12px + env(safe-area-inset-right));
+  }
+}
+
+/* ==========================================================================
+   Craft material migration
+   ========================================================================== */
+
+:root {
+  --bg-deep: #111419;
+  --bg-surface: #20252a;
+  --bg-card: rgba(29, 31, 34, 0.94);
+  --bg-card-hover: rgba(47, 48, 47, 0.96);
+  --surface-soft: rgba(36, 38, 40, 0.92);
+  --surface-raised: rgba(48, 47, 44, 0.96);
+  --accent-primary: #5daaa5;
+  --accent-secondary: #7d94b5;
+  --accent-warm: #d77b50;
+  --accent-warm-soft: #edbd80;
+  --accent-quiet: #a884bd;
+  --accent-danger: #cf5f65;
+  --accent-garden: #789866;
+  --accent-library: #9b7598;
+  --accent-glow: rgba(214, 184, 126, 0.2);
+  --text-primary: #f2e7cd;
+  --text-secondary: #c7bda8;
+  --text-muted: #887f72;
+  --border-glass: rgba(224, 204, 163, 0.2);
+  --border-strong: rgba(224, 184, 117, 0.54);
+  --radius-sm: 7px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+  --shadow-glow: 0 18px 50px rgba(0, 0, 0, 0.46), 0 2px 0 rgba(238, 220, 181, 0.06);
+  --font-heading: Georgia, 'Times New Roman', serif;
+  --font-body: 'Trebuchet MS', 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'Cascadia Mono', 'SFMono-Regular', Consolas, monospace;
+  --material-denim: url('../assets/materials/denim-dark.jpg');
+  --material-linen: url('../assets/materials/linen.jpg');
+  --material-cotton: url('../assets/materials/cotton.jpg');
+  --material-board: url('../assets/materials/board.jpg');
+}
+
+html,
+body {
+  background: #111419;
+}
+
+body::before {
+  background-image:
+    linear-gradient(rgba(13, 16, 20, 0.7), rgba(13, 16, 20, 0.7)),
+    var(--material-denim);
+  background-size: auto, 480px 480px;
+  opacity: 0.72;
+}
+
+#landing-screen {
+  background-image:
+    radial-gradient(circle at 18% 20%, rgba(93, 170, 165, 0.14), transparent 32%),
+    radial-gradient(circle at 82% 78%, rgba(215, 123, 80, 0.12), transparent 34%),
+    linear-gradient(rgba(17, 20, 25, 0.84), rgba(17, 20, 25, 0.84)),
+    var(--material-denim);
+  background-size: auto, auto, auto, 480px 480px;
+}
+
+.landing-card {
+  background-image:
+    linear-gradient(rgba(28, 29, 31, 0.94), rgba(18, 20, 23, 0.96)),
+    var(--material-linen);
+  background-size: auto, 430px 430px;
+  border: 3px solid #76593e;
+  outline: 1px dashed rgba(239, 215, 168, 0.52);
+  outline-offset: -8px;
+  box-shadow: 0 22px 62px rgba(0, 0, 0, 0.52), 0 3px 0 #392c22;
+}
+
+.landing-card::before {
+  width: 5px;
+  background: #d3b477;
+  border-radius: 999px;
+  box-shadow: none;
+  opacity: 0.76;
+}
+
+.landing-title {
+  color: #f1dfbb;
+  text-shadow: 0 2px 0 #3c3026;
+}
+
+.input-group input,
+.join-specific-row input,
+.customize-hash-row input,
+.customize-import-row input {
+  color: var(--text-primary);
+  background-image:
+    linear-gradient(rgba(20, 24, 28, 0.9), rgba(20, 24, 28, 0.9)),
+    var(--material-denim);
+  background-size: auto, 260px 260px;
+  border-color: rgba(226, 203, 158, 0.3);
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.32);
+}
+
+.btn,
+.join-specific-toggle,
+.hash-toggle,
+.vibe-action-btn,
+.vibe-prompt-btn {
+  border-color: rgba(224, 198, 148, 0.28);
+  box-shadow: 0 2px 0 rgba(33, 26, 22, 0.82);
+}
+
+.btn-enter {
+  background-image:
+    linear-gradient(rgba(58, 107, 104, 0.82), rgba(47, 83, 83, 0.88)),
+    var(--material-linen);
+  background-size: auto, 280px 280px;
+  border: 2px solid #91b9aa;
+  color: #fff1d2;
+}
+
+.btn-enter:hover {
+  background-image:
+    linear-gradient(rgba(70, 126, 121, 0.86), rgba(51, 92, 90, 0.9)),
+    var(--material-linen);
+}
+
+.private-actions .btn-secondary,
+.btn-secondary,
+.common-room-item,
+.bookmarks-section,
+.public-rooms-section,
+.customize-section,
+.landing-col:first-child {
+  background-image:
+    linear-gradient(rgba(35, 38, 40, 0.9), rgba(25, 28, 31, 0.94)),
+    var(--material-linen);
+  background-size: auto, 360px 360px;
+  border-color: rgba(220, 198, 158, 0.22);
+}
+
+.common-room-item::before {
+  width: 6px;
+  background: var(--room-accent, var(--accent-primary));
+  box-shadow: none;
+}
+
+.common-room-item[data-room='garden'],
+.common-room-item[data-room='library'] {
+  background-image:
+    linear-gradient(rgba(35, 38, 40, 0.88), rgba(25, 28, 31, 0.94)),
+    var(--material-linen);
+}
+
+#connection-status,
+#room-info,
+#player-count,
+#back-btn,
+#flee-btn,
+#quiet-btn,
+#build-btn,
+.zoom-controls button,
+#sign-bar,
+.emote-toggle,
+.music-btn,
+.love-btn,
+#furniture-panel,
+.ambient-panel,
+.music-panel,
+.vibe-action,
+.vibe-prompt,
+.emote-grid {
+  background-image:
+    linear-gradient(rgba(31, 33, 35, 0.93), rgba(22, 24, 27, 0.95)),
+    var(--material-cotton);
+  background-size: auto, 320px 320px;
+  border: 2px solid rgba(179, 143, 97, 0.62);
+  outline: 1px dashed rgba(239, 216, 171, 0.36);
+  outline-offset: -5px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 9px 24px rgba(0, 0, 0, 0.4), 0 2px 0 #352820;
+}
+
+#flee-btn {
+  background-image:
+    linear-gradient(rgba(101, 43, 48, 0.9), rgba(72, 33, 38, 0.94)),
+    var(--material-cotton);
+  border-color: rgba(208, 104, 105, 0.72);
+  color: #f5d8c8;
+}
+
+#quiet-btn.active {
+  background-image:
+    linear-gradient(rgba(82, 60, 95, 0.9), rgba(57, 45, 68, 0.94)),
+    var(--material-cotton);
+  border-color: rgba(181, 144, 194, 0.76);
+}
+
+#build-btn.active,
+.tool-btn.active,
+.furn-btn.active,
+.ambient-track-btn.active,
+.music-cell.active {
+  background-image:
+    linear-gradient(rgba(55, 111, 106, 0.92), rgba(42, 78, 77, 0.96)),
+    var(--material-linen);
+  border-color: rgba(126, 190, 178, 0.78);
+  color: #f6e8c9;
+  box-shadow: 0 2px 0 #2c2620;
+}
+
+.room-code,
+.owner-badge {
+  color: #e3b96f;
+}
+
+.status-dot {
+  background: #70b9a7;
+  box-shadow: 0 0 0 3px rgba(112, 185, 167, 0.16);
+}
+
+.furniture-palette {
+  gap: 7px;
+}
+
+.furn-btn {
+  min-width: 42px;
+  height: 48px;
+  padding: 3px;
+  overflow: hidden;
+  background: rgba(13, 16, 18, 0.58);
+  border: 1px solid rgba(225, 205, 168, 0.22);
+}
+
+.furn-preview {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.42));
+  pointer-events: none;
+}
+
+.emote-btn,
+.tool-btn,
+.ambient-track-btn,
+.music-cell,
+.music-close,
+.music-play,
+.copy-btn,
+.bookmark-btn,
+.sign-send-btn {
+  background: rgba(31, 33, 34, 0.78);
+  border-color: rgba(225, 205, 168, 0.2);
+  color: var(--text-primary);
+}
+
+.panel-status,
+.common-room-count,
+.public-room-count {
+  background: rgba(15, 17, 18, 0.54);
+  border-color: rgba(226, 203, 158, 0.2);
+}
+
+body[data-room-theme='garden'] {
+  --accent-primary: #789866;
+}
+
+body[data-room-theme='library'] {
+  --accent-primary: #9b7598;
+}
+
+body[data-room-theme='private'] {
+  --accent-primary: #7187ad;
+}
+
+@media (prefers-contrast: more) {
+  :root {
+    --border-glass: rgba(244, 226, 190, 0.52);
+    --text-secondary: #e3d7bd;
+    --text-muted: #b9ab92;
   }
 }

@@ -44,13 +44,13 @@ Movement:
 Top-down Phaser movement with keyboard and click-to-move. The player physics body collides with walls and solid furniture. Idle/sit animation is visual only and does not move the physics body. The server performs lightweight authority checks on reported movement before rebroadcasting positions.
 
 Presence:
-Avatars are procedural neon shapes with color, shape, accessory, and pulse customization. Idle players sit after 5 seconds. Quiet Mode lowers opacity and auto-declines Vibe Checks.
+Avatars are procedural fabric patches with color, shape, accessory, and pulse customization. They share the room's material language but keep faces and distinct silhouettes so they cannot be confused with furniture. Idle players sit after 5 seconds. Quiet Mode lowers opacity and auto-declines Vibe Checks.
 
 Communication:
 Emotes are room-visible, palette-limited, and rate-limited. Signs are 10-character text bubbles visible only between accepted Vibe Check pairs. Muting a stranger hides that stranger's emotes locally for the current session.
 
 Rooms and Furniture:
-Private room owners can place up to 100 items from the 20-item furniture/pet set. Walkable furniture does not block movement; solid furniture does. Lamps and TVs are interactive and synced across the room.
+Private room owners can place up to 100 items from the 20-item furniture/pet set. Every item is assembled at runtime from layered CC0 textile/board materials, shape paths, borders, and stitches. Walkable furniture does not block movement; solid furniture does. Lamps and TVs are interactive and synced across the room.
 
 Room Memory Cards:
 Private room layouts can be exported as PNG cards with encoded layout, theme, and lamp/TV state data and later imported into another private room.
@@ -70,18 +70,26 @@ State:
 All core state is in-memory. There is no account system, no user-uploaded media, and no database.
 
 Tests:
-Node's built-in test runner covers room-state, payload normalization, event rate limiting, asset matte removal, and idle-state helpers. A Socket.IO integration test exercises malformed events, invalid furniture, room joining, Vibe Check, and consent-gated sign delivery. Run `npm test`.
+Node's built-in test runner covers room-state, payload normalization, event rate limiting, the craft-material manifest/compositor contract, and idle-state helpers. A Socket.IO integration test exercises malformed events, invalid furniture, room joining, Vibe Check, and consent-gated sign delivery. Run `npm test`.
 
 Runtime dependencies:
-Phaser, the Socket.IO client, Lucide, and system-font stacks are served by FreeLobby itself. The application does not contact third-party CDNs during normal page load.
+Phaser, the Socket.IO client, Lucide, system-font stacks, and seven CC0 material scans are served by FreeLobby itself. The application does not contact third-party CDNs during normal page load.
 
 7. Current Product Direction
 
-The next major pass should update look and feel without weakening the consent model. Good targets:
+FreeLobby's visual system is intentionally a reusable craft kit rather than a
+fixed collection of final sprites:
 
-- Landing screen visual hierarchy and density.
-- In-game HUD polish and clearer controls.
-- Mobile comfort.
-- Accessibility pass for keyboard and reduced-motion users.
-- Better visual differentiation between common, random, and private spaces.
-- Socket.IO integration tests for multi-client room transitions, consent-gated signs, Quiet Mode, furniture placement, and disconnect cleanup.
+- Seven audited CC0 scans provide denim, linen, cotton, fleece, hessian,
+  corduroy, and board grain.
+- Canvas recipes independently define silhouette, layers, material choice,
+  palette, borders, seams, and details.
+- The same recipes drive room sprites, interactive states, build thumbnails,
+  avatars, walls, floors, and Memory Card art.
+- Common rooms use distinct semantic palettes while sharing construction rules.
+- New visual work should extend this grammar without weakening consent,
+  accessibility, responsive behavior, or the stable numeric furniture protocol.
+
+Good next targets are additional object recipe variants, more theme palettes,
+and Socket.IO integration coverage for Quiet Mode, room transitions, furniture
+placement, and disconnect cleanup.

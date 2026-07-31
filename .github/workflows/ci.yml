@@ -23,7 +23,7 @@ jobs:
       - run: npm ci
       - run: node --check server/index.js
       - run: node --check public/js/idle-state.js
-      - run: node --check public/js/asset-normalizer.js
+      - run: node --check public/js/craft-textures.js
       - run: node --check public/js/card-codec.js
       - run: node --check public/js/game.js
       - run: npm test
