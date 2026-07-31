@@ -98,39 +98,69 @@
           Customize Avatar
         </button>
         <div class="join-specific-panel" id="customize-panel" role="region" aria-label="Avatar customization">
-          <div class="customize-row">
-            <label class="customize-label">Color</label>
-            <div class="swatch-group" id="color-swatches" role="radiogroup" aria-label="Avatar color"></div>
-          </div>
-          <div class="customize-row">
-            <label class="customize-label">Shape</label>
-            <div class="shape-group" id="shape-btns" role="radiogroup" aria-label="Avatar shape">
-              <button class="shape-btn active" data-shape="0" role="radio" aria-checked="true" aria-label="Circle shape">●</button>
-              <button class="shape-btn" data-shape="1" role="radio" aria-checked="false" aria-label="Square shape">■</button>
-              <button class="shape-btn" data-shape="2" role="radio" aria-checked="false" aria-label="Diamond shape">◆</button>
+          <div class="avatar-customizer">
+            <div class="avatar-preview-column">
+              <div class="avatar-preview-frame">
+                <canvas id="avatar-preview" width="192" height="192" aria-label="Current patchwork avatar preview"></canvas>
+              </div>
+              <p>Everyone starts with a surprise mix. Change anything.</p>
+              <div class="avatar-preview-actions">
+                <button class="btn btn-primary" id="btn-randomize-avatar" type="button">
+                  <i data-lucide="dices" aria-hidden="true"></i>
+                  Randomize
+                </button>
+                <button class="btn btn-secondary" id="btn-reset-avatar" type="button">Reset</button>
+              </div>
+            </div>
+
+            <div class="avatar-option-panel">
+              <div class="avatar-option-row avatar-option-row-wide">
+                <span class="customize-label">Base / Shape</span>
+                <div class="shape-group avatar-choice-grid" id="shape-btns" role="radiogroup" aria-label="Avatar shape"></div>
+              </div>
+              <div class="avatar-option-row avatar-option-row-wide">
+                <span class="customize-label">Color</span>
+                <div class="swatch-group" id="color-swatches" role="radiogroup" aria-label="Avatar color"></div>
+              </div>
+              <div class="avatar-option-row">
+                <span class="customize-label">Eyes</span>
+                <div class="avatar-choice-grid" id="eyes-btns" role="radiogroup" aria-label="Avatar eyes"></div>
+              </div>
+              <div class="avatar-option-row">
+                <span class="customize-label">Brows</span>
+                <div class="avatar-choice-grid" id="brows-btns" role="radiogroup" aria-label="Avatar brows"></div>
+              </div>
+              <div class="avatar-option-row">
+                <span class="customize-label">Mouth</span>
+                <div class="avatar-choice-grid" id="mouth-btns" role="radiogroup" aria-label="Avatar mouth"></div>
+              </div>
+              <div class="avatar-option-row">
+                <span class="customize-label">Details</span>
+                <div class="avatar-choice-grid" id="detail-btns" role="radiogroup" aria-label="Avatar face details"></div>
+              </div>
+              <div class="avatar-option-row avatar-option-row-wide">
+                <span class="customize-label">Accessory</span>
+                <div class="acc-group avatar-choice-grid" id="acc-btns" role="radiogroup" aria-label="Avatar accessory"></div>
+              </div>
+              <div class="avatar-option-row avatar-option-row-wide avatar-pulse-row">
+                <label class="customize-label" for="pulse-slider">Pulse</label>
+                <input type="range" id="pulse-slider" min="0" max="2" step="1" value="1" aria-label="Avatar pulse speed">
+                <div class="pulse-labels"><span>Slow</span><span>Normal</span><span>Fast</span></div>
+              </div>
             </div>
           </div>
-          <div class="customize-row">
-            <label class="customize-label">Accessory</label>
-            <div class="acc-group" id="acc-btns" role="radiogroup" aria-label="Avatar accessory">
-              <button class="acc-btn active" data-acc="0" role="radio" aria-checked="true" aria-label="No accessory">None</button>
-              <button class="acc-btn" data-acc="1" role="radio" aria-checked="false" aria-label="Headphones accessory">🎧</button>
-              <button class="acc-btn" data-acc="2" role="radio" aria-checked="false" aria-label="Halo accessory">😇</button>
-              <button class="acc-btn" data-acc="3" role="radio" aria-checked="false" aria-label="Beanie accessory">🧢</button>
+
+          <div class="avatar-share-row">
+            <div class="customize-hash-row">
+              <label for="avatar-hash">Look code</label>
+              <input type="text" id="avatar-hash" readonly maxlength="9" value="A00010000" aria-label="Avatar look code">
+              <button class="btn btn-primary btn-sm" id="btn-copy-hash" type="button" aria-label="Copy avatar look code">Copy</button>
             </div>
-          </div>
-          <div class="customize-row">
-            <label class="customize-label">Glow Pulse</label>
-            <input type="range" id="pulse-slider" min="0" max="2" step="1" value="1" aria-label="Glow pulse speed">
-            <div class="pulse-labels"><span>Slow</span><span>Normal</span><span>Fast</span></div>
-          </div>
-          <div class="customize-hash-row">
-            <input type="text" id="avatar-hash" readonly maxlength="4" value="0001" aria-label="Avatar hash code">
-            <button class="btn btn-primary btn-sm" id="btn-copy-hash" aria-label="Copy avatar hash">Copy</button>
-          </div>
-          <div class="customize-import-row">
-            <input type="text" id="import-hash" placeholder="Paste hash..." maxlength="4" aria-label="Paste avatar hash to import">
-            <button class="btn btn-primary btn-sm" id="btn-import-hash" aria-label="Import avatar hash">Import</button>
+            <div class="customize-import-row">
+              <label for="import-hash">Import</label>
+              <input type="text" id="import-hash" placeholder="Paste look code…" maxlength="9" aria-label="Paste avatar look code to import">
+              <button class="btn btn-primary btn-sm" id="btn-import-hash" type="button" aria-label="Import avatar look code">Import</button>
+            </div>
           </div>
         </div>
       </div>
@@ -177,26 +207,117 @@
   <button id="back-btn" aria-label="Return to lobby">← Lobby</button>
 
   <!-- ═══ FURNITURE PANEL ═══ -->
-  <div id="furniture-panel" role="dialog" aria-label="Furniture build panel" aria-hidden="true">
-    <div class="tool-panel-header">
-      <div>
+  <div id="furniture-panel" class="build-drawer" data-snap="closed" role="dialog" aria-label="Room builder" aria-hidden="true">
+    <button id="build-drawer-handle" class="build-drawer-handle" type="button" aria-label="Resize build drawer">
+      <span aria-hidden="true"></span>
+    </button>
+
+    <div class="build-drawer-header">
+      <div class="build-drawer-heading">
         <span class="panel-kicker">Owner Tools</span>
-        <h2>Build</h2>
+        <h2 id="build-drawer-title">Build · Seating</h2>
       </div>
-      <span class="panel-status">Grid 64</span>
+      <div class="build-view-tabs" role="tablist" aria-label="Build view">
+        <button id="build-tab-furniture" class="build-view-tab active" type="button" role="tab" aria-selected="true" aria-controls="furniture-view">Furniture</button>
+        <button id="build-tab-style" class="build-view-tab" type="button" role="tab" aria-selected="false" aria-controls="room-style-view">Room Style</button>
+      </div>
+      <button id="build-close" class="build-close" type="button" aria-label="Close room builder">×</button>
     </div>
-    <div class="furniture-palette" id="furniture-palette" role="radiogroup" aria-label="Furniture selection"></div>
-    <div class="furniture-tools" role="group" aria-label="Build tools">
-      <button class="tool-btn active" id="tool-place" title="Place furniture" aria-label="Place tool" aria-pressed="true">＋</button>
-      <button class="tool-btn" id="tool-remove" title="Remove furniture" aria-label="Remove tool" aria-pressed="false">−</button>
+
+    <div class="build-drawer-body">
+      <section id="furniture-view" class="build-view active" role="tabpanel" aria-labelledby="build-tab-furniture">
+        <div id="furniture-categories" class="furniture-categories" role="tablist" aria-label="Furniture categories"></div>
+
+        <div class="catalog-workspace">
+          <div class="catalog-browser">
+            <div class="catalog-toolbar">
+              <label class="catalog-search">
+                <span class="sr-only">Search furniture</span>
+                <i data-lucide="search" aria-hidden="true"></i>
+                <input id="furniture-search" type="search" placeholder="Search furniture…" autocomplete="off">
+              </label>
+              <span id="catalog-count" class="catalog-count">100 items</span>
+            </div>
+            <div class="furniture-palette" id="furniture-palette" role="radiogroup" aria-label="Furniture selection"></div>
+          </div>
+
+          <aside class="selected-furniture" aria-live="polite">
+            <div id="selected-furniture-preview" class="selected-furniture-preview" aria-hidden="true"></div>
+            <div>
+              <span class="selected-label">Selected</span>
+              <h3 id="selected-furniture-name">Storage Cube</h3>
+              <p id="selected-furniture-meta">Storage · 1 × 1</p>
+            </div>
+            <div class="selected-rotation">
+              <span>Rotation</span>
+              <strong id="selected-rotation-label">0°</strong>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section id="room-style-view" class="build-view room-style-view" role="tabpanel" aria-labelledby="build-tab-style" hidden>
+        <div class="room-style-layout">
+          <div>
+            <div class="room-style-section-heading">
+              <div>
+                <span class="selected-label">Start with a mood</span>
+                <h3>Room Presets</h3>
+              </div>
+              <p>Every preset stays fully editable.</p>
+            </div>
+            <div id="room-style-presets" class="room-style-presets" role="radiogroup" aria-label="Room style preset"></div>
+          </div>
+
+          <div class="room-style-controls">
+            <div class="room-color-control">
+              <label for="room-wall-color">Wall</label>
+              <div class="room-color-input">
+                <input id="room-wall-color" type="color" value="#eadfc8">
+                <output id="room-wall-value" for="room-wall-color">#eadfc8</output>
+              </div>
+            </div>
+            <div class="room-color-control">
+              <label for="room-floor-color">Floor</label>
+              <div class="room-color-input">
+                <input id="room-floor-color" type="color" value="#9a7654">
+                <output id="room-floor-value" for="room-floor-color">#9a7654</output>
+              </div>
+            </div>
+            <div class="room-color-control">
+              <label for="room-accent-color">Accent</label>
+              <div class="room-color-input">
+                <input id="room-accent-color" type="color" value="#4f8079">
+                <output id="room-accent-value" for="room-accent-color">#4f8079</output>
+              </div>
+            </div>
+
+            <fieldset class="room-intensity">
+              <legend>Texture intensity</legend>
+              <div id="room-intensity-options" class="room-intensity-options"></div>
+            </fieldset>
+          </div>
+        </div>
+      </section>
     </div>
-    <div class="furniture-hash-section">
-      <button class="hash-toggle" id="btn-toggle-hash" aria-expanded="false" aria-controls="hash-panel">Memory Card</button>
-      <div class="hash-panel" id="hash-panel" role="region" aria-label="Room memory card">
-        <button class="btn btn-primary btn-sm" id="btn-download-card" style="width:100%;margin-bottom:8px;" aria-label="Download room memory card">Download Room Card</button>
-        <div class="hash-row">
-          <label class="file-input-label" style="flex:1;text-align:center;padding:8px;font-size:0.78rem;color:var(--text-secondary);cursor:pointer;border:1px dashed var(--border-glass);border-radius:var(--radius-sm);">
-            <input type="file" id="card-file-input" accept="image/png" style="display:none;" aria-label="Upload room memory card">
+
+    <div class="build-actions" role="group" aria-label="Build tools">
+      <button class="tool-btn" id="tool-rotate" type="button" title="Rotate selected furniture" aria-label="Rotate selected furniture">
+        <i data-lucide="rotate-cw" aria-hidden="true"></i><span>Rotate</span>
+      </button>
+      <button class="tool-btn active" id="tool-place" type="button" title="Place furniture" aria-label="Place tool" aria-pressed="true">
+        <i data-lucide="check" aria-hidden="true"></i><span>Place</span>
+      </button>
+      <button class="tool-btn" id="tool-remove" type="button" title="Remove furniture" aria-label="Remove tool" aria-pressed="false">
+        <i data-lucide="eraser" aria-hidden="true"></i><span>Remove</span>
+      </button>
+
+      <div class="furniture-hash-section">
+        <button class="hash-toggle" id="btn-toggle-hash" type="button" aria-expanded="false" aria-controls="hash-panel">Memory Card</button>
+        <div class="hash-panel" id="hash-panel" role="region" aria-label="Room memory card">
+          <button class="btn btn-primary btn-sm" id="btn-download-card" type="button" aria-label="Download room memory card">Download Room Card</button>
+          <label class="file-input-label">
+            <input type="file" id="card-file-input" accept="image/png" aria-label="Upload room memory card">
             Upload Room Card
           </label>
         </div>
@@ -317,6 +438,7 @@
   <script src="vendor/socket.io.min.js"></script>
   <script src="js/idle-state.js"></script>
   <script src="js/furniture-catalog.js"></script>
+  <script src="js/room-style.js"></script>
   <script src="js/craft-textures.js"></script>
   <script src="js/card-codec.js"></script>
   <script src="js/shell-state.js"></script>

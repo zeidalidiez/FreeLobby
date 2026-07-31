@@ -78,6 +78,7 @@ let currentRoomIsPublic = true;
 let quietMode = false;
 const idleState = window.FreeLobbyIdle;
 const furnitureCatalog = window.FreeLobbyFurniture;
+const roomStyles = window.FreeLobbyRoomStyles;
 const craftTextures = window.FreeLobbyCraft;
 const cardCodec = window.FreeLobbyCards;
 
@@ -105,8 +106,15 @@ let vibePromptFromId = null; // who is requesting a vibe check on us
 // Phase 2 — Character Customization
 const btnToggleCustomize = document.getElementById('btn-toggle-customize');
 const customizePanel     = document.getElementById('customize-panel');
+const avatarPreview      = document.getElementById('avatar-preview');
+const btnRandomizeAvatar = document.getElementById('btn-randomize-avatar');
+const btnResetAvatar     = document.getElementById('btn-reset-avatar');
 const colorSwatches      = document.getElementById('color-swatches');
 const shapeBtns          = document.getElementById('shape-btns');
+const eyeBtns            = document.getElementById('eyes-btns');
+const browBtns           = document.getElementById('brows-btns');
+const mouthBtns          = document.getElementById('mouth-btns');
+const detailBtns         = document.getElementById('detail-btns');
 const accBtns            = document.getElementById('acc-btns');
 const pulseSlider        = document.getElementById('pulse-slider');
 const avatarHashInput    = document.getElementById('avatar-hash');
@@ -126,6 +134,7 @@ const COLOR_HEX_STR = [
 const ROOM_THEME_VISUALS = craftTextures.THEME_PALETTES;
 
 function getRoomVisualTheme(theme) {
+  if (theme && typeof theme === 'object') return roomStyles.paletteForStyle(theme);
   if (!Number.isInteger(theme) || theme < 0) return ROOM_THEME_VISUALS[0];
   return ROOM_THEME_VISUALS[theme % ROOM_THEME_VISUALS.length] || ROOM_THEME_VISUALS[0];
 }
@@ -179,8 +188,9 @@ function installInterfaceIcons() {
     ['zoom-in', 'plus', '', '+'],
     ['zoom-out', 'minus', '', '-'],
     ['sign-send', 'arrow-up', '', '↑'],
-    ['tool-place', 'plus', '', '+'],
-    ['tool-remove', 'eraser', '', '-'],
+    ['tool-rotate', 'rotate-cw', 'Rotate', '↻'],
+    ['tool-place', 'check', 'Place', '+'],
+    ['tool-remove', 'eraser', 'Remove', '-'],
     ['music-close', 'x', '', '×'],
   ];
   for (const [id, icon, label, fallback] of iconButtons) {
@@ -389,142 +399,210 @@ function buildMusicGrid() {
   }
 }
 
-let CUSTOMIZATION = { colorIdx: 0, shape: 0, accessory: 0, pulse: 1 };
+const DEFAULT_CUSTOMIZATION = Object.freeze({
+  colorIdx: 0,
+  shape: 0,
+  accessory: 0,
+  pulse: 1,
+  eyes: 3,
+  brows: 0,
+  mouth: 0,
+  detail: 1,
+});
+const AVATAR_GLYPHS = Object.freeze({
+  shape: ['●', '■', '◆', '♥', '✿'],
+  eyes: ['••', '⌒⌒', '◉◉', '^^', '•⌒', '××'],
+  brows: ['⌒', '—', '⌃', '╱╲', '▬'],
+  mouth: ['⌣', '◡', '—', '○', '⌁', '⌢'],
+  detail: ['–', '∴', '●', '〰', '•', '┄'],
+  accessory: ['–', '🎧', '◯', '▰', '⋈', '✿', '⌐', '❧'],
+});
+const AVATAR_GROUPS = [
+  { element: shapeBtns, field: 'shape', names: craftTextures.SHAPE_NAMES, className: 'shape-btn' },
+  { element: eyeBtns, field: 'eyes', names: craftTextures.EYE_NAMES },
+  { element: browBtns, field: 'brows', names: craftTextures.BROW_NAMES },
+  { element: mouthBtns, field: 'mouth', names: craftTextures.MOUTH_NAMES },
+  { element: detailBtns, field: 'detail', names: craftTextures.DETAIL_NAMES },
+  { element: accBtns, field: 'accessory', names: craftTextures.ACCESSORY_NAMES, className: 'acc-btn' },
+];
 
-function encodeHash(c) {
-  const chars = '0123456789abcdef';
-  return chars[c.colorIdx] + String(c.shape) + String(c.accessory) + String(c.pulse);
-}
-function decodeHash(str) {
-  const chars = '0123456789abcdef';
-  const c = { colorIdx: 0, shape: 0, accessory: 0, pulse: 1 };
-  if (str.length !== 4) return c;
-  c.colorIdx = chars.indexOf(str[0].toLowerCase());
-  if (c.colorIdx < 0) c.colorIdx = 0;
-  c.shape = parseInt(str[1], 10) || 0;
-  c.accessory = parseInt(str[2], 10) || 0;
-  c.pulse = parseInt(str[3], 10);
-  if (isNaN(c.pulse)) c.pulse = 1;
-  c.colorIdx = Math.max(0, Math.min(9, c.colorIdx));
-  c.shape = Math.max(0, Math.min(2, c.shape));
-  c.accessory = Math.max(0, Math.min(3, c.accessory));
-  c.pulse = Math.max(0, Math.min(2, c.pulse));
-  return c;
-}
-function updateCustomizationUI() {
-  avatarHashInput.value = encodeHash(CUSTOMIZATION);
-  colorSwatches.querySelectorAll('.swatch').forEach((el, i) => {
-    const isActive = i === CUSTOMIZATION.colorIdx;
-    el.classList.toggle('active', isActive);
-    el.setAttribute('aria-checked', String(isActive));
-  });
-  shapeBtns.querySelectorAll('.shape-btn').forEach(el => {
-    const isActive = parseInt(el.dataset.shape, 10) === CUSTOMIZATION.shape;
-    el.classList.toggle('active', isActive);
-    el.setAttribute('aria-checked', String(isActive));
-  });
-  accBtns.querySelectorAll('.acc-btn').forEach(el => {
-    const isActive = parseInt(el.dataset.acc, 10) === CUSTOMIZATION.accessory;
-    el.classList.toggle('active', isActive);
-    el.setAttribute('aria-checked', String(isActive));
-  });
-  pulseSlider.value = CUSTOMIZATION.pulse;
+let CUSTOMIZATION = craftTextures.randomAvatarCustomization();
+let avatarPreviewRevision = 0;
+
+function encodeHash(customization) {
+  return craftTextures.encodeAvatarLook(customization);
 }
 
-COLOR_HEX_STR.forEach((hex, i) => {
-  const sw = document.createElement('div');
-  sw.className = 'swatch' + (i === 0 ? ' active' : '');
-  sw.style.backgroundColor = hex;
-  sw.style.boxShadow = `0 0 8px ${hex}66`;
-  sw.setAttribute('tabindex', '0');
-  sw.setAttribute('role', 'radio');
-  sw.setAttribute('aria-checked', String(i === 0));
-  sw.setAttribute('aria-label', `Color ${i + 1}`);
-  sw.addEventListener('click', () => {
-    CUSTOMIZATION.colorIdx = i;
+function decodeHash(code) {
+  return craftTextures.decodeAvatarLook(code);
+}
+
+function titleCase(value) {
+  return String(value).replace(/-/g, ' ').replace(/\b\w/g, character => character.toUpperCase());
+}
+
+function installAvatarChoiceGroup({ element, field, names, className = '' }) {
+  if (!element) return;
+  element.innerHTML = '';
+  names.forEach((name, index) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = `avatar-choice-btn ${className}`.trim();
+    button.dataset.customizationField = field;
+    button.dataset.customizationValue = String(index);
+    button.setAttribute('role', 'radio');
+    button.setAttribute('aria-label', `${titleCase(field)}: ${titleCase(name)}`);
+    button.title = titleCase(name);
+
+    const glyph = document.createElement('span');
+    glyph.className = 'avatar-choice-glyph';
+    glyph.setAttribute('aria-hidden', 'true');
+    glyph.textContent = AVATAR_GLYPHS[field][index] || '•';
+    button.appendChild(glyph);
+
+    const label = document.createElement('small');
+    label.textContent = titleCase(name);
+    button.appendChild(label);
+    element.appendChild(button);
+  });
+
+  element.addEventListener('click', event => {
+    const button = event.target.closest('[data-customization-field]');
+    if (!button) return;
+    CUSTOMIZATION[field] = Number.parseInt(button.dataset.customizationValue, 10);
     updateCustomizationUI();
   });
-  sw.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      sw.click();
-    }
+
+  element.addEventListener('keydown', event => {
+    if (!['ArrowRight', 'ArrowLeft', 'ArrowDown', 'ArrowUp'].includes(event.key)) return;
+    const buttons = Array.from(element.querySelectorAll('[data-customization-field]'));
+    const currentIndex = buttons.indexOf(document.activeElement);
+    if (currentIndex < 0) return;
+    const direction = event.key === 'ArrowRight' || event.key === 'ArrowDown' ? 1 : -1;
+    const nextIndex = (currentIndex + direction + buttons.length) % buttons.length;
+    event.preventDefault();
+    buttons[nextIndex].focus();
+    buttons[nextIndex].click();
   });
-  colorSwatches.appendChild(sw);
-});
+}
+
+function installAvatarChoices() {
+  COLOR_HEX_STR.forEach((hex, index) => {
+    const swatch = document.createElement('button');
+    swatch.type = 'button';
+    swatch.className = 'swatch';
+    swatch.style.backgroundColor = hex;
+    swatch.style.setProperty('--swatch-color', hex);
+    swatch.dataset.customizationField = 'colorIdx';
+    swatch.dataset.customizationValue = String(index);
+    swatch.setAttribute('role', 'radio');
+    swatch.setAttribute('aria-label', `Fabric color ${index + 1}`);
+    swatch.addEventListener('click', () => {
+      CUSTOMIZATION.colorIdx = index;
+      updateCustomizationUI();
+    });
+    colorSwatches.appendChild(swatch);
+  });
+  AVATAR_GROUPS.forEach(installAvatarChoiceGroup);
+}
+
+async function refreshAvatarPreview() {
+  if (!avatarPreview) return;
+  const revision = ++avatarPreviewRevision;
+  const stagingCanvas = document.createElement('canvas');
+  avatarPreview.classList.add('loading');
+  try {
+    await craftTextures.renderAvatarPreview(stagingCanvas, CUSTOMIZATION);
+    if (revision !== avatarPreviewRevision) return;
+    const context = avatarPreview.getContext('2d');
+    context.clearRect(0, 0, avatarPreview.width, avatarPreview.height);
+    context.drawImage(stagingCanvas, 0, 0, avatarPreview.width, avatarPreview.height);
+    avatarPreview.classList.remove('loading');
+  } catch (error) {
+    avatarPreview.classList.remove('loading');
+    console.error('Avatar preview failed to render.', error);
+  }
+}
+
+function updateCustomizationUI() {
+  CUSTOMIZATION = craftTextures.normalizeAvatarCustomization(CUSTOMIZATION);
+  avatarHashInput.value = encodeHash(CUSTOMIZATION);
+  document.querySelectorAll('[data-customization-field]').forEach(element => {
+    const field = element.dataset.customizationField;
+    const value = Number.parseInt(element.dataset.customizationValue, 10);
+    const isActive = CUSTOMIZATION[field] === value;
+    element.classList.toggle('active', isActive);
+    element.setAttribute('aria-checked', String(isActive));
+    element.tabIndex = isActive ? 0 : -1;
+  });
+  pulseSlider.value = String(CUSTOMIZATION.pulse);
+  refreshAvatarPreview();
+}
 
 btnToggleCustomize.addEventListener('click', () => {
   customizePanel.classList.toggle('open');
   const isOpen = customizePanel.classList.contains('open');
+  customizePanel.closest('.customize-section')?.classList.toggle('expanded', isOpen);
   btnToggleCustomize.setAttribute('aria-expanded', String(isOpen));
+  if (isOpen) refreshAvatarPreview();
 });
 
-shapeBtns.addEventListener('click', (e) => {
-  const btn = e.target.closest('.shape-btn');
-  if (!btn) return;
-  CUSTOMIZATION.shape = parseInt(btn.dataset.shape, 10);
+btnRandomizeAvatar.addEventListener('click', () => {
+  CUSTOMIZATION = craftTextures.randomAvatarCustomization();
   updateCustomizationUI();
 });
 
-shapeBtns.addEventListener('keydown', (e) => {
-  const buttons = Array.from(shapeBtns.querySelectorAll('.shape-btn'));
-  const idx = buttons.indexOf(document.activeElement);
-  if (idx === -1) return;
-  let nextIdx = idx;
-  if (e.key === 'ArrowRight') nextIdx = idx + 1;
-  else if (e.key === 'ArrowLeft') nextIdx = idx - 1;
-  else return;
-  e.preventDefault();
-  if (nextIdx >= 0 && nextIdx < buttons.length) {
-    buttons[nextIdx].focus();
-    buttons[nextIdx].click();
-  }
-});
-
-accBtns.addEventListener('click', (e) => {
-  const btn = e.target.closest('.acc-btn');
-  if (!btn) return;
-  CUSTOMIZATION.accessory = parseInt(btn.dataset.acc, 10);
+btnResetAvatar.addEventListener('click', () => {
+  CUSTOMIZATION = { ...DEFAULT_CUSTOMIZATION };
   updateCustomizationUI();
-});
-
-accBtns.addEventListener('keydown', (e) => {
-  const buttons = Array.from(accBtns.querySelectorAll('.acc-btn'));
-  const idx = buttons.indexOf(document.activeElement);
-  if (idx === -1) return;
-  let nextIdx = idx;
-  if (e.key === 'ArrowRight') nextIdx = idx + 1;
-  else if (e.key === 'ArrowLeft') nextIdx = idx - 1;
-  else return;
-  e.preventDefault();
-  if (nextIdx >= 0 && nextIdx < buttons.length) {
-    buttons[nextIdx].focus();
-    buttons[nextIdx].click();
-  }
 });
 
 pulseSlider.addEventListener('input', () => {
-  CUSTOMIZATION.pulse = parseInt(pulseSlider.value, 10);
+  CUSTOMIZATION.pulse = Number.parseInt(pulseSlider.value, 10);
   updateCustomizationUI();
 });
 
-btnCopyHash.addEventListener('click', () => {
-  navigator.clipboard.writeText(encodeHash(CUSTOMIZATION)).then(() => {
-    btnCopyHash.textContent = '✓';
-    setTimeout(() => btnCopyHash.textContent = 'Copy', 1500);
-  });
+async function copyAvatarLookCode() {
+  const code = encodeHash(CUSTOMIZATION);
+  try {
+    if (!navigator.clipboard || typeof navigator.clipboard.writeText !== 'function') {
+      throw new Error('Clipboard API unavailable');
+    }
+    await navigator.clipboard.writeText(code);
+  } catch (error) {
+    avatarHashInput.focus();
+    avatarHashInput.select();
+    if (!document.execCommand('copy')) {
+      showError('Could not copy automatically. Select the look code and copy it.');
+      return;
+    }
+  }
+  btnCopyHash.textContent = 'Copied';
+  setTimeout(() => { btnCopyHash.textContent = 'Copy'; }, 1500);
+}
+
+function importAvatarLookCode() {
+  const decoded = decodeHash(importHashInput.value);
+  if (!decoded) {
+    showError('Use a 9-character look code, or a legacy 4-character code.');
+    return;
+  }
+  CUSTOMIZATION = decoded;
+  updateCustomizationUI();
+  importHashInput.value = '';
+}
+
+btnCopyHash.addEventListener('click', copyAvatarLookCode);
+btnImportHash.addEventListener('click', importAvatarLookCode);
+importHashInput.addEventListener('input', () => {
+  importHashInput.value = importHashInput.value.toUpperCase().replace(/[^0-9A-Z]/g, '');
+});
+importHashInput.addEventListener('keydown', event => {
+  if (event.key === 'Enter') importAvatarLookCode();
 });
 
-btnImportHash.addEventListener('click', () => {
-  const str = importHashInput.value.trim();
-  if (str.length === 4) {
-    CUSTOMIZATION = decodeHash(str);
-    updateCustomizationUI();
-    importHashInput.value = '';
-  } else {
-    showError('Hash must be 4 characters');
-  }
-});
+installAvatarChoices();
+updateCustomizationUI();
 
 function showError(msg) {
   errorToast.textContent = msg;
@@ -593,8 +671,7 @@ document.addEventListener('keydown', (e) => {
       return;
     }
     if (furniturePanel.classList.contains('visible')) {
-      setExpandedPanel(buildBtn, furniturePanel, false);
-      buildMode = false;
+      closeBuildDrawer();
       return;
     }
     if (vibePrompt.classList.contains('visible')) {
@@ -624,10 +701,14 @@ document.addEventListener('keydown', (e) => {
   // B: Toggle build mode
   if (e.key === 'b' || e.key === 'B') {
     if (!currentRoomId || !isRoomOwner) return;
-    buildMode = !buildMode;
-    setExpandedPanel(buildBtn, furniturePanel, buildMode);
-    if (buildMode) setExpandedPanel(musicBtn, musicPanel, false);
-    updateBuildUI();
+    if (buildMode) closeBuildDrawer();
+    else openBuildDrawer();
+    return;
+  }
+
+  if (e.key === 'r' || e.key === 'R') {
+    if (!currentRoomId || !isRoomOwner || !buildMode) return;
+    toolRotate.click();
     return;
   }
 
@@ -636,10 +717,7 @@ document.addEventListener('keydown', (e) => {
     if (!currentRoomId || currentRoomIsPublic) return;
     const willOpen = !musicPanel.classList.contains('visible');
     setExpandedPanel(musicBtn, musicPanel, willOpen);
-    if (willOpen && buildMode) {
-      buildMode = false;
-      setExpandedPanel(buildBtn, furniturePanel, false);
-    }
+    if (willOpen && buildMode) closeBuildDrawer();
     return;
   }
 
@@ -831,6 +909,8 @@ let lastY = -1;
 let scene;
 let roomFurniture = [];
 let roomTheme = 0;
+let roomStyle = roomStyles.styleFromPreset(0);
+let roomStyleSlot = 0;
 let pendingRoomJoined = null;
 
 // Idle animation state
@@ -899,6 +979,7 @@ function exitGame() {
   if (zoomControls) zoomControls.classList.remove('visible');
   currentZoom = 1;
   buildBtn.classList.remove('visible');
+  setBuildDrawerSnap('closed');
   setExpandedPanel(buildBtn, furniturePanel, false);
   ownerBadge.classList.remove('visible');
   isRoomOwner = false;
@@ -1008,10 +1089,7 @@ ambientTrackBtns.forEach(btn => {
 musicBtn.addEventListener('click', () => {
   const willOpen = !musicPanel.classList.contains('visible');
   setExpandedPanel(musicBtn, musicPanel, willOpen);
-  if (willOpen && buildMode) {
-    buildMode = false;
-    setExpandedPanel(buildBtn, furniturePanel, false);
-  }
+  if (willOpen && buildMode) closeBuildDrawer();
 });
 
 musicCloseBtn.addEventListener('click', () => {
@@ -1218,22 +1296,47 @@ vibeDeclineBtn.addEventListener('click', () => {
 const buildBtn         = document.getElementById('build-btn');
 const furniturePanel   = document.getElementById('furniture-panel');
 const furniturePalette = document.getElementById('furniture-palette');
+const furnitureCategories = document.getElementById('furniture-categories');
+const furnitureSearch  = document.getElementById('furniture-search');
+const catalogCount     = document.getElementById('catalog-count');
+const selectedFurniturePreview = document.getElementById('selected-furniture-preview');
+const selectedFurnitureName = document.getElementById('selected-furniture-name');
+const selectedFurnitureMeta = document.getElementById('selected-furniture-meta');
+const selectedRotationLabel = document.getElementById('selected-rotation-label');
+const buildDrawerTitle = document.getElementById('build-drawer-title');
+const buildDrawerHandle = document.getElementById('build-drawer-handle');
+const buildClose       = document.getElementById('build-close');
+const buildTabFurniture = document.getElementById('build-tab-furniture');
+const buildTabStyle    = document.getElementById('build-tab-style');
+const furnitureView    = document.getElementById('furniture-view');
+const roomStyleView    = document.getElementById('room-style-view');
 const toolPlace        = document.getElementById('tool-place');
 const toolRemove       = document.getElementById('tool-remove');
+const toolRotate       = document.getElementById('tool-rotate');
 const btnToggleHash    = document.getElementById('btn-toggle-hash');
 const hashPanel        = document.getElementById('hash-panel');
 const btnDownloadCard  = document.getElementById('btn-download-card');
 const cardFileInput    = document.getElementById('card-file-input');
+const roomStylePresets = document.getElementById('room-style-presets');
+const roomWallColor    = document.getElementById('room-wall-color');
+const roomFloorColor   = document.getElementById('room-floor-color');
+const roomAccentColor  = document.getElementById('room-accent-color');
+const roomWallValue    = document.getElementById('room-wall-value');
+const roomFloorValue   = document.getElementById('room-floor-value');
+const roomAccentValue  = document.getElementById('room-accent-value');
+const roomIntensityOptions = document.getElementById('room-intensity-options');
 
 let buildMode = false;
 let buildTool = 'place';
-let selectedFurnitureType = 0;
+let selectedFurnitureType = 20;
+let selectedFurnitureRotation = 0;
+let activeFurnitureCategory = 'seating';
+let furnitureSearchQuery = '';
+let activeBuildView = 'furniture';
+let roomStyleBroadcastTimer = null;
 
 const FURNITURE_DEFS = furnitureCatalog.ITEMS;
-
-const FURNITURE_NAMES = FURNITURE_DEFS.map(d => d.name);
 const FURNITURE_FOOTPRINTS = FURNITURE_DEFS.map(d => ({ w: d.w, h: d.h, walkable: d.walkable }));
-const FURNITURE_ICONS = FURNITURE_DEFS.map(d => d.icon);
 
 function getClientFootprint(type, rotation) {
   const fp = FURNITURE_FOOTPRINTS[type];
@@ -1244,45 +1347,128 @@ function getClientFootprint(type, rotation) {
   return { w, h, walkable: fp.walkable };
 }
 
-// Generate furniture palette
-FURNITURE_NAMES.forEach((name, i) => {
-  const btn = document.createElement('button');
-  btn.type = 'button';
-  btn.className = 'furn-btn' + (i === 0 ? ' active' : '');
-  btn.title = name;
-  btn.setAttribute('aria-label', name);
-  btn.setAttribute('aria-pressed', String(i === 0));
-  btn.dataset.type = String(i);
-  btn.textContent = FURNITURE_ICONS[i];
-  btn.addEventListener('click', () => {
-    selectedFurnitureType = i;
-    buildTool = 'place';
-    updateBuildUI();
+function renderFurnitureCategories() {
+  furnitureCategories.innerHTML = '';
+  const categories = [{ id: 'all', name: 'All', icon: 'layout-grid' }, ...furnitureCatalog.CATEGORIES];
+  const fragment = document.createDocumentFragment();
+  categories.forEach(category => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'furniture-category';
+    button.dataset.category = category.id;
+    button.setAttribute('role', 'tab');
+    button.setAttribute('aria-selected', String(category.id === activeFurnitureCategory));
+    button.innerHTML = `<i data-lucide="${category.icon}" aria-hidden="true"></i><span>${escapeHtml(category.name)}</span>`;
+    button.addEventListener('click', () => {
+      activeFurnitureCategory = category.id;
+      renderFurniturePalette();
+    });
+    fragment.appendChild(button);
   });
-  furniturePalette.appendChild(btn);
-});
+  furnitureCategories.appendChild(fragment);
+  refreshInterfaceIcons();
+}
 
-function refreshFurniturePaletteArtwork(theme = 0) {
+function selectedFurnitureDefinition() {
+  return FURNITURE_DEFS[selectedFurnitureType] || FURNITURE_DEFS[0];
+}
+
+function renderFurniturePalette() {
+  const matches = furnitureCatalog.searchItems(furnitureSearchQuery, activeFurnitureCategory);
+  furniturePalette.innerHTML = '';
+  const fragment = document.createDocumentFragment();
+
+  for (const definition of matches) {
+    const button = document.createElement('button');
+    const active = definition.type === selectedFurnitureType;
+    button.type = 'button';
+    button.className = `furn-btn${active ? ' active' : ''}`;
+    button.title = definition.name;
+    button.setAttribute('aria-label', `${definition.name}, ${definition.w} by ${definition.h}`);
+    button.setAttribute('aria-pressed', String(active));
+    button.dataset.type = String(definition.type);
+    button.innerHTML = `
+      <span class="furn-art"><i data-lucide="${definition.icon}" aria-hidden="true"></i></span>
+      <span class="furn-name">${escapeHtml(definition.name)}</span>
+    `;
+    button.addEventListener('click', () => {
+      selectedFurnitureType = definition.type;
+      selectedFurnitureRotation = 0;
+      buildTool = 'place';
+      updateBuildUI();
+      refreshFurniturePaletteArtwork(roomStyleSlot);
+    });
+    fragment.appendChild(button);
+  }
+
+  if (matches.length === 0) {
+    const empty = document.createElement('p');
+    empty.className = 'catalog-empty';
+    empty.textContent = 'No furniture matches that search.';
+    fragment.appendChild(empty);
+  }
+
+  furniturePalette.appendChild(fragment);
+  catalogCount.textContent = `${matches.length} item${matches.length === 1 ? '' : 's'}`;
+  furnitureCategories.querySelectorAll('.furniture-category').forEach(button => {
+    const active = button.dataset.category === activeFurnitureCategory;
+    button.classList.toggle('active', active);
+    button.setAttribute('aria-selected', String(active));
+  });
+  const category = furnitureCatalog.CATEGORIES.find(entry => entry.id === activeFurnitureCategory);
+  buildDrawerTitle.textContent = `Build · ${category ? category.name : 'All'}`;
+  updateSelectedFurniturePanel();
+  refreshInterfaceIcons();
+  refreshFurniturePaletteArtwork(roomStyleSlot);
+}
+
+function refreshFurniturePaletteArtwork(styleSlot = 0) {
   if (!scene || !craftTextures) return;
-  furniturePalette.querySelectorAll('.furn-btn').forEach((button, type) => {
-    const source = craftTextures.furniturePreviewUrl(scene, theme, type);
+  furniturePalette.querySelectorAll('.furn-btn').forEach(button => {
+    const type = Number(button.dataset.type);
+    const source = craftTextures.furniturePreviewUrl(scene, styleSlot, type);
     if (!source) return;
-    let image = button.querySelector('.furn-preview');
+    const art = button.querySelector('.furn-art');
+    let image = art.querySelector('.furn-preview');
     if (!image) {
-      button.textContent = '';
+      art.innerHTML = '';
       image = document.createElement('img');
       image.className = 'furn-preview';
       image.alt = '';
       image.setAttribute('aria-hidden', 'true');
-      button.appendChild(image);
+      art.appendChild(image);
     }
     image.src = source;
   });
+  updateSelectedFurniturePanel();
+}
+
+function updateSelectedFurniturePanel() {
+  const definition = selectedFurnitureDefinition();
+  selectedFurnitureName.textContent = definition.name;
+  const category = furnitureCatalog.CATEGORIES.find(entry => entry.id === definition.category);
+  const footprint = getClientFootprint(selectedFurnitureType, selectedFurnitureRotation);
+  selectedFurnitureMeta.textContent = `${category?.name || 'Furniture'} · ${footprint.w} × ${footprint.h}`;
+  selectedRotationLabel.textContent = `${selectedFurnitureRotation * 90}°`;
+  selectedFurniturePreview.innerHTML = '';
+  if (scene) {
+    const source = craftTextures.furniturePreviewUrl(scene, roomStyleSlot, selectedFurnitureType);
+    if (source) {
+      const image = document.createElement('img');
+      image.src = source;
+      image.alt = '';
+      image.setAttribute('aria-hidden', 'true');
+      selectedFurniturePreview.appendChild(image);
+      return;
+    }
+  }
+  selectedFurniturePreview.innerHTML = `<i data-lucide="${definition.icon}" aria-hidden="true"></i>`;
+  refreshInterfaceIcons();
 }
 
 function updateBuildUI() {
-  furniturePalette.querySelectorAll('.furn-btn').forEach((el, i) => {
-    const active = i === selectedFurnitureType && buildTool === 'place';
+  furniturePalette.querySelectorAll('.furn-btn').forEach(el => {
+    const active = Number(el.dataset.type) === selectedFurnitureType && buildTool === 'place';
     el.classList.toggle('active', active);
     el.setAttribute('aria-pressed', String(active));
   });
@@ -1290,18 +1476,181 @@ function updateBuildUI() {
   toolRemove.classList.toggle('active', buildTool === 'remove');
   toolPlace.setAttribute('aria-pressed', String(buildTool === 'place'));
   toolRemove.setAttribute('aria-pressed', String(buildTool === 'remove'));
+  updateSelectedFurniturePanel();
+}
+
+function setBuildView(view) {
+  activeBuildView = view === 'style' ? 'style' : 'furniture';
+  const showingFurniture = activeBuildView === 'furniture';
+  furnitureView.hidden = !showingFurniture;
+  roomStyleView.hidden = showingFurniture;
+  furnitureView.classList.toggle('active', showingFurniture);
+  roomStyleView.classList.toggle('active', !showingFurniture);
+  buildTabFurniture.classList.toggle('active', showingFurniture);
+  buildTabStyle.classList.toggle('active', !showingFurniture);
+  buildTabFurniture.setAttribute('aria-selected', String(showingFurniture));
+  buildTabStyle.setAttribute('aria-selected', String(!showingFurniture));
+  if (!showingFurniture) buildDrawerTitle.textContent = 'Build · Room Style';
+  else {
+    const category = furnitureCatalog.CATEGORIES.find(entry => entry.id === activeFurnitureCategory);
+    buildDrawerTitle.textContent = `Build · ${category ? category.name : 'All'}`;
+  }
+}
+
+function setBuildDrawerSnap(snap) {
+  const allowed = new Set(['closed', 'peek', 'half', 'expanded']);
+  furniturePanel.dataset.snap = allowed.has(snap) ? snap : 'half';
+}
+
+function openBuildDrawer() {
+  buildMode = true;
+  setExpandedPanel(buildBtn, furniturePanel, true);
+  setBuildDrawerSnap(window.matchMedia('(max-width: 720px)').matches ? 'half' : 'expanded');
+  setExpandedPanel(musicBtn, musicPanel, false);
+  buildTool = 'place';
+  updateBuildUI();
+}
+
+function closeBuildDrawer() {
+  buildMode = false;
+  setBuildDrawerSnap('closed');
+  setExpandedPanel(buildBtn, furniturePanel, false);
+}
+
+function emitRoomStyleChange() {
+  if (socket && socket.connected && isRoomOwner && !currentRoomIsPublic) {
+    socket.emit('setRoomStyle', { style: roomStyle });
+  }
+}
+
+function updateRoomStyleUI() {
+  if (!roomStylePresets) return;
+  roomWallColor.value = roomStyle.wall;
+  roomFloorColor.value = roomStyle.floor;
+  roomAccentColor.value = roomStyle.accent;
+  roomWallValue.textContent = roomStyle.wall;
+  roomFloorValue.textContent = roomStyle.floor;
+  roomAccentValue.textContent = roomStyle.accent;
+
+  roomStylePresets.querySelectorAll('.room-preset').forEach(button => {
+    const active = Number(button.dataset.preset) === roomStyle.preset;
+    button.classList.toggle('active', active);
+    button.setAttribute('aria-checked', String(active));
+    button.classList.toggle('customized', active && !roomStyles.isPresetStyle(roomStyle));
+  });
+  roomIntensityOptions.querySelectorAll('.room-intensity-btn').forEach(button => {
+    const active = Number(button.dataset.intensity) === roomStyle.intensity;
+    button.classList.toggle('active', active);
+    button.setAttribute('aria-checked', String(active));
+  });
+}
+
+function applyAndBroadcastRoomStyle(nextStyle, immediate = false) {
+  roomStyle = roomStyles.normalizeStyle(nextStyle, roomStyle.preset);
+  updateRoomStyleUI();
+  clearTimeout(roomStyleBroadcastTimer);
+  const apply = () => {
+    applyRoomVisualStyle(roomStyle);
+    emitRoomStyleChange();
+  };
+  if (immediate) apply();
+  else roomStyleBroadcastTimer = setTimeout(apply, 140);
+}
+
+function renderRoomStyleControls() {
+  roomStylePresets.innerHTML = '';
+  roomStyles.PRESETS.forEach((preset, presetIndex) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'room-preset';
+    button.dataset.preset = String(presetIndex);
+    button.setAttribute('role', 'radio');
+    button.setAttribute('aria-checked', 'false');
+    button.innerHTML = `
+      <span class="room-preset-preview" style="--preset-wall:${preset.wall};--preset-floor:${preset.floor};--preset-accent:${preset.accent}">
+        <span></span><span></span><span></span>
+      </span>
+      <strong>${escapeHtml(preset.name)}</strong>
+      <small>${escapeHtml(preset.description)}</small>
+    `;
+    button.addEventListener('click', () => applyAndBroadcastRoomStyle(roomStyles.styleFromPreset(presetIndex), true));
+    roomStylePresets.appendChild(button);
+  });
+
+  roomIntensityOptions.innerHTML = '';
+  roomStyles.INTENSITIES.forEach((intensity, index) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'room-intensity-btn';
+    button.dataset.intensity = String(index);
+    button.setAttribute('role', 'radio');
+    button.setAttribute('aria-checked', 'false');
+    button.innerHTML = `<span aria-hidden="true">${index === 0 ? '○' : index === 1 ? '◉' : '✦'}</span>${escapeHtml(intensity.name)}`;
+    button.addEventListener('click', () => applyAndBroadcastRoomStyle({ ...roomStyle, intensity: index }, true));
+    roomIntensityOptions.appendChild(button);
+  });
+  updateRoomStyleUI();
 }
 
 buildBtn.addEventListener('click', () => {
-  buildMode = !buildMode;
-  setExpandedPanel(buildBtn, furniturePanel, buildMode);
-  if (buildMode) setExpandedPanel(musicBtn, musicPanel, false);
-  if (buildMode) buildTool = 'place';
-  updateBuildUI();
+  if (buildMode) closeBuildDrawer();
+  else openBuildDrawer();
 });
 
 toolPlace.addEventListener('click', () => { buildTool = 'place'; updateBuildUI(); });
 toolRemove.addEventListener('click', () => { buildTool = 'remove'; updateBuildUI(); });
+toolRotate.addEventListener('click', () => {
+  selectedFurnitureRotation = (selectedFurnitureRotation + 1) % 4;
+  buildTool = 'place';
+  updateBuildUI();
+});
+buildClose.addEventListener('click', closeBuildDrawer);
+buildTabFurniture.addEventListener('click', () => setBuildView('furniture'));
+buildTabStyle.addEventListener('click', () => setBuildView('style'));
+furnitureSearch.addEventListener('input', () => {
+  furnitureSearchQuery = furnitureSearch.value;
+  renderFurniturePalette();
+});
+
+[
+  [roomWallColor, 'wall'],
+  [roomFloorColor, 'floor'],
+  [roomAccentColor, 'accent'],
+].forEach(([input, field]) => {
+  input.addEventListener('input', () => applyAndBroadcastRoomStyle({ ...roomStyle, [field]: input.value }));
+  input.addEventListener('change', () => applyAndBroadcastRoomStyle({ ...roomStyle, [field]: input.value }, true));
+});
+
+let drawerDragStart = null;
+buildDrawerHandle.addEventListener('pointerdown', event => {
+  if (!window.matchMedia('(max-width: 720px)').matches) return;
+  drawerDragStart = { y: event.clientY, snap: furniturePanel.dataset.snap || 'half' };
+  buildDrawerHandle.setPointerCapture(event.pointerId);
+  furniturePanel.classList.add('dragging');
+});
+buildDrawerHandle.addEventListener('pointermove', event => {
+  if (!drawerDragStart) return;
+  const delta = event.clientY - drawerDragStart.y;
+  furniturePanel.style.setProperty('--drawer-drag-y', `${delta}px`);
+});
+buildDrawerHandle.addEventListener('pointerup', event => {
+  if (!drawerDragStart) return;
+  const delta = event.clientY - drawerDragStart.y;
+  const snaps = ['expanded', 'half', 'peek'];
+  let index = Math.max(0, snaps.indexOf(drawerDragStart.snap));
+  if (delta > 55) index = Math.min(snaps.length - 1, index + 1);
+  else if (delta < -55) index = Math.max(0, index - 1);
+  else if (Math.abs(delta) < 8) index = (index + 1) % snaps.length;
+  setBuildDrawerSnap(snaps[index]);
+  furniturePanel.style.removeProperty('--drawer-drag-y');
+  furniturePanel.classList.remove('dragging');
+  buildDrawerHandle.releasePointerCapture(event.pointerId);
+  drawerDragStart = null;
+});
+
+renderFurnitureCategories();
+renderFurniturePalette();
+renderRoomStyleControls();
 
 // ─── Room Memory Card Export / Import ──────────────────
 
@@ -1312,7 +1661,7 @@ btnToggleHash.addEventListener('click', () => {
 
 btnDownloadCard.addEventListener('click', () => {
   const items = roomFurniture.map(f => ({ ...f.item, on: f.interactiveOn === true }));
-  const canvas = generateRoomCard(currentRoomId, items, roomTheme);
+  const canvas = generateRoomCard(currentRoomId, items, roomStyle);
   const link = document.createElement('a');
   link.download = `freelobby-room-${currentRoomId || 'card'}.png`;
   link.href = canvas.toDataURL('image/png');
@@ -1325,7 +1674,7 @@ cardFileInput.addEventListener('change', (e) => {
   decodeRoomCard(file, (result, error) => {
     if (error) { showError(error); return; }
     if (socket && socket.connected) {
-      socket.emit('setRoomFurniture', { furniture: result.furniture, theme: result.theme });
+      socket.emit('setRoomFurniture', { furniture: result.furniture, theme: result.theme, style: result.style });
     }
   });
   cardFileInput.value = '';
@@ -1348,12 +1697,13 @@ function create() {
     definitions: FURNITURE_DEFS,
     playerColors: COLOR_HEX_STR,
   });
-  refreshFurniturePaletteArtwork(roomTheme);
+  roomStyleSlot = craftTextures.installRoomStyle(this, roomStyle);
+  refreshFurniturePaletteArtwork(roomStyleSlot);
 
   // Draw floor grid extending in all directions (3x the world size for generous padding)
   for (let x = -WORLD_WIDTH; x < WORLD_WIDTH * 2; x += 128) {
     for (let y = -WORLD_HEIGHT; y < WORLD_HEIGHT * 2; y += 128) {
-      const tile = this.add.image(x + 64, y + 64, craftTextures.floorTextureKey(roomTheme));
+      const tile = this.add.image(x + 64, y + 64, craftTextures.floorTextureKey(roomStyleSlot));
       tile.setDisplaySize(128, 128);
       tile.setDepth(-10);
       this.floorTiles.push(tile);
@@ -1369,20 +1719,20 @@ function create() {
   this.drawRoomWalls = (w, h) => {
     wallGroup.clear(true, true);
     for (let x = 0; x < w; x += 64) {
-      wallGroup.add(this.add.image(x + 32, 0, craftTextures.wallTextureKey(roomTheme)).setDisplaySize(64, 64).setDepth(-5));
-      wallGroup.add(this.add.image(x + 32, h, craftTextures.wallTextureKey(roomTheme)).setDisplaySize(64, 64).setDepth(-5));
+      wallGroup.add(this.add.image(x + 32, 0, craftTextures.wallTextureKey(roomStyleSlot)).setDisplaySize(64, 64).setDepth(-5));
+      wallGroup.add(this.add.image(x + 32, h, craftTextures.wallTextureKey(roomStyleSlot)).setDisplaySize(64, 64).setDepth(-5));
     }
     for (let y = 0; y < h; y += 64) {
-      wallGroup.add(this.add.image(0, y + 32, craftTextures.wallTextureKey(roomTheme)).setDisplaySize(64, 64).setDepth(-5));
-      wallGroup.add(this.add.image(w, y + 32, craftTextures.wallTextureKey(roomTheme)).setDisplaySize(64, 64).setDepth(-5));
+      wallGroup.add(this.add.image(0, y + 32, craftTextures.wallTextureKey(roomStyleSlot)).setDisplaySize(64, 64).setDepth(-5));
+      wallGroup.add(this.add.image(w, y + 32, craftTextures.wallTextureKey(roomStyleSlot)).setDisplaySize(64, 64).setDepth(-5));
     }
-    applyRoomVisualTheme(roomTheme);
+    applyRoomVisualStyle(roomStyle);
   };
   this.drawRoomWalls(ROOM_WIDTH, ROOM_HEIGHT);
 
   player = null;
 
-  this.cameras.main.setBackgroundColor(getRoomVisualTheme(roomTheme).background);
+  this.cameras.main.setBackgroundColor(getRoomVisualTheme(roomStyle).background);
   this.cameras.main.setZoom(currentZoom);
   this.physics.world.setBounds(0, 0, ROOM_WIDTH, ROOM_HEIGHT);
 
@@ -1458,7 +1808,7 @@ function create() {
         const gx = Math.floor(pointer.worldX / 64);
         const gy = Math.floor(pointer.worldY / 64);
         if (buildTool === 'place') {
-          const item = { t: selectedFurnitureType, x: gx, y: gy, r: 0 };
+          const item = { t: selectedFurnitureType, x: gx, y: gy, r: selectedFurnitureRotation };
           socket.emit('placeFurniture', { item });
         } else if (buildTool === 'remove') {
           const idx = roomFurniture.findIndex(f => {
@@ -1633,7 +1983,7 @@ function spawnLocalPlayer(data) {
   const cust = data.customization || CUSTOMIZATION;
   myColor = PLAYER_COLORS[cust.colorIdx] || data.color;
 
-  const shapeKey = craftTextures.playerTextureKey(cust.shape, cust.colorIdx);
+  const shapeKey = craftTextures.ensureAvatarTexture(scene, cust);
   player = scene.physics.add.sprite(data.x, data.y, shapeKey);
   player.setDisplaySize(48, 48);
   player.setCollideWorldBounds(true);
@@ -1678,8 +2028,8 @@ function spawnOtherPlayer(data) {
   if (data.id === socket.id) return;
   if (otherPlayers.has(data.id)) return;
 
-  const cust = data.customization || { colorIdx: 0, shape: 0, accessory: 0, pulse: 1 };
-  const shapeKey = craftTextures.playerTextureKey(cust.shape, cust.colorIdx);
+  const cust = data.customization || { colorIdx: 0, shape: 0, accessory: 0, pulse: 1, eyes: 0, brows: 0, mouth: 0, detail: 0 };
+  const shapeKey = craftTextures.ensureAvatarTexture(scene, cust);
 
   const sprite = scene.add.sprite(data.x, data.y, shapeKey);
   sprite.setDisplaySize(48, 48);
@@ -1777,15 +2127,22 @@ function updatePlayerCount() {
   playerCountText.textContent = total === 1 ? '1 player' : `${total} players`;
 }
 
-function applyRoomVisualTheme(theme) {
+function applyRoomVisualStyle(style) {
   if (!scene) return;
-  const visual = getRoomVisualTheme(theme || 0);
+  roomStyle = roomStyles.normalizeStyle(style, roomTheme);
+  roomTheme = roomStyle.preset;
+  roomStyleSlot = craftTextures.installRoomStyle(scene, roomStyle);
+  const visual = getRoomVisualTheme(roomStyle);
   document.body.dataset.roomTheme = visual.name;
+  document.body.dataset.roomIntensity = roomStyles.INTENSITIES[roomStyle.intensity].id;
+  document.documentElement.style.setProperty('--room-wall', roomStyle.wall);
+  document.documentElement.style.setProperty('--room-floor', roomStyle.floor);
+  document.documentElement.style.setProperty('--room-accent', roomStyle.accent);
   scene.cameras.main.setBackgroundColor(visual.background);
 
   if (scene.floorTiles) {
     scene.floorTiles.forEach(tile => {
-      tile.setTexture(craftTextures.floorTextureKey(theme || 0));
+      tile.setTexture(craftTextures.floorTextureKey(roomStyleSlot));
       tile.setDisplaySize(128, 128);
       tile.setAlpha(1);
     });
@@ -1793,7 +2150,7 @@ function applyRoomVisualTheme(theme) {
 
   if (scene.wallGroup) {
     scene.wallGroup.getChildren().forEach(wall => {
-      wall.setTexture(craftTextures.wallTextureKey(theme || 0));
+      wall.setTexture(craftTextures.wallTextureKey(roomStyleSlot));
       wall.setDisplaySize(64, 64);
       wall.setAlpha(1);
     });
@@ -1801,10 +2158,15 @@ function applyRoomVisualTheme(theme) {
 
   roomFurniture.forEach(f => {
     if (!f.sprite) return;
-    f.sprite.setTexture(craftTextures.furnitureTextureKey(theme || 0, f.item.t, f.interactiveOn));
+    f.sprite.setTexture(craftTextures.furnitureTextureKey(roomStyleSlot, f.item.t, f.interactiveOn));
     f.sprite.setDisplaySize(f.baseFp.w * 64, f.baseFp.h * 64);
   });
-  refreshFurniturePaletteArtwork(theme || 0);
+  refreshFurniturePaletteArtwork(roomStyleSlot);
+  updateRoomStyleUI();
+}
+
+function applyRoomVisualTheme(theme) {
+  applyRoomVisualStyle(roomStyles.styleFromPreset(theme));
 }
 
 const INTERACTIVE_FURNITURE_TYPES = new Set(
@@ -1812,11 +2174,11 @@ const INTERACTIVE_FURNITURE_TYPES = new Set(
 );
 
 function setFurnitureInteractiveVisual(furniture, state, animate = false) {
-  if (!furniture || !furniture.glow) return;
+  if (!furniture || !furniture.sprite) return;
   furniture.interactiveOn = state === true;
   const alpha = furniture.interactiveOn ? 0.25 : 0;
   const textureKey = craftTextures.furnitureTextureKey(
-    roomTheme,
+    roomStyleSlot,
     furniture.item.t,
     furniture.interactiveOn,
   );
@@ -1824,7 +2186,9 @@ function setFurnitureInteractiveVisual(furniture, state, animate = false) {
   furniture.sprite.setDisplaySize(furniture.baseFp.w * 64, furniture.baseFp.h * 64);
 
   if (animate) {
-    scene.tweens.add({ targets: [furniture.glow], alpha, duration: 300, ease: 'Power2' });
+    if (furniture.glow) {
+      scene.tweens.add({ targets: [furniture.glow], alpha, duration: 300, ease: 'Power2' });
+    }
     scene.tweens.add({
       targets: furniture.sprite,
       scaleX: furniture.sprite.scaleX * 1.04,
@@ -1833,7 +2197,7 @@ function setFurnitureInteractiveVisual(furniture, state, animate = false) {
       yoyo: true,
       ease: 'Sine.easeOut',
     });
-  } else {
+  } else if (furniture.glow) {
     furniture.glow.setAlpha(alpha);
   }
 }
@@ -1847,7 +2211,7 @@ function renderFurnitureItem(item) {
   const sprite = scene.add.sprite(
     x,
     y,
-    craftTextures.furnitureTextureKey(roomTheme, item.t, item.on === true),
+    craftTextures.furnitureTextureKey(roomStyleSlot, item.t, item.on === true),
   );
   sprite.setDepth(1);
   sprite.setAlpha(1);
@@ -1860,19 +2224,22 @@ function renderFurnitureItem(item) {
 
   let glow = null;
   if (INTERACTIVE_FURNITURE_TYPES.has(item.t)) {
+    const definition = FURNITURE_DEFS[item.t];
     sprite.setInteractive({ useHandCursor: true });
     sprite.on('pointerdown', () => {
       if (socket && socket.connected && item.id != null) {
         socket.emit('toggleFurniture', { id: item.id });
       }
     });
-    // Create glow overlay (initially invisible)
-    if (item.t === 6) {
-      // Lamp — soft radial glow
+    const warmGlowRecipes = new Set([
+      'table-lamp', 'floor-lamp', 'sconce', 'pendant', 'lantern',
+      'desk-lamp', 'candles', 'fireplace',
+    ]);
+    const screenGlowRecipes = new Set(['television', 'computer', 'radio', 'record-player', 'coffee-station']);
+    if (warmGlowRecipes.has(definition.recipe)) {
       glow = scene.add.circle(x, y, Math.max(fp.w, fp.h) * 40, 0xffaa00, 0);
       glow.setDepth(0);
-    } else if (item.t === 13) {
-      // TV — soft screen glow aligned with the rotated furniture recipe.
+    } else if (screenGlowRecipes.has(definition.recipe)) {
       glow = scene.add.rectangle(x, y, baseFp.w * 48, baseFp.h * 32, 0x6ca9aa, 0);
       if (item.r) glow.setAngle(item.r * 90);
       glow.setDepth(0);
@@ -1890,15 +2257,17 @@ const CARD_WIDTH = 320;
 const CARD_HEIGHT = 200;
 const CARD_DATA_ROW = CARD_HEIGHT - 1;
 
-function generateRoomCard(roomId, furniture, theme) {
+function generateRoomCard(roomId, furniture, styleValue) {
   const canvas = document.createElement('canvas');
   canvas.width = CARD_WIDTH;
   canvas.height = CARD_HEIGHT;
   const ctx = canvas.getContext('2d');
-  const visual = getRoomVisualTheme(theme || 0);
+  const style = roomStyles.normalizeStyle(styleValue);
+  const visual = getRoomVisualTheme(style);
+  const styleSlot = craftTextures.installRoomStyle(scene, style);
 
   const floorSource = scene?.textures
-    .get(craftTextures.floorTextureKey(theme || 0))
+    .get(craftTextures.floorTextureKey(styleSlot))
     .getSourceImage();
   if (floorSource) {
     const backgroundPattern = ctx.createPattern(floorSource, 'repeat');
@@ -1956,7 +2325,7 @@ function generateRoomCard(roomId, furniture, theme) {
       const fp = getClientFootprint(item.t, item.r);
       const baseFp = getClientFootprint(item.t, 0);
       const source = scene?.textures
-        .get(craftTextures.furnitureTextureKey(theme || 0, item.t, item.on === true))
+        .get(craftTextures.furnitureTextureKey(styleSlot, item.t, item.on === true))
         .getSourceImage();
       if (source) {
         const drawWidth = baseFp.w * cellSize;
@@ -1982,12 +2351,12 @@ function generateRoomCard(roomId, furniture, theme) {
 
   // ─── Encode data strip in bottom pixel row ───
   // We use 2 pixels per item to avoid alpha=0 corruption.
-  // Format: [version][theme][0][255] [count][0][0][255] [t][x][y][255] [r][layer][on][255] ...
+  // Format v2: style header + 2 pixels per furniture item.
   const imgData = ctx.getImageData(0, 0, CARD_WIDTH, CARD_HEIGHT);
   const data = imgData.data;
   const rowOffset = CARD_DATA_ROW * CARD_WIDTH * 4;
 
-  cardCodec.writeCardData(data, rowOffset, furniture || [], theme || 0);
+  cardCodec.writeCardData(data, rowOffset, furniture || [], style);
 
   ctx.putImageData(imgData, 0, 0);
   return canvas;
@@ -2151,12 +2520,13 @@ function connectSocket() {
     processRoomJoined(data);
   });
 
-  function processRoomJoined({ roomId, you, players, isOwner, isPublic, isCommon, commonName, furniture, theme, interactiveStates, ambientTrack, width, height }) {
+  function processRoomJoined({ roomId, you, players, isOwner, isPublic, isCommon, commonName, furniture, theme, style, interactiveStates, ambientTrack, width, height }) {
     currentRoomId = roomId;
     roomIdDisplay.textContent = roomId;
     isRoomOwner = !!isOwner;
     currentRoomIsPublic = isPublic !== false;
     roomTheme = theme || 0;
+    roomStyle = roomStyles.normalizeStyle(style || roomStyles.styleFromPreset(roomTheme), roomTheme);
     quietMode = !!you.quietMode;
     quietBtn.classList.toggle('active', quietMode);
     quietBtn.setAttribute('aria-pressed', String(quietMode));
@@ -2169,10 +2539,11 @@ function connectSocket() {
     } else {
       ownerBadge.classList.remove('visible');
       buildBtn.classList.remove('visible');
+      setBuildDrawerSnap('closed');
       setExpandedPanel(buildBtn, furniturePanel, false);
       buildMode = false;
     }
-    console.log(`✦ Joined room ${roomId}. Local player: ${you.name}. Owner: ${isRoomOwner}. Public: ${isPublic !== false}. Theme: ${roomTheme}.`);
+    console.log(`✦ Joined room ${roomId}. Local player: ${you.name}. Owner: ${isRoomOwner}. Public: ${isPublic !== false}. Style: ${roomStyles.PRESETS[roomStyle.preset].name}.`);
 
     // Update room dimensions
     ROOM_WIDTH = width || 1200;
@@ -2212,7 +2583,7 @@ function connectSocket() {
       for (const [idStr, state] of Object.entries(interactiveStates)) {
         const id = Number(idStr);
         const f = roomFurniture.find(rf => rf.item.id === id);
-        if (f && f.glow) setFurnitureInteractiveVisual(f, state, false);
+        if (f) setFurnitureInteractiveVisual(f, state, false);
       }
     }
 
@@ -2381,7 +2752,7 @@ function connectSocket() {
     }
   });
 
-  socket.on('roomFurnitureReset', ({ furniture, theme, interactiveStates }) => {
+  socket.on('roomFurnitureReset', ({ furniture, theme, style, interactiveStates }) => {
     if (!scene) return;
     roomFurniture.forEach(f => {
       if (scene && scene.furnitureGroup) scene.furnitureGroup.remove(f.sprite);
@@ -2389,14 +2760,15 @@ function connectSocket() {
       if (f.glow) f.glow.destroy();
     });
     roomFurniture = [];
-    if (furniture) furniture.forEach(item => renderFurnitureItem(item));
     if (typeof theme === 'number') roomTheme = theme;
-    applyRoomVisualTheme(roomTheme);
+    roomStyle = roomStyles.normalizeStyle(style || roomStyles.styleFromPreset(roomTheme), roomTheme);
+    applyRoomVisualStyle(roomStyle);
+    if (furniture) furniture.forEach(item => renderFurnitureItem(item));
     if (interactiveStates) {
       for (const [idStr, state] of Object.entries(interactiveStates)) {
         const id = Number(idStr);
         const f = roomFurniture.find(rf => rf.item.id === id);
-        if (f && f.glow) setFurnitureInteractiveVisual(f, state, false);
+        if (f) setFurnitureInteractiveVisual(f, state, false);
       }
     }
   });
@@ -2405,6 +2777,12 @@ function connectSocket() {
     if (!scene) return;
     if (typeof theme === 'number') roomTheme = theme;
     applyRoomVisualTheme(roomTheme);
+  });
+
+  socket.on('roomStyleChanged', ({ theme, style }) => {
+    if (!scene) return;
+    if (typeof theme === 'number') roomTheme = theme;
+    applyRoomVisualStyle(style || roomStyles.styleFromPreset(roomTheme));
   });
 
   socket.on('ambientTrackChanged', ({ track }) => {

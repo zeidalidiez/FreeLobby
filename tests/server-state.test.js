@@ -25,17 +25,34 @@ test('socket payload helpers reject malformed event envelopes', () => {
 });
 
 test('avatar customization is normalized to the supported ranges', () => {
-  assert.deepEqual(normalizeCustomization({ colorIdx: 9, shape: 2, accessory: 3, pulse: 0 }), {
+  assert.deepEqual(normalizeCustomization({
     colorIdx: 9,
-    shape: 2,
-    accessory: 3,
+    shape: 4,
+    accessory: 7,
     pulse: 0,
+    eyes: 5,
+    brows: 4,
+    mouth: 5,
+    detail: 5,
+  }), {
+    colorIdx: 9,
+    shape: 4,
+    accessory: 7,
+    pulse: 0,
+    eyes: 5,
+    brows: 4,
+    mouth: 5,
+    detail: 5,
   });
   assert.deepEqual(normalizeCustomization({ colorIdx: NaN, shape: 99, accessory: '1', pulse: -1 }), {
     colorIdx: 0,
     shape: 0,
     accessory: 0,
     pulse: 1,
+    eyes: 0,
+    brows: 0,
+    mouth: 0,
+    detail: 0,
   });
 });
 

@@ -3,6 +3,7 @@ const http = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
 const furnitureCatalog = require('../public/js/furniture-catalog');
+const roomStyles = require('../public/js/room-style');
 const {
   asEventObject,
   canCreateRoomAfterLeaving,
@@ -34,7 +35,7 @@ const MAX_PLAYERS_PER_COMMON_ROOM = 25;
 const MAX_FURNITURE        = 100;
 const GRID_SIZE            = 64;
 const ROOM_EMOTE_CAP_PER_SEC = 30;
-const DEFAULT_PRIVATE_ROOM_THEME = 3;
+const DEFAULT_PRIVATE_ROOM_THEME = 0;
 const ROOM_THEME_COUNT = 4;
 const MAX_LEGACY_HASH_BYTES = 64 * 1024;
 
@@ -101,7 +102,7 @@ const COMMON_ROOMS_DEF = [
     id: 'LIBRARY',
     name: 'The Library',
     description: 'Low light, soft chairs, good for lurking',
-    theme: 2,
+    theme: 3,
     width: 1600,
     height: 1000,
     maxPlayers: 20,
@@ -235,7 +236,7 @@ function removePlayerFromRoom(socket) {
 }
 
 function createRoom() {
-  return { players: new Map(), revealedPairs: new Set(), pendingVibeChecks: createPendingVibeChecks(), occupiedCells: new Set(), blockedCells: new Set(), theme: 0, emoteWindow: { startMs: 0, count: 0 }, width: 1200, height: 800 };
+  return { players: new Map(), revealedPairs: new Set(), pendingVibeChecks: createPendingVibeChecks(), occupiedCells: new Set(), blockedCells: new Set(), theme: 0, style: roomStyles.styleFromPreset(0), emoteWindow: { startMs: 0, count: 0 }, width: 1200, height: 800 };
 }
 
 function initCommonRooms() {
@@ -251,6 +252,7 @@ function initCommonRooms() {
       occupiedCells: new Set(),
       blockedCells: new Set(),
       theme: def.theme || 0,
+      style: roomStyles.styleFromPreset(def.theme || 0),
       emoteWindow: { startMs: 0, count: 0 },
       nextFurnitureId: 1,
       interactiveStates: new Map(),
@@ -408,7 +410,7 @@ io.on('connection', (socket) => {
     removePlayerFromRoom(socket);
     const roomId = generateRoomId();
     // Create Room always creates a PRIVATE room with the creator as owner
-    rooms.set(roomId, { players: new Map(), revealedPairs: new Set(), pendingVibeChecks: createPendingVibeChecks(), ownerId: socket.id, isPublic: false, furniture: [], occupiedCells: new Set(), blockedCells: new Set(), theme: DEFAULT_PRIVATE_ROOM_THEME, emoteWindow: { startMs: 0, count: 0 }, nextFurnitureId: 1, interactiveStates: new Map(), ambientTrack: 0 });
+    rooms.set(roomId, { players: new Map(), revealedPairs: new Set(), pendingVibeChecks: createPendingVibeChecks(), ownerId: socket.id, isPublic: false, furniture: [], occupiedCells: new Set(), blockedCells: new Set(), theme: DEFAULT_PRIVATE_ROOM_THEME, style: roomStyles.styleFromPreset(DEFAULT_PRIVATE_ROOM_THEME), emoteWindow: { startMs: 0, count: 0 }, nextFurnitureId: 1, interactiveStates: new Map(), ambientTrack: 0 });
     const playerData = joinPlayerToRoom(socket, roomId, name, customization);
 
     const room = rooms.get(roomId);
@@ -427,6 +429,7 @@ io.on('connection', (socket) => {
       isCommon: false,
       furniture: room.furniture,
       theme: room.theme,
+      style: room.style || roomStyles.styleFromPreset(room.theme),
       interactiveStates: interactiveStatesObj,
       ambientTrack: room.ambientTrack || 0,
       width: room.width || 1200,
@@ -467,6 +470,7 @@ io.on('connection', (socket) => {
       commonName: room.commonName || null,
       furniture: room.furniture,
       theme: room.theme,
+      style: room.style || roomStyles.styleFromPreset(room.theme),
       interactiveStates: interactiveStatesObj2,
       ambientTrack: room.ambientTrack || 0,
       width: room.width || 1200,
@@ -487,7 +491,7 @@ io.on('connection', (socket) => {
       if (rooms.size >= MAX_ROOMS) { socket.emit('error', { message: 'Server is full. Try again later.' }); return; }
       roomId = generateRoomId();
       // Auto-created random rooms have NO owner and are PUBLIC
-      rooms.set(roomId, { players: new Map(), revealedPairs: new Set(), pendingVibeChecks: createPendingVibeChecks(), ownerId: null, isPublic: true, furniture: [], occupiedCells: new Set(), blockedCells: new Set(), theme: 0, emoteWindow: { startMs: 0, count: 0 }, nextFurnitureId: 1, interactiveStates: new Map(), ambientTrack: 0 });
+      rooms.set(roomId, { players: new Map(), revealedPairs: new Set(), pendingVibeChecks: createPendingVibeChecks(), ownerId: null, isPublic: true, furniture: [], occupiedCells: new Set(), blockedCells: new Set(), theme: 0, style: roomStyles.styleFromPreset(0), emoteWindow: { startMs: 0, count: 0 }, nextFurnitureId: 1, interactiveStates: new Map(), ambientTrack: 0 });
       console.log(`   ↳ No open rooms, auto-created random ${roomId}`);
     }
 
@@ -510,6 +514,7 @@ io.on('connection', (socket) => {
       commonName: room.commonName || null,
       furniture: room.furniture,
       theme: room.theme,
+      style: room.style || roomStyles.styleFromPreset(room.theme),
       interactiveStates: interactiveStatesObj3,
       ambientTrack: room.ambientTrack || 0,
       width: room.width || 1200,
@@ -536,7 +541,7 @@ io.on('connection', (socket) => {
     removePlayerFromRoom(socket);
     const roomId = generateRoomId();
     // Flee always creates a PRIVATE room owned by the fleer
-    rooms.set(roomId, { players: new Map(), revealedPairs: new Set(), pendingVibeChecks: createPendingVibeChecks(), ownerId: socket.id, isPublic: false, furniture: [], occupiedCells: new Set(), blockedCells: new Set(), theme: DEFAULT_PRIVATE_ROOM_THEME, emoteWindow: { startMs: 0, count: 0 }, nextFurnitureId: 1, interactiveStates: new Map(), ambientTrack: 0 });
+    rooms.set(roomId, { players: new Map(), revealedPairs: new Set(), pendingVibeChecks: createPendingVibeChecks(), ownerId: socket.id, isPublic: false, furniture: [], occupiedCells: new Set(), blockedCells: new Set(), theme: DEFAULT_PRIVATE_ROOM_THEME, style: roomStyles.styleFromPreset(DEFAULT_PRIVATE_ROOM_THEME), emoteWindow: { startMs: 0, count: 0 }, nextFurnitureId: 1, interactiveStates: new Map(), ambientTrack: 0 });
     const room = rooms.get(roomId);
     const playerData = joinPlayerToRoom(socket, roomId, name, customization);
 
@@ -555,6 +560,7 @@ io.on('connection', (socket) => {
       isCommon: false,
       furniture: room.furniture,
       theme: room.theme,
+      style: room.style || roomStyles.styleFromPreset(room.theme),
       interactiveStates: interactiveStatesObj4,
       ambientTrack: room.ambientTrack || 0,
       width: room.width || 1200,
@@ -602,6 +608,7 @@ io.on('connection', (socket) => {
       commonName: room.commonName || null,
       furniture: room.furniture,
       theme: room.theme,
+      style: room.style || roomStyles.styleFromPreset(room.theme),
       interactiveStates: interactiveStatesObjC,
       ambientTrack: room.ambientTrack || 0,
       width: room.width || 1600,
@@ -781,6 +788,7 @@ io.on('connection', (socket) => {
     io.in(roomId).emit('roomFurnitureReset', {
       furniture: room.furniture,
       theme: room.theme,
+      style: room.style || roomStyles.styleFromPreset(room.theme),
       interactiveStates: interactiveStatesObject(room),
     });
   });
@@ -788,7 +796,7 @@ io.on('connection', (socket) => {
   // ── Set Room Furniture (raw array from decoded memory card) ──
   socket.on('setRoomFurniture', (payload) => {
     if (!withinRateLimit('furniture-import', 3, 10000)) return;
-    const { furniture, theme } = asEventObject(payload);
+    const { furniture, theme, style } = asEventObject(payload);
     const roomId = socket.roomId;
     if (!roomId || !rooms.has(roomId)) return;
     const room = rooms.get(roomId);
@@ -801,12 +809,24 @@ io.on('connection', (socket) => {
       socket.emit('buildError', { message: 'Unknown room theme.' });
       return;
     }
-    if (theme !== undefined) room.theme = theme;
+    if (style !== undefined) {
+      const styleErrors = roomStyles.validateStyle(style);
+      if (styleErrors.length > 0) {
+        socket.emit('buildError', { message: styleErrors[0] });
+        return;
+      }
+      room.style = roomStyles.normalizeStyle(style);
+      room.theme = room.style.preset;
+    } else if (theme !== undefined) {
+      room.theme = theme;
+      room.style = roomStyles.styleFromPreset(theme);
+    }
 
     resetRoomFurniture(room, result);
     io.in(roomId).emit('roomFurnitureReset', {
       furniture: room.furniture,
       theme: room.theme,
+      style: room.style || roomStyles.styleFromPreset(room.theme),
       interactiveStates: interactiveStatesObject(room),
     });
   });
@@ -820,8 +840,26 @@ io.on('connection', (socket) => {
     if (room.ownerId !== socket.id) return;
     if (Number.isInteger(theme) && theme >= 0 && theme < ROOM_THEME_COUNT) {
       room.theme = theme;
-      io.in(roomId).emit('roomThemeChanged', { theme: room.theme });
+      room.style = roomStyles.styleFromPreset(theme);
+      io.in(roomId).emit('roomStyleChanged', { theme: room.theme, style: room.style });
     }
+  });
+
+  socket.on('setRoomStyle', (payload) => {
+    if (!withinRateLimit('room-style', 20, 5000)) return;
+    const { style } = asEventObject(payload);
+    const roomId = socket.roomId;
+    if (!roomId || !rooms.has(roomId)) return;
+    const room = rooms.get(roomId);
+    if (room.ownerId !== socket.id || room.isPublic) return;
+    const errors = roomStyles.validateStyle(style);
+    if (errors.length > 0) {
+      socket.emit('buildError', { message: errors[0] });
+      return;
+    }
+    room.style = roomStyles.normalizeStyle(style);
+    room.theme = room.style.preset;
+    io.in(roomId).emit('roomStyleChanged', { theme: room.theme, style: room.style });
   });
 
   // ── Ambient Audio Track ──

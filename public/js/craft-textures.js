@@ -1,8 +1,11 @@
 (function craftTexturesModule(root, factory) {
-  const api = factory();
+  const roomStyles = typeof module !== 'undefined' && module.exports
+    ? require('./room-style')
+    : root.FreeLobbyRoomStyles;
+  const api = factory(roomStyles);
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   root.FreeLobbyCraft = api;
-})(typeof globalThis !== 'undefined' ? globalThis : this, function createCraftTexturesApi() {
+})(typeof globalThis !== 'undefined' ? globalThis : this, function createCraftTexturesApi(roomStyles) {
   const SOURCE_MATERIALS = Object.freeze({
     denim: 'denim-dark.jpg',
     linen: 'linen.jpg',
@@ -13,77 +16,24 @@
     board: 'board.jpg',
   });
 
-  const THEME_PALETTES = Object.freeze([
-    {
-      name: 'lobby',
-      background: '#101419',
-      floor: '#1c252b',
-      seam: '#806d57',
-      wall: '#8f6b46',
-      primary: '#287f7c',
-      secondary: '#d7c39c',
-      accent: '#c9653f',
-      dark: '#293b48',
-      light: '#f0dfb8',
-      leaf: '#668a54',
-      water: '#4c94a0',
-      wood: '#9b7047',
-    },
-    {
-      name: 'garden',
-      background: '#111711',
-      floor: '#20291f',
-      seam: '#766f4f',
-      wall: '#8b754d',
-      primary: '#5f8552',
-      secondary: '#c8bd86',
-      accent: '#cc7b3f',
-      dark: '#314339',
-      light: '#ede0bd',
-      leaf: '#719b56',
-      water: '#4d8f88',
-      wood: '#8a6846',
-    },
-    {
-      name: 'library',
-      background: '#17131b',
-      floor: '#29212d',
-      seam: '#8a6a61',
-      wall: '#76516a',
-      primary: '#795277',
-      secondary: '#c8a78e',
-      accent: '#b65e45',
-      dark: '#343040',
-      light: '#ead9bc',
-      leaf: '#687a52',
-      water: '#547e90',
-      wood: '#805c46',
-    },
-    {
-      name: 'private',
-      background: '#12151c',
-      floor: '#1d2330',
-      seam: '#776b68',
-      wall: '#655c72',
-      primary: '#4d6f91',
-      secondary: '#b9a989',
-      accent: '#bd664e',
-      dark: '#2d3545',
-      light: '#eadcbf',
-      leaf: '#607f58',
-      water: '#4f8497',
-      wood: '#87634a',
-    },
-  ]);
+  const THEME_PALETTES = Object.freeze(
+    roomStyles.PRESETS.map(preset => Object.freeze({ ...preset.palette })),
+  );
 
-  const SHAPE_NAMES = Object.freeze(['circle', 'square', 'diamond']);
-  const ACCESSORY_NAMES = Object.freeze(['none', 'headphones', 'halo', 'beanie']);
+  const SHAPE_NAMES = Object.freeze(['circle', 'square', 'diamond', 'heart', 'scallop']);
+  const ACCESSORY_NAMES = Object.freeze(['none', 'headphones', 'halo', 'beanie', 'bow', 'flower', 'glasses', 'leaf']);
+  const EYE_NAMES = Object.freeze(['button', 'sleepy', 'wide', 'happy', 'wink', 'cross-stitch']);
+  const BROW_NAMES = Object.freeze(['soft', 'straight', 'arched', 'worried', 'bold']);
+  const MOUTH_NAMES = Object.freeze(['smile', 'open-smile', 'flat', 'tiny-o', 'smirk', 'frown']);
+  const DETAIL_NAMES = Object.freeze(['none', 'freckles', 'blush', 'moustache', 'beauty-mark', 'cheek-stitch']);
   const DEFAULT_PLAYER_COLORS = Object.freeze([
     '#2db8b2', '#d85a9a', '#74b84d', '#d94d77', '#dfba3e',
     '#dc773c', '#9d62c4', '#4c7dcc', '#d65b52', '#34ae88',
   ]);
 
   const generatedPreviewUrls = new Map();
+  const installedSceneState = new WeakMap();
+  let domSourcePromise = null;
 
   function clamp(value, min = 0, max = 255) {
     return Math.min(max, Math.max(min, value));
@@ -112,11 +62,15 @@
     return `#${[r, g, b].map(channel => channel.toString(16).padStart(2, '0')).join('')}`;
   }
 
-  function furnitureTextureKey(theme, type, on = false) {
-    const normalizedTheme = Number.isInteger(theme)
-      ? ((theme % THEME_PALETTES.length) + THEME_PALETTES.length) % THEME_PALETTES.length
+  function normalizeStyleSlot(styleSlot) {
+    if (styleSlot === 'custom') return 'custom';
+    return Number.isInteger(styleSlot)
+      ? ((styleSlot % THEME_PALETTES.length) + THEME_PALETTES.length) % THEME_PALETTES.length
       : 0;
-    return `craft-furn-${normalizedTheme}-${type}${on ? '-on' : ''}`;
+  }
+
+  function furnitureTextureKey(styleSlot, type, on = false) {
+    return `craft-furn-${normalizeStyleSlot(styleSlot)}-${type}${on ? '-on' : ''}`;
   }
 
   function playerTextureKey(shape, colorIndex) {
@@ -127,6 +81,92 @@
     return `craft-player-${shapeName}-${normalizedColor}`;
   }
 
+  function normalizeAvatarCustomization(value = {}) {
+    const integer = (candidate, max, fallback = 0) => (
+      Number.isInteger(candidate) && candidate >= 0 && candidate <= max ? candidate : fallback
+    );
+    return {
+      colorIdx: integer(value.colorIdx, DEFAULT_PLAYER_COLORS.length - 1),
+      shape: integer(value.shape, SHAPE_NAMES.length - 1),
+      accessory: integer(value.accessory, ACCESSORY_NAMES.length - 1),
+      pulse: integer(value.pulse, 2, 1),
+      eyes: integer(value.eyes, EYE_NAMES.length - 1),
+      brows: integer(value.brows, BROW_NAMES.length - 1),
+      mouth: integer(value.mouth, MOUTH_NAMES.length - 1),
+      detail: integer(value.detail, DETAIL_NAMES.length - 1),
+    };
+  }
+
+  function encodeAvatarLook(customization) {
+    const value = normalizeAvatarCustomization(customization);
+    return `A${[
+      value.colorIdx,
+      value.shape,
+      value.accessory,
+      value.pulse,
+      value.eyes,
+      value.brows,
+      value.mouth,
+      value.detail,
+    ].map(number => number.toString(36).toUpperCase()).join('')}`;
+  }
+
+  function decodeAvatarLook(code) {
+    const normalizedCode = String(code || '').trim().toUpperCase();
+
+    // Version 1 used four characters: hexadecimal color, shape, accessory, pulse.
+    if (/^[0-9A-F][0-9][0-9][0-9]$/.test(normalizedCode)) {
+      return normalizeAvatarCustomization({
+        colorIdx: Number.parseInt(normalizedCode[0], 16),
+        shape: Number.parseInt(normalizedCode[1], 10),
+        accessory: Number.parseInt(normalizedCode[2], 10),
+        pulse: Number.parseInt(normalizedCode[3], 10),
+      });
+    }
+
+    if (!/^A[0-9A-Z]{8}$/.test(normalizedCode)) return null;
+    const values = normalizedCode.slice(1).split('').map(character => Number.parseInt(character, 36));
+    const candidate = {
+      colorIdx: values[0],
+      shape: values[1],
+      accessory: values[2],
+      pulse: values[3],
+      eyes: values[4],
+      brows: values[5],
+      mouth: values[6],
+      detail: values[7],
+    };
+    const decoded = normalizeAvatarCustomization(candidate);
+    return encodeAvatarLook(decoded) === normalizedCode ? decoded : null;
+  }
+
+  function randomAvatarCustomization(rng = Math.random) {
+    const pick = length => Math.min(length - 1, Math.max(0, Math.floor(rng() * length)));
+    return {
+      colorIdx: pick(DEFAULT_PLAYER_COLORS.length),
+      shape: pick(SHAPE_NAMES.length),
+      accessory: pick(ACCESSORY_NAMES.length),
+      pulse: pick(3),
+      eyes: pick(EYE_NAMES.length),
+      brows: pick(BROW_NAMES.length),
+      mouth: pick(MOUTH_NAMES.length),
+      detail: pick(DETAIL_NAMES.length),
+    };
+  }
+
+  function avatarTextureKey(customization) {
+    const value = normalizeAvatarCustomization(customization);
+    return [
+      'craft-avatar',
+      value.shape,
+      value.colorIdx,
+      value.eyes,
+      value.brows,
+      value.mouth,
+      value.detail,
+    ].join('-');
+  }
+
   function accessoryTextureKey(accessory, colorIndex) {
     const accessoryName = ACCESSORY_NAMES[accessory] || ACCESSORY_NAMES[0];
     const normalizedColor = Number.isInteger(colorIndex) && colorIndex >= 0
@@ -135,12 +175,12 @@
     return `craft-accessory-${accessoryName}-${normalizedColor}`;
   }
 
-  function floorTextureKey(theme) {
-    return `craft-floor-${Number.isInteger(theme) ? theme % THEME_PALETTES.length : 0}`;
+  function floorTextureKey(styleSlot) {
+    return `craft-floor-${normalizeStyleSlot(styleSlot)}`;
   }
 
-  function wallTextureKey(theme) {
-    return `craft-wall-${Number.isInteger(theme) ? theme % THEME_PALETTES.length : 0}`;
+  function wallTextureKey(styleSlot) {
+    return `craft-wall-${normalizeStyleSlot(styleSlot)}`;
   }
 
   function preload(scene) {
@@ -318,17 +358,19 @@
   }
 
   function createThemeMaterials(sourceImages, palette) {
+    const contrast = Number.isFinite(palette.textureContrast) ? palette.textureContrast : 1;
     return {
-      floor: makeTintedTile(sourceImages.denim, palette.floor, 1.08),
-      wall: makeTintedTile(sourceImages.board, palette.wall, 0.82),
-      primary: makeTintedTile(sourceImages.fleece, palette.primary, 1.12),
-      secondary: makeTintedTile(sourceImages.linen, palette.secondary, 0.96),
-      accent: makeTintedTile(sourceImages.hessian, palette.accent, 1.05),
-      dark: makeTintedTile(sourceImages.corduroy, palette.dark, 0.96),
-      light: makeTintedTile(sourceImages.cotton, palette.light, 0.9),
-      leaf: makeTintedTile(sourceImages.linen, palette.leaf, 1.08),
-      water: makeTintedTile(sourceImages.linen, palette.water, 1.02),
-      wood: makeTintedTile(sourceImages.board, palette.wood, 0.9),
+      floor: makeTintedTile(sourceImages.denim, palette.floor, 1.08 * contrast),
+      wall: makeTintedTile(sourceImages.board, palette.wall, 0.82 * contrast),
+      primary: makeTintedTile(sourceImages.fleece, palette.primary, 1.12 * contrast),
+      secondary: makeTintedTile(sourceImages.linen, palette.secondary, 0.96 * contrast),
+      accent: makeTintedTile(sourceImages.hessian, palette.accent, 1.05 * contrast),
+      dark: makeTintedTile(sourceImages.corduroy, palette.dark, 0.96 * contrast),
+      light: makeTintedTile(sourceImages.cotton, palette.light, 0.9 * contrast),
+      leaf: makeTintedTile(sourceImages.linen, palette.leaf, 1.08 * contrast),
+      water: makeTintedTile(sourceImages.linen, palette.water, 1.02 * contrast),
+      wood: makeTintedTile(sourceImages.board, palette.wood, 0.9 * contrast),
+      cotton: makeTintedTile(sourceImages.cotton, palette.light, 0.9 * contrast),
     };
   }
 
@@ -1242,10 +1284,13 @@
     return canvas;
   }
 
-  function drawAvatar(shape, color, sourceImages, palette) {
+  function drawAvatar(customization, color, sourceImages, palette) {
+    const value = normalizeAvatarCustomization(customization);
+    const shape = value.shape;
     const { canvas, context } = createCanvas(48, 48, 1);
     const patch = makeTintedTile(sourceImages.fleece, color, 1.18);
     const border = makeTintedTile(sourceImages.cotton, palette.light, 0.86);
+    const faceInk = makeTintedTile(sourceImages.corduroy, palette.dark, 0.8);
     let outer;
     let inner;
 
@@ -1255,6 +1300,33 @@
     } else if (shape === 2) {
       outer = polygonPath([[24, 1], [47, 24], [24, 47], [1, 24]]);
       inner = polygonPath([[24, 6], [42, 24], [24, 42], [6, 24]]);
+    } else if (shape === 3) {
+      outer = new Path2D();
+      outer.moveTo(24, 45);
+      outer.bezierCurveTo(19, 38, 3, 29, 3, 16);
+      outer.bezierCurveTo(3, 6, 16, 2, 24, 12);
+      outer.bezierCurveTo(32, 2, 45, 6, 45, 16);
+      outer.bezierCurveTo(45, 29, 29, 38, 24, 45);
+      outer.closePath();
+      inner = new Path2D();
+      inner.moveTo(24, 39);
+      inner.bezierCurveTo(19, 34, 8, 27, 8, 17);
+      inner.bezierCurveTo(8, 10, 17, 7, 24, 17);
+      inner.bezierCurveTo(31, 7, 40, 10, 40, 17);
+      inner.bezierCurveTo(40, 27, 29, 34, 24, 39);
+      inner.closePath();
+    } else if (shape === 4) {
+      const outerPoints = [];
+      const innerPoints = [];
+      for (let index = 0; index < 16; index++) {
+        const angle = (index / 16) * Math.PI * 2 - Math.PI / 2;
+        const outerRadius = index % 2 === 0 ? 23 : 20;
+        const innerRadius = index % 2 === 0 ? 18 : 16;
+        outerPoints.push([24 + Math.cos(angle) * outerRadius, 24 + Math.sin(angle) * outerRadius]);
+        innerPoints.push([24 + Math.cos(angle) * innerRadius, 24 + Math.sin(angle) * innerRadius]);
+      }
+      outer = polygonPath(outerPoints);
+      inner = polygonPath(innerPoints);
     } else {
       outer = ellipsePath(24, 24, 22, 22);
       inner = ellipsePath(24, 24, 17.5, 17.5);
@@ -1263,9 +1335,100 @@
     fillTexture(context, outer, border, { shadow: { blur: 5, offsetY: 2 } });
     fillTexture(context, inner, patch);
     stitch(context, inner, palette.light, { width: 1.2, dash: [2.5, 2.5] });
-    fillTexture(context, ellipsePath(19, 21, 1.5, 1.5), makeTintedTile(sourceImages.corduroy, palette.dark, 0.8));
-    fillTexture(context, ellipsePath(29, 21, 1.5, 1.5), makeTintedTile(sourceImages.corduroy, palette.dark, 0.8));
-    stitch(context, linePath([[19, 29], [24, 31], [29, 29]]), palette.dark, { width: 1, dash: [2, 1] });
+
+    const leftEyeX = 18.5;
+    const rightEyeX = 29.5;
+    const eyeY = 21;
+    if (value.eyes === 1) {
+      solidStroke(context, linePath([[15.5, eyeY], [21.5, eyeY + 1]]), palette.dark, 1.5);
+      solidStroke(context, linePath([[26.5, eyeY + 1], [32.5, eyeY]]), palette.dark, 1.5);
+    } else if (value.eyes === 2) {
+      fillTexture(context, ellipsePath(leftEyeX, eyeY, 3.2, 4), faceInk);
+      fillTexture(context, ellipsePath(rightEyeX, eyeY, 3.2, 4), faceInk);
+      fillTexture(context, ellipsePath(leftEyeX - 0.7, eyeY - 1.2, 0.9, 1.1), border);
+      fillTexture(context, ellipsePath(rightEyeX - 0.7, eyeY - 1.2, 0.9, 1.1), border);
+    } else if (value.eyes === 3) {
+      const leftEye = new Path2D();
+      leftEye.arc(leftEyeX, eyeY + 2, 3.6, Math.PI, Math.PI * 2);
+      const rightEye = new Path2D();
+      rightEye.arc(rightEyeX, eyeY + 2, 3.6, Math.PI, Math.PI * 2);
+      solidStroke(context, leftEye, palette.dark, 1.5);
+      solidStroke(context, rightEye, palette.dark, 1.5);
+    } else if (value.eyes === 4) {
+      fillTexture(context, ellipsePath(leftEyeX, eyeY, 1.8, 1.8), faceInk);
+      solidStroke(context, linePath([[26.5, eyeY], [32.5, eyeY + 0.5]]), palette.dark, 1.5);
+    } else if (value.eyes === 5) {
+      crossStitch(context, leftEyeX, eyeY, palette.dark, 2.3);
+      crossStitch(context, rightEyeX, eyeY, palette.dark, 2.3);
+    } else {
+      fillTexture(context, ellipsePath(leftEyeX, eyeY, 1.8, 1.8), faceInk);
+      fillTexture(context, ellipsePath(rightEyeX, eyeY, 1.8, 1.8), faceInk);
+      crossStitch(context, leftEyeX, eyeY, palette.light, 0.75);
+      crossStitch(context, rightEyeX, eyeY, palette.light, 0.75);
+    }
+
+    const browY = 15.8;
+    const browWidth = value.brows === 4 ? 2.2 : 1.25;
+    if (value.brows === 1) {
+      solidStroke(context, linePath([[15.5, browY], [21.5, browY]]), palette.dark, browWidth);
+      solidStroke(context, linePath([[26.5, browY], [32.5, browY]]), palette.dark, browWidth);
+    } else if (value.brows === 2) {
+      solidStroke(context, linePath([[15.5, browY + 1], [18.5, browY - 1], [21.5, browY + 0.5]]), palette.dark, browWidth);
+      solidStroke(context, linePath([[26.5, browY + 0.5], [29.5, browY - 1], [32.5, browY + 1]]), palette.dark, browWidth);
+    } else if (value.brows === 3) {
+      solidStroke(context, linePath([[15.5, browY - 1], [21.5, browY + 1]]), palette.dark, browWidth);
+      solidStroke(context, linePath([[26.5, browY + 1], [32.5, browY - 1]]), palette.dark, browWidth);
+    } else {
+      const leftBrow = new Path2D();
+      leftBrow.arc(leftEyeX, browY + 3, 3.6, Math.PI * 1.12, Math.PI * 1.88);
+      const rightBrow = new Path2D();
+      rightBrow.arc(rightEyeX, browY + 3, 3.6, Math.PI * 1.12, Math.PI * 1.88);
+      solidStroke(context, leftBrow, palette.dark, browWidth);
+      solidStroke(context, rightBrow, palette.dark, browWidth);
+    }
+
+    const mouthY = 30;
+    if (value.mouth === 1) {
+      const mouth = new Path2D();
+      mouth.arc(24, mouthY - 2, 5.5, 0.12, Math.PI - 0.12);
+      mouth.closePath();
+      fillTexture(context, mouth, faceInk);
+      solidStroke(context, linePath([[20, mouthY], [28, mouthY]]), palette.accent, 1);
+    } else if (value.mouth === 2) {
+      solidStroke(context, linePath([[19.5, mouthY], [28.5, mouthY]]), palette.dark, 1.4);
+    } else if (value.mouth === 3) {
+      solidStroke(context, ellipsePath(24, mouthY, 2.2, 2.8), palette.dark, 1.3);
+    } else if (value.mouth === 4) {
+      solidStroke(context, linePath([[19, mouthY], [23, mouthY + 1.5], [29, mouthY - 1]]), palette.dark, 1.4);
+    } else if (value.mouth === 5) {
+      const mouth = new Path2D();
+      mouth.arc(24, mouthY + 4, 5, Math.PI * 1.12, Math.PI * 1.88);
+      solidStroke(context, mouth, palette.dark, 1.4);
+    } else {
+      const mouth = new Path2D();
+      mouth.arc(24, mouthY - 3, 5.5, 0.15, Math.PI - 0.15);
+      solidStroke(context, mouth, palette.dark, 1.4);
+    }
+
+    if (value.detail === 1) {
+      for (const [x, y] of [[14.5, 27], [17, 28.5], [31, 28.5], [33.5, 27]]) {
+        fillTexture(context, ellipsePath(x, y, 0.8, 0.8), faceInk);
+      }
+    } else if (value.detail === 2) {
+      context.save();
+      context.globalAlpha = 0.55;
+      fillTexture(context, ellipsePath(15.5, 27, 4, 2.5), makeTintedTile(sourceImages.linen, palette.accent, 0.8));
+      fillTexture(context, ellipsePath(32.5, 27, 4, 2.5), makeTintedTile(sourceImages.linen, palette.accent, 0.8));
+      context.restore();
+    } else if (value.detail === 3) {
+      fillTexture(context, polygonPath([[24, 27], [19, 25], [18, 29], [24, 30]]), faceInk);
+      fillTexture(context, polygonPath([[24, 27], [29, 25], [30, 29], [24, 30]]), faceInk);
+    } else if (value.detail === 4) {
+      fillTexture(context, ellipsePath(32, 27, 1.2, 1.2), faceInk);
+    } else if (value.detail === 5) {
+      crossStitch(context, 14.5, 27.5, palette.light, 2);
+      crossStitch(context, 33.5, 27.5, palette.light, 2);
+    }
     return canvas;
   }
 
@@ -1291,6 +1454,35 @@
       fillTexture(context, roundedRectPath(6, 13, 36, 7, 3), thread);
       stitch(context, linePath([[11, 15], [37, 15]]), color, { width: 1, dash: [2, 2] });
       crossStitch(context, 24, 7, palette.light, 1.5);
+    } else if (accessory === 4) {
+      fillTexture(context, polygonPath([[24, 9], [11, 3], [10, 17], [24, 12]]), patch, { shadow: { blur: 2, offsetY: 1 } });
+      fillTexture(context, polygonPath([[24, 9], [37, 3], [38, 17], [24, 12]]), patch, { shadow: { blur: 2, offsetY: 1 } });
+      fillTexture(context, ellipsePath(24, 10, 5, 5), thread);
+      stitch(context, ellipsePath(24, 10, 3, 3), color, { width: 0.8, dash: [1.5, 1.5] });
+    } else if (accessory === 5) {
+      const flowerX = 34;
+      const flowerY = 10;
+      for (let index = 0; index < 6; index++) {
+        const angle = (index / 6) * Math.PI * 2;
+        fillTexture(context, ellipsePath(flowerX + Math.cos(angle) * 6, flowerY + Math.sin(angle) * 6, 4, 5), patch);
+      }
+      fillTexture(context, ellipsePath(flowerX, flowerY, 4, 4), thread);
+      fillTexture(context, polygonPath([[29, 15], [24, 22], [34, 17]]), makeTintedTile(sourceImages.linen, palette.leaf, 1.05));
+    } else if (accessory === 6) {
+      const left = ellipsePath(17, 21, 8, 7);
+      const right = ellipsePath(31, 21, 8, 7);
+      strokeTexture(context, left, patch, 3);
+      strokeTexture(context, right, patch, 3);
+      strokeTexture(context, linePath([[25, 21], [23, 21]]), patch, 3);
+      strokeTexture(context, linePath([[9, 20], [4, 18]]), patch, 2);
+      strokeTexture(context, linePath([[39, 20], [44, 18]]), patch, 2);
+      stitch(context, left, palette.light, { width: 0.7, dash: [2, 2] });
+      stitch(context, right, palette.light, { width: 0.7, dash: [2, 2] });
+    } else if (accessory === 7) {
+      const leaf = polygonPath([[26, 4], [42, 2], [38, 17], [25, 14]]);
+      fillTexture(context, leaf, makeTintedTile(sourceImages.linen, palette.leaf, 1.05), { shadow: { blur: 2, offsetY: 1 } });
+      solidStroke(context, linePath([[27, 13], [38, 5]]), palette.light, 1);
+      stitch(context, leaf, color, { width: 0.8, dash: [2, 2] });
     }
 
     return canvas;
@@ -1299,6 +1491,28 @@
   function addCanvasTexture(scene, key, canvas) {
     if (scene.textures.exists(key)) scene.textures.remove(key);
     scene.textures.addCanvas(key, canvas);
+  }
+
+  function installStyleTextureSet(scene, styleSlot, palette, state) {
+    const materials = createThemeMaterials(state.sourceImages, palette);
+    addCanvasTexture(scene, floorTextureKey(styleSlot), drawFloor(materials, palette));
+    addCanvasTexture(scene, wallTextureKey(styleSlot), drawWall(materials, palette));
+
+    state.footprints.forEach((footprint, type) => {
+      const definition = state.definitions[type];
+      addCanvasTexture(
+        scene,
+        furnitureTextureKey(styleSlot, type, false),
+        drawFurnitureCanvas(definition, footprint, materials, palette, false),
+      );
+      if (definition.interactive === true) {
+        addCanvasTexture(
+          scene,
+          furnitureTextureKey(styleSlot, type, true),
+          drawFurnitureCanvas(definition, footprint, materials, palette, true),
+        );
+      }
+    });
   }
 
   function install(scene, options = {}) {
@@ -1322,26 +1536,16 @@
       ? options.playerColors
       : DEFAULT_PLAYER_COLORS).map(toHex);
 
-    THEME_PALETTES.forEach((palette, themeIndex) => {
-      const materials = createThemeMaterials(sourceImages, palette);
-      addCanvasTexture(scene, floorTextureKey(themeIndex), drawFloor(materials, palette));
-      addCanvasTexture(scene, wallTextureKey(themeIndex), drawWall(materials, palette));
+    const state = {
+      customSignature: '',
+      definitions,
+      footprints,
+      sourceImages,
+    };
+    installedSceneState.set(scene, state);
 
-      footprints.forEach((footprint, type) => {
-        const definition = definitions[type];
-        addCanvasTexture(
-          scene,
-          furnitureTextureKey(themeIndex, type, false),
-          drawFurnitureCanvas(definition, footprint, materials, palette, false),
-        );
-        if (definition.interactive === true) {
-          addCanvasTexture(
-            scene,
-            furnitureTextureKey(themeIndex, type, true),
-            drawFurnitureCanvas(definition, footprint, materials, palette, true),
-          );
-        }
-      });
+    THEME_PALETTES.forEach((palette, themeIndex) => {
+      installStyleTextureSet(scene, themeIndex, palette, state);
     });
 
     playerColors.forEach((color, colorIndex) => {
@@ -1349,7 +1553,7 @@
         addCanvasTexture(
           scene,
           playerTextureKey(shapeIndex, colorIndex),
-          drawAvatar(shapeIndex, color, sourceImages, THEME_PALETTES[0]),
+          drawAvatar({ shape: shapeIndex, colorIdx: colorIndex }, color, sourceImages, THEME_PALETTES[0]),
         );
       });
       for (let accessory = 1; accessory < ACCESSORY_NAMES.length; accessory++) {
@@ -1369,14 +1573,79 @@
     };
   }
 
-  function furniturePreviewUrl(scene, theme, type) {
-    const key = furnitureTextureKey(theme, type, false);
+  function ensureAvatarTexture(scene, customization) {
+    const state = installedSceneState.get(scene);
+    if (!state) throw new Error('Craft textures must be installed before creating an avatar.');
+    const value = normalizeAvatarCustomization(customization);
+    const key = avatarTextureKey(value);
+    if (!scene.textures.exists(key)) {
+      const color = DEFAULT_PLAYER_COLORS[value.colorIdx] || DEFAULT_PLAYER_COLORS[0];
+      addCanvasTexture(
+        scene,
+        key,
+        drawAvatar(value, color, state.sourceImages, THEME_PALETTES[0]),
+      );
+    }
+    return key;
+  }
+
+  function installRoomStyle(scene, style) {
+    const normalized = roomStyles.normalizeStyle(style);
+    if (roomStyles.isPresetStyle(normalized)) return normalized.preset;
+    const state = installedSceneState.get(scene);
+    if (!state) throw new Error('Craft textures must be installed before applying a room style.');
+    const signature = roomStyles.styleSignature(normalized);
+    if (state.customSignature !== signature) {
+      installStyleTextureSet(scene, 'custom', roomStyles.paletteForStyle(normalized), state);
+      state.customSignature = signature;
+      for (const key of generatedPreviewUrls.keys()) {
+        if (key.startsWith('craft-furn-custom-')) generatedPreviewUrls.delete(key);
+      }
+    }
+    return 'custom';
+  }
+
+  function furniturePreviewUrl(scene, styleSlot, type) {
+    const key = furnitureTextureKey(styleSlot, type, false);
     if (generatedPreviewUrls.has(key)) return generatedPreviewUrls.get(key);
     const source = scene && scene.textures.get(key).getSourceImage();
     if (!source || typeof source.toDataURL !== 'function') return '';
     const url = source.toDataURL('image/png');
     generatedPreviewUrls.set(key, url);
     return url;
+  }
+
+  function loadDomSourceImages() {
+    if (domSourcePromise) return domSourcePromise;
+    domSourcePromise = Promise.all(Object.entries(SOURCE_MATERIALS).map(([id, filename]) => (
+      new Promise((resolve, reject) => {
+        const image = new Image();
+        image.onload = () => resolve([id, image]);
+        image.onerror = () => reject(new Error(`Craft material did not load for avatar preview: ${id}`));
+        image.src = `assets/materials/${filename}`;
+      })
+    ))).then(entries => Object.fromEntries(entries));
+    return domSourcePromise;
+  }
+
+  async function renderAvatarPreview(canvas, customization) {
+    if (!canvas || typeof canvas.getContext !== 'function') return;
+    const value = normalizeAvatarCustomization(customization);
+    const sources = await loadDomSourceImages();
+    const color = DEFAULT_PLAYER_COLORS[value.colorIdx] || DEFAULT_PLAYER_COLORS[0];
+    const avatar = drawAvatar(value, color, sources, THEME_PALETTES[0]);
+    const accessory = value.accessory > 0
+      ? drawAccessory(value.accessory, color, sources, THEME_PALETTES[0])
+      : null;
+    const size = 192;
+    canvas.width = size;
+    canvas.height = size;
+    const context = canvas.getContext('2d');
+    context.imageSmoothingEnabled = true;
+    context.imageSmoothingQuality = 'high';
+    context.clearRect(0, 0, size, size);
+    context.drawImage(avatar, 0, 0, size, size);
+    if (accessory) context.drawImage(accessory, 0, 0, size, size);
   }
 
   function validateMaterialManifest(manifest) {
@@ -1411,18 +1680,30 @@
 
   return {
     ACCESSORY_NAMES,
+    BROW_NAMES,
     DEFAULT_PLAYER_COLORS,
+    DETAIL_NAMES,
+    EYE_NAMES,
+    MOUTH_NAMES,
     SHAPE_NAMES,
     SOURCE_MATERIALS,
     THEME_PALETTES,
     accessoryTextureKey,
+    avatarTextureKey,
+    decodeAvatarLook,
+    encodeAvatarLook,
+    ensureAvatarTexture,
     floorTextureKey,
     furniturePreviewUrl,
     furnitureTextureKey,
     hexToRgb,
     install,
+    installRoomStyle,
+    normalizeAvatarCustomization,
     playerTextureKey,
     preload,
+    renderAvatarPreview,
+    randomAvatarCustomization,
     validateMaterialManifest,
     wallTextureKey,
   };

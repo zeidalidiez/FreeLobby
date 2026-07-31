@@ -90,9 +90,43 @@ test('socket boundary rejects malformed payloads and preserves consent-gated sig
   guest.emit('joinRoom', {
     roomId,
     name: 'Guest',
-    customization: { colorIdx: 2, shape: 0, accessory: 0, pulse: 1 },
+    customization: {
+      colorIdx: 2,
+      shape: 4,
+      accessory: 7,
+      pulse: 1,
+      eyes: 5,
+      brows: 4,
+      mouth: 5,
+      detail: 5,
+    },
   });
-  await guestJoined;
+  const guestRoom = await guestJoined;
+  assert.deepEqual(guestRoom.you.customization, {
+    colorIdx: 2,
+    shape: 4,
+    accessory: 7,
+    pulse: 1,
+    eyes: 5,
+    brows: 4,
+    mouth: 5,
+    detail: 5,
+  });
+
+  const customStyle = {
+    preset: 1,
+    intensity: 0,
+    wall: '#f0dfc4',
+    floor: '#8f7658',
+    accent: '#64846f',
+  };
+  const styleChanged = waitForEvent(guest, 'roomStyleChanged');
+  owner.emit('setRoomStyle', { style: customStyle });
+  assert.deepEqual((await styleChanged).style, customStyle);
+
+  const invalidStyle = waitForEvent(owner, 'buildError');
+  owner.emit('setRoomStyle', { style: { ...customStyle, wall: 'not-a-color' } });
+  assert.match((await invalidStyle).message, /wall/i);
 
   let leakedSign = false;
   guest.once('playerSign', () => { leakedSign = true; });

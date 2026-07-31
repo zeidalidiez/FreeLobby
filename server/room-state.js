@@ -3,7 +3,16 @@ const DEFAULT_ROOM_WIDTH = 1200;
 const DEFAULT_ROOM_HEIGHT = 800;
 const DEFAULT_PLAYER_MARGIN = 24;
 const DEFAULT_GRID_SIZE = 64;
-const DEFAULT_CUSTOMIZATION = Object.freeze({ colorIdx: 0, shape: 0, accessory: 0, pulse: 1 });
+const DEFAULT_CUSTOMIZATION = Object.freeze({
+  colorIdx: 0,
+  shape: 0,
+  accessory: 0,
+  pulse: 1,
+  eyes: 0,
+  brows: 0,
+  mouth: 0,
+  detail: 0,
+});
 
 const APPROVED_EMOTES = new Set([
   '😊', '👋', '☕', '😴', '❤️', '😂', '🎵', '✨', '🤔', '👍',
@@ -42,9 +51,13 @@ function normalizeCustomization(value) {
   const customization = asEventObject(value);
   const ranges = {
     colorIdx: [0, 9],
-    shape: [0, 2],
-    accessory: [0, 3],
+    shape: [0, 4],
+    accessory: [0, 7],
     pulse: [0, 2],
+    eyes: [0, 5],
+    brows: [0, 4],
+    mouth: [0, 5],
+    detail: [0, 5],
   };
   const normalized = {};
 
