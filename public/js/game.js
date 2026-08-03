@@ -51,6 +51,7 @@ const loveModalClose = document.getElementById('love-modal-close');
 
 const ownerBadge    = document.getElementById('owner-badge');
 const quietBtn      = document.getElementById('quiet-btn');
+const avatarHudBtn  = document.getElementById('avatar-btn');
 const ambientPanel  = document.getElementById('ambient-panel');
 const ambientMuteBtn = document.getElementById('ambient-mute');
 const ambientTrackBtns = document.querySelectorAll('.ambient-track-btn');
@@ -107,6 +108,11 @@ let vibePromptFromId = null; // who is requesting a vibe check on us
 const btnToggleCustomize = document.getElementById('btn-toggle-customize');
 const customizePanel     = document.getElementById('customize-panel');
 const avatarPreview      = document.getElementById('avatar-preview');
+const landingAvatarPreview = document.getElementById('landing-avatar-preview');
+const avatarWorkshopClose = document.getElementById('btn-close-avatar');
+const avatarDoneBtn      = document.getElementById('btn-avatar-done');
+const avatarTabButtons   = Array.from(document.querySelectorAll('[data-avatar-tab]'));
+const avatarPanes        = Array.from(document.querySelectorAll('[data-avatar-pane]'));
 const btnRandomizeAvatar = document.getElementById('btn-randomize-avatar');
 const btnResetAvatar     = document.getElementById('btn-reset-avatar');
 const colorSwatches      = document.getElementById('color-swatches');
@@ -177,11 +183,12 @@ function installInterfaceIcons() {
     ['btn-create', 'plus', 'Create Private Room', '+'],
     ['btn-join', 'shuffle', 'Go to a Random Room', '↝'],
     ['btn-toggle-specific', 'key-round', 'Have a Room Code?', ''],
-    ['btn-toggle-customize', 'palette', 'Customize Avatar', ''],
+    ['btn-toggle-customize', 'user-round', 'Customize Avatar', ''],
     ['back-btn', 'arrow-left', 'Lobby', '←'],
     ['flee-btn', 'door-open', 'Empty room', ''],
     ['quiet-btn', 'moon', 'Quiet', ''],
     ['build-btn', 'hammer', 'Build', ''],
+    ['avatar-btn', 'user-round', 'Avatar', ''],
     ['emote-toggle', 'smile', '', '☺'],
     ['music-btn', 'music-2', '', '♪'],
     ['love-btn', 'heart', '', '♥'],
@@ -507,24 +514,27 @@ function installAvatarChoices() {
 }
 
 async function refreshAvatarPreview() {
-  if (!avatarPreview) return;
+  const previews = [avatarPreview, landingAvatarPreview].filter(Boolean);
+  if (previews.length === 0) return;
   const revision = ++avatarPreviewRevision;
   const stagingCanvas = document.createElement('canvas');
-  avatarPreview.classList.add('loading');
+  previews.forEach(preview => preview.classList.add('loading'));
   try {
     await craftTextures.renderAvatarPreview(stagingCanvas, CUSTOMIZATION);
     if (revision !== avatarPreviewRevision) return;
-    const context = avatarPreview.getContext('2d');
-    context.clearRect(0, 0, avatarPreview.width, avatarPreview.height);
-    context.drawImage(stagingCanvas, 0, 0, avatarPreview.width, avatarPreview.height);
-    avatarPreview.classList.remove('loading');
+    previews.forEach(preview => {
+      const context = preview.getContext('2d');
+      context.clearRect(0, 0, preview.width, preview.height);
+      context.drawImage(stagingCanvas, 0, 0, preview.width, preview.height);
+      preview.classList.remove('loading');
+    });
   } catch (error) {
-    avatarPreview.classList.remove('loading');
+    previews.forEach(preview => preview.classList.remove('loading'));
     console.error('Avatar preview failed to render.', error);
   }
 }
 
-function updateCustomizationUI() {
+function updateCustomizationUI({ broadcast = true } = {}) {
   CUSTOMIZATION = craftTextures.normalizeAvatarCustomization(CUSTOMIZATION);
   avatarHashInput.value = encodeHash(CUSTOMIZATION);
   document.querySelectorAll('[data-customization-field]').forEach(element => {
@@ -537,15 +547,86 @@ function updateCustomizationUI() {
   });
   pulseSlider.value = String(CUSTOMIZATION.pulse);
   refreshAvatarPreview();
+  if (currentRoomId) {
+    refreshLocalPlayerAppearance();
+    if (broadcast && socket && socket.connected) {
+      socket.emit('updateCustomization', { customization: { ...CUSTOMIZATION } });
+    }
+  }
 }
 
-btnToggleCustomize.addEventListener('click', () => {
-  customizePanel.classList.toggle('open');
-  const isOpen = customizePanel.classList.contains('open');
-  customizePanel.closest('.customize-section')?.classList.toggle('expanded', isOpen);
-  btnToggleCustomize.setAttribute('aria-expanded', String(isOpen));
-  if (isOpen) refreshAvatarPreview();
+function setAvatarTab(tabName) {
+  const selectedTab = avatarTabButtons.some(button => button.dataset.avatarTab === tabName)
+    ? tabName
+    : 'base';
+  avatarTabButtons.forEach(button => {
+    const active = button.dataset.avatarTab === selectedTab;
+    button.classList.toggle('active', active);
+    button.setAttribute('aria-selected', String(active));
+    button.tabIndex = active ? 0 : -1;
+  });
+  avatarPanes.forEach(pane => {
+    const active = pane.dataset.avatarPane === selectedTab;
+    pane.classList.toggle('active', active);
+    pane.hidden = !active;
+  });
+}
+
+function setAvatarWorkshopTriggerState(open) {
+  [btnToggleCustomize, avatarHudBtn].forEach(button => {
+    if (!button) return;
+    button.classList.toggle('active', open);
+    button.setAttribute('aria-expanded', String(open));
+    button.setAttribute('aria-pressed', String(open));
+  });
+}
+
+function openAvatarWorkshop() {
+  if (currentRoomId) {
+    if (buildMode) closeBuildDrawer();
+    setExpandedPanel(musicBtn, musicPanel, false);
+  }
+  customizePanel.classList.add('open');
+  customizePanel.setAttribute('aria-hidden', 'false');
+  landingScreen.inert = true;
+  gameContainer.inert = true;
+  document.body.classList.add('avatar-workshop-open');
+  setAvatarWorkshopTriggerState(true);
+  refreshAvatarPreview();
+  trapFocus(customizePanel);
+}
+
+function closeAvatarWorkshop({ restoreFocus = true } = {}) {
+  if (!customizePanel.classList.contains('open')) return;
+  customizePanel.classList.remove('open');
+  customizePanel.setAttribute('aria-hidden', 'true');
+  landingScreen.inert = false;
+  gameContainer.inert = false;
+  document.body.classList.remove('avatar-workshop-open');
+  setAvatarWorkshopTriggerState(false);
+  releaseFocus(customizePanel, restoreFocus);
+}
+
+btnToggleCustomize.addEventListener('click', openAvatarWorkshop);
+avatarHudBtn.addEventListener('click', openAvatarWorkshop);
+avatarWorkshopClose.addEventListener('click', () => closeAvatarWorkshop());
+avatarDoneBtn.addEventListener('click', () => closeAvatarWorkshop());
+customizePanel.addEventListener('click', event => {
+  if (event.target === customizePanel) closeAvatarWorkshop();
 });
+avatarTabButtons.forEach(button => {
+  button.addEventListener('click', () => setAvatarTab(button.dataset.avatarTab));
+  button.addEventListener('keydown', event => {
+    if (!['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
+    const currentIndex = avatarTabButtons.indexOf(button);
+    const direction = event.key === 'ArrowRight' ? 1 : -1;
+    const nextButton = avatarTabButtons[(currentIndex + direction + avatarTabButtons.length) % avatarTabButtons.length];
+    event.preventDefault();
+    nextButton.click();
+    nextButton.focus();
+  });
+});
+setAvatarTab('base');
 
 btnRandomizeAvatar.addEventListener('click', () => {
   CUSTOMIZATION = craftTextures.randomAvatarCustomization();
@@ -656,6 +737,11 @@ function releaseFocus(element, restore = true) {
 
 // ── Keyboard shortcuts ──
 document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && customizePanel.classList.contains('open')) {
+    closeAvatarWorkshop();
+    return;
+  }
+
   // Ignore if typing in an input
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
 
@@ -847,6 +933,7 @@ btnToggleSpecific.addEventListener('click', () => {
   joinSpecificPanel.classList.toggle('open');
   const isOpen = joinSpecificPanel.classList.contains('open');
   btnToggleSpecific.setAttribute('aria-expanded', String(isOpen));
+  joinSpecificPanel.setAttribute('aria-hidden', String(!isOpen));
   if (isOpen) roomCodeInput.focus();
 });
 
@@ -924,6 +1011,7 @@ function enterGame(mode, roomCode) {
   joinMode = mode;
   joinRoomCode = roomCode || '';
 
+  closeAvatarWorkshop({ restoreFocus: false });
   shellController.enterGame();
   connectionStatus.classList.add('visible');
   backBtn.classList.add('visible');
@@ -934,6 +1022,7 @@ function enterGame(mode, roomCode) {
   loveBtn.classList.add('visible');
   fleeBtn.classList.add('visible');
   quietBtn.classList.add('visible');
+  avatarHudBtn.classList.add('visible');
   if (zoomControls) zoomControls.classList.add('visible');
 
   // Reset sign input to blocked until vibe check
@@ -968,6 +1057,8 @@ function exitGame() {
   releaseFocus(loveModal);
   fleeBtn.classList.remove('visible');
   quietBtn.classList.remove('visible');
+  avatarHudBtn.classList.remove('visible');
+  closeAvatarWorkshop({ restoreFocus: false });
   quietBtn.classList.remove('active');
   quietBtn.setAttribute('aria-pressed', 'false');
   quietMode = false;
@@ -1978,6 +2069,55 @@ function createClickPulse(x, y) {
 // PLAYER MANAGEMENT
 // ═══════════════════════════════════════════════════════
 
+function refreshLocalPlayerAppearance() {
+  if (!scene || !player) return;
+  const customization = craftTextures.normalizeAvatarCustomization(CUSTOMIZATION);
+  player.setTexture(craftTextures.ensureAvatarTexture(scene, customization));
+  myColor = PLAYER_COLORS[customization.colorIdx] || myColor;
+
+  if (playerAccessory) {
+    playerAccessory.destroy();
+    playerAccessory = null;
+  }
+  if (customization.accessory > 0) {
+    playerAccessory = scene.add.sprite(
+      player.x,
+      player.y,
+      craftTextures.accessoryTextureKey(customization.accessory, customization.colorIdx),
+    );
+    playerAccessory
+      .setDepth(11)
+      .setAlpha(player.alpha)
+      .setScale(player.scaleX, player.scaleY)
+      .setAngle(player.angle);
+  }
+}
+
+function applyOtherPlayerCustomization(id, customization) {
+  if (!scene) return;
+  const other = otherPlayers.get(id);
+  if (!other) return;
+  const normalized = craftTextures.normalizeAvatarCustomization(customization);
+  other.sprite.setTexture(craftTextures.ensureAvatarTexture(scene, normalized));
+  if (other.accessory) {
+    other.accessory.destroy();
+    other.accessory = null;
+  }
+  if (normalized.accessory > 0) {
+    other.accessory = scene.add.sprite(
+      other.sprite.x,
+      other.sprite.y,
+      craftTextures.accessoryTextureKey(normalized.accessory, normalized.colorIdx),
+    );
+    other.accessory
+      .setDepth(6)
+      .setAlpha(other.quietMode ? 0.35 : 1)
+      .setScale(other.sprite.scaleX, other.sprite.scaleY)
+      .setAngle(other.sprite.angle);
+  }
+  other.customization = normalized;
+}
+
 function spawnLocalPlayer(data) {
   if (player) return;
   const cust = data.customization || CUSTOMIZATION;
@@ -2522,6 +2662,8 @@ function connectSocket() {
 
   function processRoomJoined({ roomId, you, players, isOwner, isPublic, isCommon, commonName, furniture, theme, style, interactiveStates, ambientTrack, width, height }) {
     currentRoomId = roomId;
+    CUSTOMIZATION = craftTextures.normalizeAvatarCustomization(you.customization || CUSTOMIZATION);
+    updateCustomizationUI({ broadcast: false });
     roomIdDisplay.textContent = roomId;
     isRoomOwner = !!isOwner;
     currentRoomIsPublic = isPublic !== false;
@@ -2614,7 +2756,7 @@ function connectSocket() {
     if (player) {
       // Reposition and keep the local craft avatar in sync.
       player.setPosition(you.x, you.y);
-      myColor = you.color;
+      myColor = PLAYER_COLORS[CUSTOMIZATION.colorIdx] || you.color;
       if (nameLabel) nameLabel.setPosition(you.x, you.y - 30);
       if (playerAccessory) playerAccessory.setPosition(you.x, you.y);
       player.setAlpha(quietMode ? 0.35 : 1);
@@ -2666,6 +2808,10 @@ function connectSocket() {
     if (!scene) return;
     const other = otherPlayers.get(id);
     if (other) { other.targetX = x; other.targetY = y; }
+  });
+
+  socket.on('playerCustomizationChanged', ({ id, customization }) => {
+    applyOtherPlayerCustomization(id, customization);
   });
 
   socket.on('playerQuietMode', ({ id, enabled }) => {

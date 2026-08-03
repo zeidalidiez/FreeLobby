@@ -133,6 +133,24 @@ test('socket boundary rejects malformed payloads and preserves consent-gated sig
     detail: 5,
   });
 
+  const liveCustomization = {
+    colorIdx: 8,
+    shape: 3,
+    accessory: 6,
+    pulse: 2,
+    eyes: 4,
+    brows: 3,
+    mouth: 2,
+    detail: 4,
+  };
+  const customizationChanged = waitForEvent(guest, 'playerCustomizationChanged');
+  owner.emit('updateCustomization', { customization: liveCustomization });
+  assert.deepEqual(await customizationChanged, {
+    id: owner.id,
+    customization: liveCustomization,
+  });
+  assert.deepEqual(rooms.get(roomId).players.get(owner.id).customization, liveCustomization);
+
   const customStyle = {
     preset: 1,
     intensity: 0,

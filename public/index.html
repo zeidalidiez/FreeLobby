@@ -14,37 +14,43 @@
 
   <!-- ═══ LANDING SCREEN ═══ -->
   <div id="landing-screen" role="main" aria-label="FreeLobby landing page">
-    <div class="landing-card">
-      <h1 class="landing-title">FreeLobby</h1>
-      <p class="landing-subtitle">a calm corner of the internet</p>
+    <main class="landing-card">
+      <section class="landing-arrival" aria-labelledby="landing-title">
+        <header class="landing-brand">
+          <h1 class="landing-title" id="landing-title">FreeLobby</h1>
+          <p class="landing-subtitle">a calm corner of the internet</p>
+        </header>
 
-      <div class="input-group">
-        <label for="player-name">Your Name</label>
-        <input
-          type="text"
-          id="player-name"
-          placeholder="Something nice…"
-          maxlength="24"
-          autocomplete="off"
-          spellcheck="false"
-          aria-label="Enter your display name"
-        >
-      </div>
-
-      <button class="btn btn-primary btn-enter" id="btn-enter" aria-label="Enter the Lobby common room">
-        <span class="btn-icon" aria-hidden="true">✦</span>
-        Enter The Lobby
-      </button>
-
-      <div class="landing-columns">
-        <div class="landing-col">
-          <h3 class="col-title">Common Rooms</h3>
-          <div class="common-rooms" id="common-rooms" aria-label="Common rooms list">
-            <div class="common-room-skeleton" role="status" aria-live="polite">Loading…</div>
+        <div class="landing-avatar-summary">
+          <div class="landing-avatar-frame" aria-hidden="true">
+            <canvas id="landing-avatar-preview" width="128" height="128"></canvas>
           </div>
+          <button class="landing-avatar-button" id="btn-toggle-customize" type="button" aria-expanded="false" aria-controls="customize-panel">
+            <i data-lucide="user-round" aria-hidden="true"></i>
+            <span>Customize Avatar</span>
+          </button>
         </div>
-        <div class="landing-col landing-col-right">
-          <h3 class="col-title">Your Space</h3>
+
+        <div class="input-group landing-name-field">
+          <label for="player-name">Your Name</label>
+          <input
+            type="text"
+            id="player-name"
+            placeholder="Something nice…"
+            maxlength="24"
+            autocomplete="off"
+            spellcheck="false"
+            aria-label="Enter your display name"
+          >
+        </div>
+
+        <button class="btn btn-primary btn-enter" id="btn-enter" aria-label="Enter the Lobby common room">
+          <span class="btn-icon" aria-hidden="true">✦</span>
+          Enter The Lobby
+        </button>
+
+        <section class="landing-private" aria-labelledby="your-space-title">
+          <h2 class="col-title" id="your-space-title">Your Space</h2>
           <div class="private-actions">
             <button class="btn btn-secondary" id="btn-create" aria-label="Create a new private room">
               <span class="btn-icon" aria-hidden="true">＋</span>
@@ -58,7 +64,7 @@
               <button class="join-specific-toggle" id="btn-toggle-specific" aria-expanded="false" aria-controls="join-specific-panel">
                 Have a Room Code?
               </button>
-              <div class="join-specific-panel" id="join-specific-panel" role="region" aria-label="Join room by code">
+              <div class="join-specific-panel" id="join-specific-panel" role="region" aria-label="Join room by code" aria-hidden="true">
                 <div class="join-specific-row">
                   <input
                     type="text"
@@ -69,59 +75,100 @@
                     spellcheck="false"
                     aria-label="Room code"
                   >
-                  <button class="btn btn-primary btn-sm" id="btn-join-code" aria-label="Join room with code">
-                    Join
-                  </button>
+                  <button class="btn btn-primary btn-sm" id="btn-join-code" aria-label="Join room with code">Join</button>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      </div>
+        </section>
 
-      <div class="bookmarks-section" id="bookmarks-section">
-        <h3 class="col-title">Bookmarks</h3>
-        <div class="bookmarks-list" id="bookmarks-list" aria-label="Bookmarked rooms">
-          <div class="bookmark-empty">Bookmark rooms to find them again</div>
-        </div>
-      </div>
+        <p class="landing-footer">
+          made with <span class="heart" aria-hidden="true">♥</span> for quiet people
+        </p>
+      </section>
 
-      <div class="public-rooms-section" id="public-rooms-section">
-        <h3 class="col-title">Active Public Rooms</h3>
-        <div class="public-rooms" id="public-rooms" aria-label="Active public rooms">
-          <div class="common-room-skeleton" role="status" aria-live="polite">Loading…</div>
+      <section class="landing-directory" aria-labelledby="common-rooms-title">
+        <div class="landing-col landing-common-section">
+          <h2 class="col-title" id="common-rooms-title">Common Rooms</h2>
+          <div class="common-rooms" id="common-rooms" aria-label="Common rooms list">
+            <div class="common-room-skeleton" role="status" aria-live="polite">Loading…</div>
+          </div>
         </div>
-      </div>
 
-      <div class="customize-section">
-        <button class="join-specific-toggle" id="btn-toggle-customize" aria-expanded="false" aria-controls="customize-panel">
-          Customize Avatar
-        </button>
-        <div class="join-specific-panel" id="customize-panel" role="region" aria-label="Avatar customization">
-          <div class="avatar-customizer">
-            <div class="avatar-preview-column">
-              <div class="avatar-preview-frame">
-                <canvas id="avatar-preview" width="192" height="192" aria-label="Current patchwork avatar preview"></canvas>
-              </div>
-              <p>Everyone starts with a surprise mix. Change anything.</p>
-              <div class="avatar-preview-actions">
-                <button class="btn btn-primary" id="btn-randomize-avatar" type="button">
-                  <i data-lucide="dices" aria-hidden="true"></i>
-                  Randomize
-                </button>
-                <button class="btn btn-secondary" id="btn-reset-avatar" type="button">Reset</button>
-              </div>
+        <div class="landing-directory-secondary">
+          <section class="bookmarks-section" id="bookmarks-section" aria-labelledby="bookmarks-title">
+            <h2 class="col-title" id="bookmarks-title">Bookmarks</h2>
+            <div class="bookmarks-list" id="bookmarks-list" aria-label="Bookmarked rooms">
+              <div class="bookmark-empty">Bookmark rooms to find them again</div>
             </div>
+          </section>
 
-            <div class="avatar-option-panel">
+          <section class="public-rooms-section" id="public-rooms-section" aria-labelledby="public-rooms-title">
+            <h2 class="col-title" id="public-rooms-title">Active Public Rooms</h2>
+            <div class="public-rooms" id="public-rooms" aria-label="Active public rooms">
+              <div class="common-room-skeleton" role="status" aria-live="polite">Loading…</div>
+            </div>
+          </section>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- ═══ SHARED AVATAR WORKSHOP ═══ -->
+  <div id="customize-panel" class="avatar-workshop-overlay" role="dialog" aria-modal="true" aria-labelledby="avatar-workshop-title" aria-describedby="avatar-workshop-description" aria-hidden="true">
+    <section class="avatar-workshop-shell">
+      <div class="avatar-workshop-handle" aria-hidden="true"><span></span></div>
+      <header class="avatar-workshop-header">
+        <div>
+          <h2 id="avatar-workshop-title">Customize Avatar</h2>
+          <p id="avatar-workshop-description">Change your look anytime.</p>
+        </div>
+        <button id="btn-close-avatar" class="avatar-workshop-close" type="button" aria-label="Close avatar workshop">×</button>
+      </header>
+
+      <div class="avatar-workshop-body">
+        <div class="avatar-preview-column">
+          <div class="avatar-preview-frame">
+            <canvas id="avatar-preview" width="256" height="256" aria-label="Current patchwork avatar preview"></canvas>
+          </div>
+          <div class="avatar-preview-actions">
+            <button class="btn btn-primary" id="btn-randomize-avatar" type="button">
+              <i data-lucide="shuffle" aria-hidden="true"></i>
+              Randomize
+            </button>
+            <button class="btn btn-secondary" id="btn-reset-avatar" type="button">
+              <i data-lucide="rotate-ccw" aria-hidden="true"></i>
+              Reset
+            </button>
+          </div>
+        </div>
+
+        <div class="avatar-editor">
+          <div class="avatar-tabs" role="tablist" aria-label="Avatar customization sections">
+            <button class="avatar-tab active" id="avatar-tab-base" type="button" role="tab" aria-selected="true" aria-controls="avatar-pane-base" data-avatar-tab="base">
+              <i data-lucide="square-dashed" aria-hidden="true"></i><span>Base</span>
+            </button>
+            <button class="avatar-tab" id="avatar-tab-face" type="button" role="tab" aria-selected="false" aria-controls="avatar-pane-face" data-avatar-tab="face">
+              <i data-lucide="smile" aria-hidden="true"></i><span>Face</span>
+            </button>
+            <button class="avatar-tab" id="avatar-tab-extras" type="button" role="tab" aria-selected="false" aria-controls="avatar-pane-extras" data-avatar-tab="extras">
+              <i data-lucide="sparkles" aria-hidden="true"></i><span>Extras</span>
+            </button>
+          </div>
+
+          <div class="avatar-panes">
+            <section class="avatar-option-panel avatar-pane active" id="avatar-pane-base" role="tabpanel" aria-labelledby="avatar-tab-base" data-avatar-pane="base">
               <div class="avatar-option-row avatar-option-row-wide">
-                <span class="customize-label">Base / Shape</span>
+                <span class="customize-label">Shape</span>
                 <div class="shape-group avatar-choice-grid" id="shape-btns" role="radiogroup" aria-label="Avatar shape"></div>
               </div>
               <div class="avatar-option-row avatar-option-row-wide">
                 <span class="customize-label">Color</span>
                 <div class="swatch-group" id="color-swatches" role="radiogroup" aria-label="Avatar color"></div>
               </div>
+            </section>
+
+            <section class="avatar-option-panel avatar-pane" id="avatar-pane-face" role="tabpanel" aria-labelledby="avatar-tab-face" data-avatar-pane="face" hidden>
               <div class="avatar-option-row">
                 <span class="customize-label">Eyes</span>
                 <div class="avatar-choice-grid" id="eyes-btns" role="radiogroup" aria-label="Avatar eyes"></div>
@@ -138,6 +185,9 @@
                 <span class="customize-label">Details</span>
                 <div class="avatar-choice-grid" id="detail-btns" role="radiogroup" aria-label="Avatar face details"></div>
               </div>
+            </section>
+
+            <section class="avatar-option-panel avatar-pane" id="avatar-pane-extras" role="tabpanel" aria-labelledby="avatar-tab-extras" data-avatar-pane="extras" hidden>
               <div class="avatar-option-row avatar-option-row-wide">
                 <span class="customize-label">Accessory</span>
                 <div class="acc-group avatar-choice-grid" id="acc-btns" role="radiogroup" aria-label="Avatar accessory"></div>
@@ -147,28 +197,30 @@
                 <input type="range" id="pulse-slider" min="0" max="2" step="1" value="1" aria-label="Avatar pulse speed">
                 <div class="pulse-labels"><span>Slow</span><span>Normal</span><span>Fast</span></div>
               </div>
-            </div>
-          </div>
-
-          <div class="avatar-share-row">
-            <div class="customize-hash-row">
-              <label for="avatar-hash">Look code</label>
-              <input type="text" id="avatar-hash" readonly maxlength="9" value="A00010000" aria-label="Avatar look code">
-              <button class="btn btn-primary btn-sm" id="btn-copy-hash" type="button" aria-label="Copy avatar look code">Copy</button>
-            </div>
-            <div class="customize-import-row">
-              <label for="import-hash">Import</label>
-              <input type="text" id="import-hash" placeholder="Paste look code…" maxlength="9" aria-label="Paste avatar look code to import">
-              <button class="btn btn-primary btn-sm" id="btn-import-hash" type="button" aria-label="Import avatar look code">Import</button>
-            </div>
+            </section>
           </div>
         </div>
       </div>
 
-      <p class="landing-footer">
-        made with <span class="heart" aria-hidden="true">♥</span> for quiet people
-      </p>
-    </div>
+      <footer class="avatar-workshop-footer">
+        <div class="avatar-share-row">
+          <div class="customize-hash-row">
+            <label for="avatar-hash">Look code</label>
+            <input type="text" id="avatar-hash" readonly maxlength="9" value="A00010000" aria-label="Avatar look code">
+            <button class="btn btn-secondary btn-sm" id="btn-copy-hash" type="button" aria-label="Copy avatar look code">Copy</button>
+          </div>
+          <div class="customize-import-row">
+            <label for="import-hash">Import</label>
+            <input type="text" id="import-hash" placeholder="Paste look code…" maxlength="9" aria-label="Paste avatar look code to import">
+            <button class="btn btn-secondary btn-sm" id="btn-import-hash" type="button" aria-label="Import avatar look code">Import</button>
+          </div>
+        </div>
+        <button class="btn btn-primary avatar-done" id="btn-avatar-done" type="button">
+          <i data-lucide="check" aria-hidden="true"></i>
+          Done
+        </button>
+      </footer>
+    </section>
   </div>
 
   <!-- ═══ GAME VIEW ═══ -->
@@ -203,6 +255,8 @@
   <button id="quiet-btn" title="Quiet Mode: appear invisible, auto-decline Vibe Checks" aria-label="Toggle quiet mode" aria-pressed="false">Quiet</button>
 
   <button id="build-btn" title="Toggle build mode" aria-label="Toggle furniture build mode" aria-expanded="false" aria-controls="furniture-panel" aria-pressed="false">Build</button>
+
+  <button id="avatar-btn" title="Customize avatar" aria-label="Customize avatar" aria-expanded="false" aria-controls="customize-panel" aria-pressed="false">Avatar</button>
 
   <button id="back-btn" aria-label="Return to lobby">← Lobby</button>
 
