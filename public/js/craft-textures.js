@@ -38,6 +38,12 @@
     '#2db8b2', '#d85a9a', '#74b84d', '#d94d77', '#dfba3e',
     '#dc773c', '#9d62c4', '#4c7dcc', '#d65b52', '#34ae88',
   ]);
+  const RENDER_RESOLUTION = Object.freeze({
+    avatarScale: 4,
+    furnitureScale: 2,
+    previewSize: 512,
+    maxDevicePixelRatio: 2,
+  });
 
   const generatedPreviewUrls = new Map();
   const installedSceneState = new WeakMap();
@@ -310,7 +316,21 @@
   }
 
   function patternFor(context, tile) {
-    return context.createPattern(tile, 'repeat') || '#777';
+    const pattern = context.createPattern(tile, 'repeat');
+    if (!pattern) return '#777';
+
+    // Canvas paths are authored in logical room pixels, then rendered at a
+    // higher backing resolution. Counter-scale the material pattern so its
+    // source pixels stay dense instead of being enlarged with the path.
+    if (typeof pattern.setTransform === 'function' && typeof DOMMatrix === 'function') {
+      const transform = context.getTransform();
+      const scaleX = Math.hypot(transform.a, transform.b) || 1;
+      const scaleY = Math.hypot(transform.c, transform.d) || 1;
+      if (scaleX > 1 || scaleY > 1) {
+        pattern.setTransform(new DOMMatrix([1 / scaleX, 0, 0, 1 / scaleY, 0, 0]));
+      }
+    }
+    return pattern;
   }
 
   function drawShadow(context, path, options = {}) {
@@ -1299,16 +1319,26 @@
   function drawFurnitureCanvas(definition, footprint, materials, palette, interactiveOn = false) {
     const logicalWidth = Math.max(1, footprint.w) * 64;
     const logicalHeight = Math.max(1, footprint.h) * 64;
-    const { canvas, context } = createCanvas(logicalWidth, logicalHeight, 1);
+    const { canvas, context } = createCanvas(
+      logicalWidth,
+      logicalHeight,
+      RENDER_RESOLUTION.furnitureScale,
+    );
     drawFurniture(context, definition, logicalWidth, logicalHeight, materials, palette, interactiveOn);
     return canvas;
   }
 
-  function drawAvatar(customization, color, sourceImages, palette) {
+  function drawAvatar(
+    customization,
+    color,
+    sourceImages,
+    palette,
+    renderScale = RENDER_RESOLUTION.avatarScale,
+  ) {
     const value = normalizeAvatarCustomization(customization);
     const features = avatarOptionSelection(value);
     const shape = value.shape;
-    const { canvas, context } = createCanvas(48, 48, 1);
+    const { canvas, context } = createCanvas(48, 48, renderScale);
     const patch = makeTintedTile(sourceImages.fleece, color, 1.18);
     const border = makeTintedTile(sourceImages.cotton, palette.light, 0.86);
     const faceInk = makeTintedTile(sourceImages.corduroy, palette.dark, 0.8);
@@ -1469,8 +1499,14 @@
     return canvas;
   }
 
-  function drawAccessory(accessory, color, sourceImages, palette) {
-    const { canvas, context } = createCanvas(48, 48, 1);
+  function drawAccessory(
+    accessory,
+    color,
+    sourceImages,
+    palette,
+    renderScale = RENDER_RESOLUTION.avatarScale,
+  ) {
+    const { canvas, context } = createCanvas(48, 48, renderScale);
     const patch = makeTintedTile(sourceImages.corduroy, color, 1.05);
     const thread = makeTintedTile(sourceImages.cotton, palette.light, 0.82);
 
@@ -1670,11 +1706,12 @@
     const value = normalizeAvatarCustomization(customization);
     const sources = await loadDomSourceImages();
     const color = DEFAULT_PLAYER_COLORS[value.colorIdx] || DEFAULT_PLAYER_COLORS[0];
-    const avatar = drawAvatar(value, color, sources, THEME_PALETTES[0]);
+    const previewScale = RENDER_RESOLUTION.previewSize / 48;
+    const avatar = drawAvatar(value, color, sources, THEME_PALETTES[0], previewScale);
     const accessory = value.accessory > 0
-      ? drawAccessory(value.accessory, color, sources, THEME_PALETTES[0])
+      ? drawAccessory(value.accessory, color, sources, THEME_PALETTES[0], previewScale)
       : null;
-    const size = 192;
+    const size = RENDER_RESOLUTION.previewSize;
     canvas.width = size;
     canvas.height = size;
     const context = canvas.getContext('2d');
@@ -1723,6 +1760,7 @@
     DETAIL_NAMES,
     EYE_NAMES,
     MOUTH_NAMES,
+    RENDER_RESOLUTION,
     SHAPE_NAMES,
     SOURCE_MATERIALS,
     THEME_PALETTES,
