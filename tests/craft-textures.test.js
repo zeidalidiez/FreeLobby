@@ -49,6 +49,18 @@ test('all four craft themes expose the complete semantic palette', () => {
   }
 });
 
+test('generated craft art uses high-resolution backing textures with a bounded DPR', () => {
+  assert.deepEqual(craft.RENDER_RESOLUTION, {
+    avatarScale: 4,
+    furnitureScale: 2,
+    previewSize: 512,
+    maxDevicePixelRatio: 2,
+  });
+  assert.ok(craft.RENDER_RESOLUTION.avatarScale > 1);
+  assert.ok(craft.RENDER_RESOLUTION.furnitureScale > 1);
+  assert.ok(craft.RENDER_RESOLUTION.previewSize >= 48 * craft.RENDER_RESOLUTION.avatarScale);
+});
+
 test('avatar parts cover the expanded mix-and-match system', () => {
   assert.equal(craft.SHAPE_NAMES.length, 5);
   assert.equal(craft.ACCESSORY_NAMES.length, 8);

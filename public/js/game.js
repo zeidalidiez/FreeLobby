@@ -506,7 +506,11 @@ function installAvatarChoices() {
 }
 
 async function refreshAvatarPreview() {
-  const previews = [avatarPreview, landingAvatarPreview].filter(Boolean);
+  const previews = [avatarPreview, landingAvatarPreview].filter(preview => {
+    if (!preview) return false;
+    const bounds = preview.getBoundingClientRect();
+    return bounds.width > 0 && bounds.height > 0;
+  });
   if (previews.length === 0) return;
   const revision = ++avatarPreviewRevision;
   const stagingCanvas = document.createElement('canvas');
@@ -515,7 +519,19 @@ async function refreshAvatarPreview() {
     await craftTextures.renderAvatarPreview(stagingCanvas, CUSTOMIZATION);
     if (revision !== avatarPreviewRevision) return;
     previews.forEach(preview => {
+      const bounds = preview.getBoundingClientRect();
+      if (bounds.width <= 0 || bounds.height <= 0) return;
+      const pixelRatio = Math.min(
+        Math.max(window.devicePixelRatio || 1, 1),
+        craftTextures.RENDER_RESOLUTION.maxDevicePixelRatio,
+      );
+      const backingWidth = Math.max(1, Math.round(bounds.width * pixelRatio));
+      const backingHeight = Math.max(1, Math.round(bounds.height * pixelRatio));
+      if (preview.width !== backingWidth) preview.width = backingWidth;
+      if (preview.height !== backingHeight) preview.height = backingHeight;
       const context = preview.getContext('2d');
+      context.imageSmoothingEnabled = true;
+      context.imageSmoothingQuality = 'high';
       context.clearRect(0, 0, preview.width, preview.height);
       context.drawImage(stagingCanvas, 0, 0, preview.width, preview.height);
       preview.classList.remove('loading');
@@ -525,6 +541,12 @@ async function refreshAvatarPreview() {
     console.error('Avatar preview failed to render.', error);
   }
 }
+
+let avatarPreviewResizeFrame = 0;
+window.addEventListener('resize', () => {
+  window.cancelAnimationFrame(avatarPreviewResizeFrame);
+  avatarPreviewResizeFrame = window.requestAnimationFrame(() => refreshAvatarPreview());
+});
 
 function updateCustomizationUI({ broadcast = true } = {}) {
   CUSTOMIZATION = craftTextures.normalizeAvatarCustomization(CUSTOMIZATION);
@@ -944,6 +966,7 @@ let ROOM_HEIGHT = 800;
 const PLAYER_SPEED = 220;
 const LERP_FACTOR  = 0.15;
 const SEND_RATE    = 50;
+const AVATAR_DISPLAY_SIZE = 48;
 
 const gameConfig = {
   type: Phaser.AUTO,
@@ -1031,6 +1054,7 @@ function enterGame(mode, roomCode) {
 
 function exitGame() {
   shellController.showLanding();
+  window.requestAnimationFrame(() => refreshAvatarPreview());
   connectionStatus.classList.remove('visible');
   backBtn.classList.remove('visible');
   roomInfo.classList.remove('visible');
@@ -1982,8 +2006,8 @@ function update(_time, _delta) {
       const pulseT = scene.time.now / 1000;
       const pulseSpeed = pulseSpeeds[CUSTOMIZATION.pulse] || 0.04;
       const pulseScale = 1 + Math.sin(pulseT * pulseSpeed * Math.PI * 2) * 0.05;
-      player.setScale(pulseScale);
-      if (playerAccessory) playerAccessory.setScale(pulseScale);
+      player.setScale(avatarBaseScale(player) * pulseScale);
+      if (playerAccessory) playerAccessory.setScale(avatarBaseScale(playerAccessory) * pulseScale);
     }
 
     const now = Date.now();
@@ -2022,8 +2046,8 @@ function update(_time, _delta) {
         const pulseT = scene.time.now / 1000;
         const pulseSpeed = pulseSpeeds[other.customization.pulse] || 0.04;
         const pulseScale = 1 + Math.sin(pulseT * pulseSpeed * Math.PI * 2) * 0.05;
-        other.sprite.setScale(pulseScale);
-        if (other.accessory) other.accessory.setScale(pulseScale);
+        other.sprite.setScale(avatarBaseScale(other.sprite) * pulseScale);
+        if (other.accessory) other.accessory.setScale(avatarBaseScale(other.accessory) * pulseScale);
       }
     }
   }
@@ -2033,14 +2057,34 @@ function sitDown(sprite, accessory) {
   if (!sprite) return;
   const targets = accessory ? [sprite, accessory] : [sprite];
   scene.tweens.killTweensOf(targets);
-  scene.tweens.add({ targets, ...idleState.sittingTweenProps(), duration: 400, ease: 'Power2' });
+  const pose = idleState.sittingTweenProps();
+  targets.forEach(target => {
+    const baseScale = avatarBaseScale(target);
+    scene.tweens.add({
+      targets: target,
+      scaleX: baseScale,
+      scaleY: baseScale * pose.scaleY,
+      duration: 400,
+      ease: 'Power2',
+    });
+  });
 }
 
 function standUp(sprite, accessory) {
   if (!sprite) return;
   const targets = accessory ? [sprite, accessory] : [sprite];
   scene.tweens.killTweensOf(targets);
-  scene.tweens.add({ targets, ...idleState.standingTweenProps(), duration: 300, ease: 'Back.easeOut' });
+  const pose = idleState.standingTweenProps();
+  targets.forEach(target => {
+    const baseScale = avatarBaseScale(target);
+    scene.tweens.add({
+      targets: target,
+      scaleX: baseScale,
+      scaleY: baseScale * pose.scaleY,
+      duration: 300,
+      ease: 'Back.easeOut',
+    });
+  });
 }
 
 function createClickPulse(x, y) {
@@ -2061,6 +2105,23 @@ function createClickPulse(x, y) {
 // PLAYER MANAGEMENT
 // ═══════════════════════════════════════════════════════
 
+function avatarBaseScale(sprite) {
+  if (!sprite) return 1;
+  const storedScale = sprite.getData('avatarBaseScale');
+  if (Number.isFinite(storedScale) && storedScale > 0) return storedScale;
+  const frameWidth = sprite.frame?.realWidth || sprite.width || AVATAR_DISPLAY_SIZE;
+  return AVATAR_DISPLAY_SIZE / frameWidth;
+}
+
+function configureAvatarSprite(sprite) {
+  if (!sprite) return 1;
+  const frameWidth = sprite.frame?.realWidth || sprite.width || AVATAR_DISPLAY_SIZE;
+  const baseScale = AVATAR_DISPLAY_SIZE / frameWidth;
+  sprite.setData('avatarBaseScale', baseScale);
+  sprite.setScale(baseScale);
+  return baseScale;
+}
+
 function refreshLocalPlayerAppearance() {
   if (!scene || !player) return;
   const customization = craftTextures.normalizeAvatarCustomization(CUSTOMIZATION);
@@ -2077,6 +2138,7 @@ function refreshLocalPlayerAppearance() {
       player.y,
       craftTextures.accessoryTextureKey(customization.accessory, customization.colorIdx),
     );
+    configureAvatarSprite(playerAccessory);
     playerAccessory
       .setDepth(11)
       .setAlpha(player.alpha)
@@ -2101,6 +2163,7 @@ function applyOtherPlayerCustomization(id, customization) {
       other.sprite.y,
       craftTextures.accessoryTextureKey(normalized.accessory, normalized.colorIdx),
     );
+    configureAvatarSprite(other.accessory);
     other.accessory
       .setDepth(6)
       .setAlpha(other.quietMode ? 0.35 : 1)
@@ -2117,7 +2180,7 @@ function spawnLocalPlayer(data) {
 
   const shapeKey = craftTextures.ensureAvatarTexture(scene, cust);
   player = scene.physics.add.sprite(data.x, data.y, shapeKey);
-  player.setDisplaySize(48, 48);
+  const playerBaseScale = configureAvatarSprite(player);
   player.setCollideWorldBounds(true);
   player.setDepth(10);
 
@@ -2128,7 +2191,7 @@ function spawnLocalPlayer(data) {
       data.y,
       craftTextures.accessoryTextureKey(cust.accessory, cust.colorIdx),
     );
-    playerAccessory.setDisplaySize(48, 48);
+    configureAvatarSprite(playerAccessory);
     playerAccessory.setDepth(11);
   }
 
@@ -2146,13 +2209,28 @@ function spawnLocalPlayer(data) {
 
   scene.cameras.main.startFollow(player, true, 0.08, 0.08);
 
-  player.setAlpha(0); player.setScale(0.3);
-  scene.tweens.add({ targets: [player], alpha: 1, scale: 1, duration: 400, ease: 'Back.easeOut' });
+  player.setAlpha(0); player.setScale(playerBaseScale * 0.3);
+  scene.tweens.add({
+    targets: player,
+    alpha: 1,
+    scaleX: playerBaseScale,
+    scaleY: playerBaseScale,
+    duration: 400,
+    ease: 'Back.easeOut',
+  });
   nameLabel.setAlpha(0);
   scene.tweens.add({ targets: [nameLabel], alpha: 1, duration: 400, delay: 150 });
   if (playerAccessory) {
-    playerAccessory.setAlpha(0); playerAccessory.setScale(0.3);
-    scene.tweens.add({ targets: [playerAccessory], alpha: 1, scale: 1, duration: 400, ease: 'Back.easeOut' });
+    const accessoryBaseScale = avatarBaseScale(playerAccessory);
+    playerAccessory.setAlpha(0); playerAccessory.setScale(accessoryBaseScale * 0.3);
+    scene.tweens.add({
+      targets: playerAccessory,
+      alpha: 1,
+      scaleX: accessoryBaseScale,
+      scaleY: accessoryBaseScale,
+      duration: 400,
+      ease: 'Back.easeOut',
+    });
   }
 }
 
@@ -2164,7 +2242,7 @@ function spawnOtherPlayer(data) {
   const shapeKey = craftTextures.ensureAvatarTexture(scene, cust);
 
   const sprite = scene.add.sprite(data.x, data.y, shapeKey);
-  sprite.setDisplaySize(48, 48);
+  const spriteBaseScale = configureAvatarSprite(sprite);
   sprite.setDepth(5);
 
   let accessory = null;
@@ -2174,7 +2252,7 @@ function spawnOtherPlayer(data) {
       data.y,
       craftTextures.accessoryTextureKey(cust.accessory, cust.colorIdx),
     );
-    accessory.setDisplaySize(48, 48);
+    configureAvatarSprite(accessory);
     accessory.setDepth(6);
   }
 
@@ -2189,13 +2267,28 @@ function spawnOtherPlayer(data) {
 
   const isQuiet = !!data.quietMode;
   const targetAlpha = isQuiet ? 0.35 : 1;
-  sprite.setAlpha(0); sprite.setScale(0.3);
-  scene.tweens.add({ targets: [sprite], alpha: targetAlpha, scale: 1, duration: 400, ease: 'Back.easeOut' });
+  sprite.setAlpha(0); sprite.setScale(spriteBaseScale * 0.3);
+  scene.tweens.add({
+    targets: sprite,
+    alpha: targetAlpha,
+    scaleX: spriteBaseScale,
+    scaleY: spriteBaseScale,
+    duration: 400,
+    ease: 'Back.easeOut',
+  });
   label.setAlpha(0);
   scene.tweens.add({ targets: [label], alpha: targetAlpha, duration: 400, delay: 150 });
   if (accessory) {
-    accessory.setAlpha(0); accessory.setScale(0.3);
-    scene.tweens.add({ targets: [accessory], alpha: targetAlpha, scale: 1, duration: 400, ease: 'Back.easeOut' });
+    const accessoryBaseScale = avatarBaseScale(accessory);
+    accessory.setAlpha(0); accessory.setScale(accessoryBaseScale * 0.3);
+    scene.tweens.add({
+      targets: accessory,
+      alpha: targetAlpha,
+      scaleX: accessoryBaseScale,
+      scaleY: accessoryBaseScale,
+      duration: 400,
+      ease: 'Back.easeOut',
+    });
   }
 
   sprite.setInteractive({ useHandCursor: true });
