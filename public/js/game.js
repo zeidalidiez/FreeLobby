@@ -416,14 +416,6 @@ const DEFAULT_CUSTOMIZATION = Object.freeze({
   mouth: 0,
   detail: 1,
 });
-const AVATAR_GLYPHS = Object.freeze({
-  shape: ['●', '■', '◆', '♥', '✿'],
-  eyes: ['••', '⌒⌒', '◉◉', '^^', '•⌒', '××'],
-  brows: ['⌒', '—', '⌃', '╱╲', '▬'],
-  mouth: ['⌣', '◡', '—', '○', '⌁', '⌢'],
-  detail: ['–', '∴', '●', '〰', '•', '┄'],
-  accessory: ['–', '🎧', '◯', '▰', '⋈', '✿', '⌐', '❧'],
-});
 const AVATAR_GROUPS = [
   { element: shapeBtns, field: 'shape', names: craftTextures.SHAPE_NAMES, className: 'shape-btn' },
   { element: eyeBtns, field: 'eyes', names: craftTextures.EYE_NAMES },
@@ -464,7 +456,7 @@ function installAvatarChoiceGroup({ element, field, names, className = '' }) {
     const glyph = document.createElement('span');
     glyph.className = 'avatar-choice-glyph';
     glyph.setAttribute('aria-hidden', 'true');
-    glyph.textContent = AVATAR_GLYPHS[field][index] || '•';
+    glyph.textContent = craftTextures.AVATAR_OPTION_GLYPHS[field][index] || '•';
     button.appendChild(glyph);
 
     const label = document.createElement('small');

@@ -56,6 +56,31 @@ test('avatar parts cover the expanded mix-and-match system', () => {
   assert.equal(craft.BROW_NAMES.length, 5);
   assert.equal(craft.MOUTH_NAMES.length, 6);
   assert.equal(craft.DETAIL_NAMES.length, 6);
+  for (const [field, names] of [
+    ['shape', craft.SHAPE_NAMES],
+    ['accessory', craft.ACCESSORY_NAMES],
+    ['eyes', craft.EYE_NAMES],
+    ['brows', craft.BROW_NAMES],
+    ['mouth', craft.MOUTH_NAMES],
+    ['detail', craft.DETAIL_NAMES],
+  ]) {
+    assert.equal(craft.AVATAR_OPTION_GLYPHS[field].length, names.length);
+  }
+});
+
+test('reported avatar face choices resolve to the same named renderer options', () => {
+  const customization = craft.decodeAvatarLook('A32111342');
+  assert.deepEqual(craft.avatarOptionSelection(customization), {
+    shape: 'diamond',
+    accessory: 'headphones',
+    eyes: 'sleepy',
+    brows: 'worried',
+    mouth: 'smirk',
+    detail: 'blush',
+  });
+  assert.equal(craft.AVATAR_OPTION_GLYPHS.eyes[customization.eyes], '︶︶');
+  assert.equal(craft.AVATAR_OPTION_GLYPHS.brows[customization.brows], '╱╲');
+  assert.equal(craft.AVATAR_OPTION_GLYPHS.mouth[customization.mouth], '⌁');
 });
 
 test('avatar look codes round-trip and keep legacy four-character codes readable', () => {
