@@ -443,6 +443,7 @@ io.on('connection', (socket) => {
     'createRoom', 'joinRoom', 'joinRandomRoom', 'fleeRoom', 'joinCommonRoom',
     'placeFurniture', 'removeFurniture', 'toggleFurniture', 'importRoomHash',
     'setRoomFurniture', 'setRoomTheme', 'setAmbientTrack', 'playerMove',
+    'updateCustomization',
     'sendEmote', 'sendSign', 'quietMode', 'vibeCheckRequest', 'vibeCheckRespond',
   ]);
 
@@ -948,6 +949,24 @@ io.on('connection', (socket) => {
     pd.y = position.y;
     pd.lastActive = Date.now();
     socket.to(roomId).emit('playerMoved', { id: socket.id, x: position.x, y: position.y });
+  });
+
+  // ── Live Avatar Customization ──
+  socket.on('updateCustomization', (payload) => {
+    if (!withinRateLimit('avatar-edit', 30, 5000)) return;
+    const { customization } = asEventObject(payload);
+    const roomId = socket.roomId;
+    if (!roomId || !rooms.has(roomId)) return;
+    const room = rooms.get(roomId);
+    const playerData = room.players.get(socket.id);
+    if (!playerData) return;
+    playerData.customization = normalizeCustomization(customization);
+    playerData.lastActive = Date.now();
+    socket.playerData = playerData;
+    socket.to(roomId).emit('playerCustomizationChanged', {
+      id: socket.id,
+      customization: playerData.customization,
+    });
   });
 
   // ── Emote ──
