@@ -26,6 +26,14 @@
   const BROW_NAMES = Object.freeze(['soft', 'straight', 'arched', 'worried', 'bold']);
   const MOUTH_NAMES = Object.freeze(['smile', 'open-smile', 'flat', 'tiny-o', 'smirk', 'frown']);
   const DETAIL_NAMES = Object.freeze(['none', 'freckles', 'blush', 'moustache', 'beauty-mark', 'cheek-stitch']);
+  const AVATAR_OPTION_GLYPHS = Object.freeze({
+    shape: Object.freeze(['●', '■', '◆', '♥', '✿']),
+    eyes: Object.freeze(['⊙⊙', '︶︶', '◉◉', '⌒⌒', '•︶', '××']),
+    brows: Object.freeze(['⌒⌒', '——', '⌃⌃', '╱╲', '━━']),
+    mouth: Object.freeze(['⌣', '◡', '—', '○', '⌁', '⌢']),
+    detail: Object.freeze(['–', '∴', '●', '〰', '•', '┄']),
+    accessory: Object.freeze(['–', '🎧', '◯', '▰', '⋈', '✿', '⌐', '❧']),
+  });
   const DEFAULT_PLAYER_COLORS = Object.freeze([
     '#2db8b2', '#d85a9a', '#74b84d', '#d94d77', '#dfba3e',
     '#dc773c', '#9d62c4', '#4c7dcc', '#d65b52', '#34ae88',
@@ -94,6 +102,18 @@
       brows: integer(value.brows, BROW_NAMES.length - 1),
       mouth: integer(value.mouth, MOUTH_NAMES.length - 1),
       detail: integer(value.detail, DETAIL_NAMES.length - 1),
+    };
+  }
+
+  function avatarOptionSelection(customization) {
+    const value = normalizeAvatarCustomization(customization);
+    return {
+      shape: SHAPE_NAMES[value.shape],
+      accessory: ACCESSORY_NAMES[value.accessory],
+      eyes: EYE_NAMES[value.eyes],
+      brows: BROW_NAMES[value.brows],
+      mouth: MOUTH_NAMES[value.mouth],
+      detail: DETAIL_NAMES[value.detail],
     };
   }
 
@@ -1286,6 +1306,7 @@
 
   function drawAvatar(customization, color, sourceImages, palette) {
     const value = normalizeAvatarCustomization(customization);
+    const features = avatarOptionSelection(value);
     const shape = value.shape;
     const { canvas, context } = createCanvas(48, 48, 1);
     const patch = makeTintedTile(sourceImages.fleece, color, 1.18);
@@ -1339,25 +1360,31 @@
     const leftEyeX = 18.5;
     const rightEyeX = 29.5;
     const eyeY = 21;
-    if (value.eyes === 1) {
-      solidStroke(context, linePath([[15.5, eyeY], [21.5, eyeY + 1]]), palette.dark, 1.5);
-      solidStroke(context, linePath([[26.5, eyeY + 1], [32.5, eyeY]]), palette.dark, 1.5);
-    } else if (value.eyes === 2) {
+    if (features.eyes === 'sleepy') {
+      const leftEye = new Path2D();
+      leftEye.arc(leftEyeX, eyeY - 1.2, 3.4, 0.12, Math.PI - 0.12);
+      const rightEye = new Path2D();
+      rightEye.arc(rightEyeX, eyeY - 1.2, 3.4, 0.12, Math.PI - 0.12);
+      solidStroke(context, leftEye, palette.dark, 1.5);
+      solidStroke(context, rightEye, palette.dark, 1.5);
+    } else if (features.eyes === 'wide') {
       fillTexture(context, ellipsePath(leftEyeX, eyeY, 3.2, 4), faceInk);
       fillTexture(context, ellipsePath(rightEyeX, eyeY, 3.2, 4), faceInk);
       fillTexture(context, ellipsePath(leftEyeX - 0.7, eyeY - 1.2, 0.9, 1.1), border);
       fillTexture(context, ellipsePath(rightEyeX - 0.7, eyeY - 1.2, 0.9, 1.1), border);
-    } else if (value.eyes === 3) {
+    } else if (features.eyes === 'happy') {
       const leftEye = new Path2D();
       leftEye.arc(leftEyeX, eyeY + 2, 3.6, Math.PI, Math.PI * 2);
       const rightEye = new Path2D();
       rightEye.arc(rightEyeX, eyeY + 2, 3.6, Math.PI, Math.PI * 2);
       solidStroke(context, leftEye, palette.dark, 1.5);
       solidStroke(context, rightEye, palette.dark, 1.5);
-    } else if (value.eyes === 4) {
+    } else if (features.eyes === 'wink') {
       fillTexture(context, ellipsePath(leftEyeX, eyeY, 1.8, 1.8), faceInk);
-      solidStroke(context, linePath([[26.5, eyeY], [32.5, eyeY + 0.5]]), palette.dark, 1.5);
-    } else if (value.eyes === 5) {
+      const rightEye = new Path2D();
+      rightEye.arc(rightEyeX, eyeY - 1.2, 3.4, 0.12, Math.PI - 0.12);
+      solidStroke(context, rightEye, palette.dark, 1.5);
+    } else if (features.eyes === 'cross-stitch') {
       crossStitch(context, leftEyeX, eyeY, palette.dark, 2.3);
       crossStitch(context, rightEyeX, eyeY, palette.dark, 2.3);
     } else {
@@ -1368,16 +1395,16 @@
     }
 
     const browY = 15.8;
-    const browWidth = value.brows === 4 ? 2.2 : 1.25;
-    if (value.brows === 1) {
+    const browWidth = features.brows === 'bold' ? 2.2 : 1.25;
+    if (features.brows === 'straight') {
       solidStroke(context, linePath([[15.5, browY], [21.5, browY]]), palette.dark, browWidth);
       solidStroke(context, linePath([[26.5, browY], [32.5, browY]]), palette.dark, browWidth);
-    } else if (value.brows === 2) {
+    } else if (features.brows === 'arched') {
       solidStroke(context, linePath([[15.5, browY + 1], [18.5, browY - 1], [21.5, browY + 0.5]]), palette.dark, browWidth);
       solidStroke(context, linePath([[26.5, browY + 0.5], [29.5, browY - 1], [32.5, browY + 1]]), palette.dark, browWidth);
-    } else if (value.brows === 3) {
-      solidStroke(context, linePath([[15.5, browY - 1], [21.5, browY + 1]]), palette.dark, browWidth);
-      solidStroke(context, linePath([[26.5, browY + 1], [32.5, browY - 1]]), palette.dark, browWidth);
+    } else if (features.brows === 'worried') {
+      solidStroke(context, linePath([[15.5, browY + 1], [21.5, browY - 1]]), palette.dark, browWidth);
+      solidStroke(context, linePath([[26.5, browY - 1], [32.5, browY + 1]]), palette.dark, browWidth);
     } else {
       const leftBrow = new Path2D();
       leftBrow.arc(leftEyeX, browY + 3, 3.6, Math.PI * 1.12, Math.PI * 1.88);
@@ -1388,19 +1415,22 @@
     }
 
     const mouthY = 30;
-    if (value.mouth === 1) {
+    if (features.mouth === 'open-smile') {
       const mouth = new Path2D();
       mouth.arc(24, mouthY - 2, 5.5, 0.12, Math.PI - 0.12);
       mouth.closePath();
       fillTexture(context, mouth, faceInk);
       solidStroke(context, linePath([[20, mouthY], [28, mouthY]]), palette.accent, 1);
-    } else if (value.mouth === 2) {
+    } else if (features.mouth === 'flat') {
       solidStroke(context, linePath([[19.5, mouthY], [28.5, mouthY]]), palette.dark, 1.4);
-    } else if (value.mouth === 3) {
+    } else if (features.mouth === 'tiny-o') {
       solidStroke(context, ellipsePath(24, mouthY, 2.2, 2.8), palette.dark, 1.3);
-    } else if (value.mouth === 4) {
-      solidStroke(context, linePath([[19, mouthY], [23, mouthY + 1.5], [29, mouthY - 1]]), palette.dark, 1.4);
-    } else if (value.mouth === 5) {
+    } else if (features.mouth === 'smirk') {
+      const mouth = new Path2D();
+      mouth.moveTo(18.5, mouthY + 1);
+      mouth.bezierCurveTo(21.5, mouthY + 1.8, 25.5, mouthY + 1.4, 29.8, mouthY - 2);
+      solidStroke(context, mouth, palette.dark, 1.4);
+    } else if (features.mouth === 'frown') {
       const mouth = new Path2D();
       mouth.arc(24, mouthY + 4, 5, Math.PI * 1.12, Math.PI * 1.88);
       solidStroke(context, mouth, palette.dark, 1.4);
@@ -1410,22 +1440,29 @@
       solidStroke(context, mouth, palette.dark, 1.4);
     }
 
-    if (value.detail === 1) {
+    if (features.detail === 'freckles') {
       for (const [x, y] of [[14.5, 27], [17, 28.5], [31, 28.5], [33.5, 27]]) {
         fillTexture(context, ellipsePath(x, y, 0.8, 0.8), faceInk);
       }
-    } else if (value.detail === 2) {
+    } else if (features.detail === 'blush') {
+      const blush = makeTintedTile(sourceImages.linen, '#f29ab2', 1.05);
+      const leftBlush = ellipsePath(16.5, 27.5, 3.2, 2);
+      const rightBlush = ellipsePath(31.5, 27.5, 3.2, 2);
       context.save();
-      context.globalAlpha = 0.55;
-      fillTexture(context, ellipsePath(15.5, 27, 4, 2.5), makeTintedTile(sourceImages.linen, palette.accent, 0.8));
-      fillTexture(context, ellipsePath(32.5, 27, 4, 2.5), makeTintedTile(sourceImages.linen, palette.accent, 0.8));
+      context.globalAlpha = 0.88;
+      fillTexture(context, leftBlush, blush);
+      fillTexture(context, rightBlush, blush);
       context.restore();
-    } else if (value.detail === 3) {
+      stitch(context, leftBlush, palette.light, { width: 0.55, dash: [1.2, 1.2], alpha: 0.7 });
+      stitch(context, rightBlush, palette.light, { width: 0.55, dash: [1.2, 1.2], alpha: 0.7 });
+      solidStroke(context, linePath([[14.8, 27], [16.1, 28.1], [17.4, 27]]), palette.light, 0.55);
+      solidStroke(context, linePath([[29.8, 27], [31.1, 28.1], [32.4, 27]]), palette.light, 0.55);
+    } else if (features.detail === 'moustache') {
       fillTexture(context, polygonPath([[24, 27], [19, 25], [18, 29], [24, 30]]), faceInk);
       fillTexture(context, polygonPath([[24, 27], [29, 25], [30, 29], [24, 30]]), faceInk);
-    } else if (value.detail === 4) {
+    } else if (features.detail === 'beauty-mark') {
       fillTexture(context, ellipsePath(32, 27, 1.2, 1.2), faceInk);
-    } else if (value.detail === 5) {
+    } else if (features.detail === 'cheek-stitch') {
       crossStitch(context, 14.5, 27.5, palette.light, 2);
       crossStitch(context, 33.5, 27.5, palette.light, 2);
     }
@@ -1680,6 +1717,7 @@
 
   return {
     ACCESSORY_NAMES,
+    AVATAR_OPTION_GLYPHS,
     BROW_NAMES,
     DEFAULT_PLAYER_COLORS,
     DETAIL_NAMES,
@@ -1689,6 +1727,7 @@
     SOURCE_MATERIALS,
     THEME_PALETTES,
     accessoryTextureKey,
+    avatarOptionSelection,
     avatarTextureKey,
     decodeAvatarLook,
     encodeAvatarLook,
